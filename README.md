@@ -56,7 +56,7 @@ The app has come a long way and crashes much less frequently than it did at the 
 
 ## Installation
 
-The current version can be downloaded [here](https://wiki.openstreetmap.org/wiki/MapLab3D#Installation). The package contains the following files:
+The current version can be downloaded [here](https://github.com/Akilth/MapLab3D/releases). The package contains the following files:
 - The installation program **MapLab3D_x_x_x_x_WebInstaller.exe**: When executed, MapLab3D is installed on the computer. If necessary the MATLAB Runtime is also downloaded from the Internet and installed.
 - The directory **\Symbols**: This directory contains the source data for the predefined map symbols. You can add your own symbols to this directory and then import them into MapLab3D.
 - The project parameters file **MapLab3D_ProjectParameters_x_x_x_x.xlsx**: This file contains all parameters that affect the map layout and is imported into the app in the first step of map creation.
