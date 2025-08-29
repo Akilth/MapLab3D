@@ -39,7 +39,7 @@ Overview of the steps required to create a map:
 - Generate the STL data for the map and for a frame
 - Print on a 3D printer and assemble
 
-The app has come a long way and crashes much less frequently than it did at the beginning, but development of the app and the project parameter file is still an ongoing process. Because map generation works relatively reliably, the current version has been released as a beta version. Users are invited to test the app and report bugs and suggestions for improvement.
+The app has come a long way and crashes much less frequently than it did at the beginning, but development of the app and the project parameter file is still an ongoing process. Because map generation works relatively reliably, the current version has been released as a beta version. Users are invited to test the app and report bugs ([Issues](https://github.com/Akilth/MapLab3D/issues)) and suggestions for improvement ([Diskussions](https://github.com/Akilth/MapLab3D/discussions)).
 
 ## Requirements
 
@@ -167,7 +167,7 @@ The source code path should be added to the MATLAB path in order to run the app 
 ## Contributing
 
 The original author [Andreas Kilthau](https://github.com/Akilth) currently plans to continue developing the app under the name of the Baden-Wuerttemberg Cooperative State University (DHBW) in Mannheim, possibly with the help of additional student work. Users are invited to contribute in the following ways:
-- Test the app, report bugs, and make suggestions for improvement ([Issues](https://github.com/Akilth/MapLab3D/issues)).
+- Test the app, report bugs ([Issues](https://github.com/Akilth/MapLab3D/issues)), and make suggestions for improvement ([Diskussions](https://github.com/Akilth/MapLab3D/discussions)).
 - Create 3D maps and make them available for download, for example on [Thingiverse](https://www.thingiverse.com), [Printables](https://www.printables.com) or [Cults](https://cults3d.com) or [Cults Category Maps](https://cults3d.com/en/categories/maps). The name of the app should be included in the tags so that maps created with MapLab3D can be easily searched for. Possible tags are:
 	- maplab3d
 	- map
