@@ -40,7 +40,7 @@ packageOpts	= [];
 
 % Run this file.
 
-% New release
+% New release example:
 % Tag:					v1.0.0.3-beta
 % Release title:		MapLab3D 1.0.0.3 Public Beta
 % Release notes:		First published version
