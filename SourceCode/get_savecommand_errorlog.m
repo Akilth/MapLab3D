@@ -41,7 +41,6 @@ try
 	variables_str	= sprintf('''%s''',variables_str);
 	use_projectdirectory			= true;
 	if ~isfield(GV,'projectdirectory')
-
 		use_projectdirectory			= false;
 	else
 		if exist(GV.projectdirectory,'dir')~=7
