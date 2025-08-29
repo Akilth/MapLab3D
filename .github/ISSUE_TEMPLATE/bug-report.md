@@ -26,6 +26,6 @@ The error message will also appear in the program log in the app's installation 
 **Further information about the error**
 In many cases, the error message is not enough to resolve the issue.
 - Save the project ("Menu: File - Save project").
-- Back up the files "errorlog_data.mat" (same location as diary.txt) and the two current project save files ".. - MAP.fig" and ".. - MAPDATA.mat" (in the project directory).
+- Back up the files "errorlog_data.mat" (same location as diary.txt) and the two current project save files ".. - MAP.fig" and ".. - MAPDATA.mat" (in the project directory). Note: An existing errorlog_data.mat file will be overwritten each time a new error occurs.
 - Send the file "errorlog_data.mat" to <akilth@web.de> with "MapLab3D x.x.x.x Bug Report Issue #xxxxx" in the subject line. If the file is too large, use a share link.
 - Only upon request: Also send the two project save files.
