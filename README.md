@@ -167,7 +167,7 @@ The source code path should be added to the MATLAB path in order to run the app 
 ## Contributing
 
 The original author [Andreas Kilthau](https://github.com/Akilth) currently plans to continue developing the app under the name of the Baden-Wuerttemberg Cooperative State University (DHBW) in Mannheim, possibly with the help of additional student work. Users are invited to contribute in the following ways:
-- Test the app, report bugs, and make suggestions for improvement.
+- Test the app, report bugs, and make suggestions for improvement ([Issues](https://github.com/Akilth/MapLab3D/issues)).
 - Create 3D maps and make them available for download, for example on [Thingiverse](https://www.thingiverse.com), [Printables](https://www.printables.com) or [Cults](https://cults3d.com) or [Cults Category Maps](https://cults3d.com/en/categories/maps). The name of the app should be included in the tags so that maps created with MapLab3D can be easily searched for. Possible tags are:
 	- maplab3d
 	- map
@@ -201,4 +201,5 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see https://www.gnu.org/licenses/.
 ```
+
 
