@@ -353,10 +353,31 @@ try
 	SampleSpacingInLongitude		= SampleSpacingInLongitude_0;
 	SampleSpacingInLatitude			= SampleSpacingInLatitude_0;
 	
-	% Read all files in ele_pathname_source and collect the elevation data in the variable elem:
+	% Get all files in ele_pathname_source and sort them by relevance if "Extract bounding box" is enabled:
 	listing				= dir(ele_pathname_source);
-	WAITBAR.kmax		= max(1,length(listing));
-	for k_listing=1:length(listing)
+	if (nargin==0)&&APP.Convert_GeoRasterDataSettings_ExtractBB_Menu.Checked
+		dist_bb_center_v	= 1e20*ones(length(listing),1);
+		for k_listing=1:length(listing)
+			dist_bb_center		= get_dist_bb_center(...
+				listing(k_listing).name,...
+				lonmin_degree,...
+				lonmax_degree,...
+				latmin_degree,...
+				latmax_degree);
+			if isscalar(dist_bb_center)
+				dist_bb_center_v(k_listing,1)		= dist_bb_center;
+			end
+		end
+		[~,ksort_listing]		= sort(dist_bb_center_v);
+		listing					= listing(ksort_listing,:);
+	end
+	
+	% Read all files in ele_pathname_source and collect the elevation data in the variable elem:
+	WAITBAR.kmax			= max(1,length(listing));
+	continue_load_ele		= true;
+	k_listing				= 0;
+	while (k_listing<length(listing))&&continue_load_ele
+		k_listing			= k_listing+1;
 		if listing(k_listing).isdir==0
 			ele_filename_source	= listing(k_listing).name;
 			if testout==1
@@ -660,13 +681,50 @@ try
 					elem	= [elem;nan(size(extend_latv,1),size(elem,2))];
 				end
 				% Assign elem:
-				rmin				= find(latv==latv_file(  1));
-				rmax				= find(latv==latv_file(end));
-				cmin				= find(lonv==lonv_file(  1));
-				cmax				= find(lonv==lonv_file(end));
+				[~,rmin]			= min(abs(latv-latv_file(  1)));
+				[~,rmax]			= min(abs(latv-latv_file(end)));
+				[~,cmin]			= min(abs(lonv-lonv_file(  1)));
+				[~,cmax]			= min(abs(lonv-lonv_file(end)));
 				r_v				= (rmin:rmax)';
 				c_v				= (cmin:cmax)';
 				elem(r_v,c_v)	= A;
+				
+			end
+			
+			% Cancel loading the files if the required area is already complete when extracting a bounding box:
+			% ("Create individual files" and "Extract bounding box" cannot be active at the same time.)
+			if (nargin==0)&&APP.Convert_GeoRasterDataSettings_ExtractBB_Menu.Checked
+				if    (lonv(1,1)  >lonmin_degree)||...
+						(lonv(1,end)<lonmax_degree)||...
+						(latv(1,1)  >latmin_degree)||...
+						(latv(end,1)<latmax_degree)
+					% Der Bereich der Höhendaten ist noch kleiner als die bounding box: weitermachen.
+				else
+					k_lonmin						= find(lonv<=lonmin_degree,1,'last');
+					k_lonmax						= find(lonv>=lonmax_degree,1,'first');
+					k_latmin						= find(latv<=latmin_degree,1,'last');
+					k_latmax						= find(latv>=latmax_degree,1,'first');
+					if    ((k_lonmin-N_extra_points)<1           )||...
+							((k_lonmax+N_extra_points)>size(lonv,2))||...
+							((k_latmin-N_extra_points)<1           )||...
+							((k_latmax+N_extra_points)>size(latv,1))
+						% Der Bereich der Höhendaten ist noch kleiner als die um N_extra_points vergrößerte bounding box:
+						% weitermachen.
+					else
+						% Der Bereich der Höhendaten ist größer als die um N_extra_points vergrößerte bounding box:
+						k_lonmin		= k_lonmin-N_extra_points;
+						k_lonmax		= k_lonmax+N_extra_points;
+						k_latmin		= k_latmin-N_extra_points;
+						k_latmax		= k_latmax+N_extra_points;
+						if any(isnan(elem(k_latmin:k_latmax,k_lonmin:k_lonmax)),'all')
+							% In der um N_extra_points vergrößerten bounding box gibt es nans: weitermachen.
+						else
+							% In der um N_extra_points vergrößerten bounding box gibt es keine nans:
+							% Laden der Höhendaten beenden:
+							continue_load_ele		= false;
+						end
+					end
+				end
 			end
 			
 			% Create individual files:
@@ -878,6 +936,11 @@ global APP GV GV_H
 
 try
 	
+	% Replace missing data with zeros:
+	if APP.Convert_GeoRasterDataSettings_ReplMissData_Menu.Checked
+		A(isnan(A))		= 0;
+	end
+	
 	% Query whether files are missing:
 	[rlat_isnan,clon_isnan]		= find(isnan(A),1);
 	
@@ -1004,4 +1067,101 @@ try
 catch ME
 	errormessage('',ME);
 end
+
+
+function dist_bb_center=get_dist_bb_center(ele_filename,minlon_bb,maxlon_bb,minlat_bb,maxlat_bb)
+% Get the distance between the given bounding box center and the center of the area in ele_filename.
+% Example: ele_filename = 'MapLab3D_Ele_Lon_e10p4_e10p6_900_Lat_n50p4_n50p6_900.mat';
+% dist_bb_center=[]  -->	It was not possible to determine the boundaries of the area based on the file name.
+
+% Initializations:
+dist_bb_center	= [];				% distance between the bounding box centers / degree
+
+% Get the bounding box from the filename:
+% Example: ele_filename = 'MapLab3D_Ele_Lon_e10p4_e10p6_900_Lat_n50p4_n50p6_900.mat'
+%                          k4:     1   2   3     4     5   6   7     8     9
+str1			= 'MapLab3D_Ele_Lon_';
+str2			= '_Lat_';
+str3			= '.mat';
+str4			= '_';
+k1				= strfind(ele_filename,str1);
+k2				= strfind(ele_filename,str2);
+k3				= strfind(ele_filename,str3);
+k4				= strfind(ele_filename,str4);
+if    ~isequal(k1,1)                     ||...
+		~isscalar(k2)                      ||...
+		~isequal(k3,length(ele_filename)-3)||...
+		~isequal(length(k4),9)
+	return
+end
+minlon_str	= ele_filename((k4(3)+1):(k4(4)-1));
+maxlon_str	= ele_filename((k4(4)+1):(k4(5)-1));
+minlat_str	= ele_filename((k4(7)+1):(k4(8)-1));
+maxlat_str	= ele_filename((k4(8)+1):(k4(9)-1));
+minlon_str(strfind(minlon_str,'p'))	= '.';
+maxlon_str(strfind(maxlon_str,'p'))	= '.';
+minlat_str(strfind(minlat_str,'p'))	= '.';
+maxlat_str(strfind(maxlat_str,'p'))	= '.';
+if strcmp(minlon_str,'0')
+	minlon		= 0;
+elseif strcmp(minlon_str(1),'e')&&(length(minlon_str)>=2)
+	minlon		= str2double(minlon_str(2:end));
+elseif strcmp(minlon_str(1),'w')&&(length(minlon_str)>=2)
+	minlon		= -str2double(minlon_str(2:end));
+else
+	minlon		= NaN;
+end
+if strcmp(maxlon_str,'0')
+	maxlon		= 0;
+elseif strcmp(maxlon_str(1),'e')&&(length(maxlon_str)>=2)
+	maxlon		= str2double(maxlon_str(2:end));
+elseif strcmp(maxlon_str(1),'w')&&(length(maxlon_str)>=2)
+	maxlon		= -str2double(maxlon_str(2:end));
+else
+	maxlon		= NaN;
+end
+if strcmp(minlat_str,'0')
+	minlat		= 0;
+elseif strcmp(minlat_str(1),'n')&&(length(minlat_str)>=2)
+	minlat		= str2double(minlat_str(2:end));
+elseif strcmp(minlat_str(1),'s')&&(length(minlat_str)>=2)
+	minlat		= -str2double(minlat_str(2:end));
+else
+	minlat		= NaN;
+end
+if strcmp(maxlat_str,'0')
+	maxlat		= 0;
+elseif strcmp(maxlat_str(1),'n')&&(length(maxlat_str)>=2)
+	maxlat		= str2double(maxlat_str(2:end));
+elseif strcmp(maxlat_str(1),'s')&&(length(maxlat_str)>=2)
+	maxlat		= -str2double(maxlat_str(2:end));
+else
+	maxlat		= NaN;
+end
+if    isnan(minlon)||...
+		isnan(maxlon)||...
+		isnan(minlat)||...
+		isnan(maxlat)
+	return
+end
+
+% Distance between the bounding box centers in degree:
+if maxlon<minlon
+	maxlon		= maxlon+360;				% longitude: -180° .. +180°
+end
+if maxlon_bb<minlon_bb
+	maxlon_bb	= maxlon_bb+360;
+end
+if maxlat<minlat								% latitude: -90° .. +90°
+	maxlat		= maxlat+180;
+end
+if maxlat_bb<minlat_bb
+	maxlat_bb	= maxlat_bb+180;
+end
+dist_bb_center_lon	= (minlon+maxlon)/2-(minlon_bb+maxlon_bb)/2;
+dist_bb_center_lat	= (minlat+maxlat)/2-(minlat_bb+maxlat_bb)/2;
+dist_bb_center_lon	= mod(dist_bb_center_lon+180,360)-180;
+dist_bb_center_lat	= mod(dist_bb_center_lat+90,180)-90;
+dist_bb_center			= sqrt(dist_bb_center_lon^2+dist_bb_center_lat^2);
+
 

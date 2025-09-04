@@ -10,7 +10,7 @@ buildResult	= [];
 packageOpts	= [];
 
 % --------------------------------------------------------------------------------------------------------------------
-% These steps must be performed before each build:
+% These steps must be performed to make a build and a new release:
 
 % Projekt parameters file:
 % -	Reset changes of
@@ -40,12 +40,22 @@ packageOpts	= [];
 
 % Run this file.
 
-% New release example:
-% Tag:					v1.0.0.3-beta
-% Release title:		MapLab3D 1.0.0.3 Public Beta
-% Release notes:		First published version
-%							or enter changelog
-% Upload the zip file
+% Matlab Branch Manager:	Commit and push changes in development
+%									Set main as HEAD
+%									Merge development with main (development does not exist any more)
+%									Commit and push changes in main
+
+% Create new release:
+% Github:						Tag:					v1.0.0.3-beta
+%									Release title:		MapLab3D 1.0.0.3 Public Beta
+%									Release notes:		First published version
+%															or enter changelog
+%									Upload the zip file
+% Matlab Branch Manager:	New Tag:				v1.0.0.3-beta
+
+% Matlab Branch Manager:	create new branch development, set development as HEAD
+% Matlab:						Increase version numbers
+% Matlab Branch Manager:	Commit and push changes in development
 
 
 % --------------------------------------------------------------------------------------------------------------------
@@ -86,17 +96,7 @@ set_settings('save',SETTINGS);
 % --------------------------------------------------------------------------------------------------------------------
 % Derived settings:
 % Settings:            for example:
-% StandaloneSubDir	= 'StandaloneApp_0_9_0_0'
-% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D\StandaloneApp_0_9_0_0'
 % ver_date_dirname	= 'V_0_9_0_0-20250805-084829'
-% ProjectBackupDir	= 'C:\Daten\Projekte\MapLab3D_Versions\V_0_9_0_0-20250805-084829'
-% FileName_PP			= 'MapLab3D_ProjectParameters_0_9.xlsx'
-% FileName_PPRef		= 'MapLab3D_ProjectParameters_0_9_Reference.xlsx'
-StandaloneSubDir		= sprintf('%s_%g_%g_%g_%g',StandaloneSubDirShort,VER.no1,VER.no2,VER.no3,VER.no4);
-if ~isempty(VER.str_fn)
-	StandaloneSubDir	= sprintf('%s%s',StandaloneSubDir,VER.str_fn);
-end
-StandaloneDir			= fullfile(ProjectRootDir,StandaloneSubDir);
 ver_date_dirname		= sprintf('V_%g_%g_%g_%g-%04.0f%02.0f%02.0f-%02.0f%02.0f%02.0f',...
 	VER.no1,VER.no2,VER.no3,VER.no4,...
 	build_datevec(1),...
@@ -105,10 +105,30 @@ ver_date_dirname		= sprintf('V_%g_%g_%g_%g-%04.0f%02.0f%02.0f-%02.0f%02.0f%02.0f
 	build_datevec(4),...
 	build_datevec(5),...
 	build_datevec(6));
+% ProjectBackupDir	= 'C:\Daten\Projekte\MapLab3D_Versions\V_0_9_0_0-20250805-084829'
 ProjectBackupDir		= fullfile(ProjectBackupRootDir,ver_date_dirname);
+% FileName_PP			= 'MapLab3D_ProjectParameters_0_9_0_0.xlsx'
 FileName_PP				= sprintf(FileName_PP_str   ,VER.no1,VER.no2,VER.no3,VER.no4);
+% FileName_PPRef		= 'MapLab3D_ProjectParameters_0_9_0_0_Reference.xlsx'
 FileName_PPRef			= sprintf(FileName_PPRef_str,VER.no1,VER.no2,VER.no3,VER.no4);
+% FileName_PPCol		= 'MapLab3D_ProjectParameters_0_9_0_0_Colors_Database.xlsx'
 FileName_PPCol			= sprintf(FileName_PPCol_str,VER.no1,VER.no2,VER.no3,VER.no4);
+% StandaloneSubDir	= 'StandaloneApp_0_9_0_0'
+StandaloneSubDir		= sprintf('%s_%g_%g_%g_%g',StandaloneSubDirShort,VER.no1,VER.no2,VER.no3,VER.no4);
+if ~isempty(VER.str_fn)
+	StandaloneSubDir	= sprintf('%s%s',StandaloneSubDir,VER.str_fn);
+end
+% StandaloneDir
+save_standalone_in_maplab3d_repo	= false;
+if save_standalone_in_maplab3d_repo
+	% Save the standalone directory together with the source code, it will be part of the repo:
+	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D\StandaloneApp_0_9_0_0'
+	StandaloneDir			= fullfile(ProjectRootDir,StandaloneSubDir);
+else
+	% Save the standalone directory not together with the source code, the repo will be smaller:
+	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D_Versions\V_0_9_0_0-20250805-084829\StandaloneApp_0_9_0_0'
+	StandaloneDir			= fullfile(ProjectBackupDir,StandaloneSubDir);
+end
 
 % Security checks:
 if    ~isequal(exist(ProjectRootDir      ,'dir'),7)||...
@@ -285,20 +305,26 @@ end
 % Create release:
 
 % Create or Rename the standalone directory:
-listing		= dir(ProjectRootDir);
-i_v			= false(size(listing,1),1);
-for i=1:size(listing,1)
-	if listing(i,1).isdir
-		k		= strfind(listing(i,1).name,StandaloneSubDirShort);
-		if isequal(k,1)
-			i_v(i,1)		= true;
+if save_standalone_in_maplab3d_repo
+	% Save the standalone directory together with the source code, it will be part of the repo:
+	listing		= dir(ProjectRootDir);
+	i_v			= false(size(listing,1),1);
+	for i=1:size(listing,1)
+		if listing(i,1).isdir
+			k		= strfind(listing(i,1).name,StandaloneSubDirShort);
+			if isequal(k,1)
+				i_v(i,1)		= true;
+			end
 		end
 	end
+	i_v			= find(i_v);
+	status		= 0;
+	msg			= '';
+	msgID			= '';
+else
+	% Save the standalone directory not together with the source code, the repo will be smaller:
+	i_v			= [];
 end
-i_v			= find(i_v);
-status		= 0;
-msg			= '';
-msgID			= '';
 if isscalar(i_v)
 	% There exists one old standalone directory: rename it:
 	folderName_old			= fullfile(listing(i_v,1).folder,listing(i_v,1).name);

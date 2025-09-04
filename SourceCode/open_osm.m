@@ -320,7 +320,7 @@ try
 	set(GV_H.text_waitbar,'String',msg);
 	drawnow;
 	
-	% If a mat file is loaded, the loading time is relatively short, otherwise it is difficult to estimate.
+	% If a mat file is loaded, the loading time is relatively short, if not it is difficult to estimate.
 	if APP.LoadSettingsElevationDataMenu.Checked
 		[lonv_file,latv_file,elem_file]	= open_ele(ele_pathname);
 		if isempty(elem_file)

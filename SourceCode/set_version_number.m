@@ -26,8 +26,8 @@ global VER
 % https://en.wikipedia.org/wiki/Software_versioning
 VER.no1		= 1;
 VER.no2		= 0;
-VER.no3		= 0;
-VER.no4		= 3;
+VER.no3		= 1;
+VER.no4		= 0;
 
 % Optional alphanumeric identifier:
 % https://de.wikipedia.org/wiki/Entwicklungsstadium_(Software)
