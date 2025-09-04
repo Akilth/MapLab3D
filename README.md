@@ -2,6 +2,10 @@
 
 MapLab3D is a tool for creating 3D models of maps in STL format from freely available [OpenStreetMap](https://www.openstreetmap.org) data and [elevation data](https://earthexplorer.usgs.gov/) which can be printed on 3D printers without further processing. No other CAD tool is required.
 
+![Heidelberg Old Town](MapLab3D_HD_small.jpg)
+![Heidelberg Old Town Colors Examples](MapLab3D_HD_small_Colors.jpg)
+
+
 ### Applications
 
 One possible application is in school lessons, as many schools already have 3D printers and can produce their own 3D relief maps for geography lessons. A 3D puzzle makes learning geography more fun. The map data can either be downloaded ready-made or created as part of projects and then made available to the general public, which also has a learning effect.
