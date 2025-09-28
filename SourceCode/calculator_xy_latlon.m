@@ -1,5 +1,9 @@
-function [lonmin_deg,lonmax_deg,latmin_deg,latmax_deg]=...
-	calculator_xy_latlon(...
+function [...
+	lonmin_deg,...
+	lonmax_deg,...
+	latmin_deg,...
+	latmax_deg...
+	]=calculator_xy_latlon(...
 	dataset,...
 	xmin_mm,...
 	xmax_mm,...
@@ -15,7 +19,7 @@ function [lonmin_deg,lonmax_deg,latmin_deg,latmax_deg]=...
 global APP
 
 try
-
+	
 	testing	= 0;
 	if nargin==0
 		testing	= 0;
@@ -41,7 +45,7 @@ try
 			return
 		end
 	end
-
+	
 	if nargin==1
 		lonorigin_deg	= APP.LatLonXYTab_OriginLongitudeEditField.Value;
 		latorigin_deg	= APP.LatLonXYTab_OriginLatitudeEditField.Value;
@@ -56,7 +60,7 @@ try
 					APP.LatLonXYTab_OSM_latminEditField.Value,...					% latmin_deg
 					APP.LatLonXYTab_OSM_latmaxEditField.Value]=...					% latmax_deg
 					calculator_xy_latlon(...
-					[],...																		% dataset
+					'OSM',...																	% dataset
 					APP.LatLonXYTab_OSM_xminmmEditField.Value,...					% xmin_mm
 					APP.LatLonXYTab_OSM_xmaxmmEditField.Value,...					% xmax_mm
 					APP.LatLonXYTab_OSM_yminmmEditField.Value,...					% ymin_mm
@@ -96,7 +100,7 @@ try
 				end
 				% Recalculate OSM data printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_OSM');
-
+				
 			case 'Osmosis'
 				% Osmosis settings:
 				% If xy-values are changed, the checkbox must not be set, because the center
@@ -107,7 +111,7 @@ try
 					APP.LatLonXYTab_Osmosis_latminEditField.Value,...				% latmin_deg
 					APP.LatLonXYTab_Osmosis_latmaxEditField.Value]=...				% latmax_deg
 					calculator_xy_latlon(...
-					[],...																		% dataset
+					'Osmosis',...																% dataset
 					APP.LatLonXYTab_Osmosis_xminmmEditField.Value,...				% xmin_mm
 					APP.LatLonXYTab_Osmosis_xmaxmmEditField.Value,...				% xmax_mm
 					APP.LatLonXYTab_Osmosis_yminmmEditField.Value,...				% ymin_mm
@@ -147,7 +151,7 @@ try
 				end
 				% Recalculate Osmosis settings printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_Osmosis');
-
+				
 			case 'Map'
 				% Map printout:
 				[  APP.LatLonXYTab_Map_lonminEditField.Value,...					% lonmin_deg
@@ -155,7 +159,7 @@ try
 					APP.LatLonXYTab_Map_latminEditField.Value,...					% latmin_deg
 					APP.LatLonXYTab_Map_latmaxEditField.Value]=...					% latmax_deg
 					calculator_xy_latlon(...
-					[],...																		% dataset
+					'Map',...																	% dataset
 					APP.LatLonXYTab_Map_xminmmEditField.Value,...					% xmin_mm
 					APP.LatLonXYTab_Map_xmaxmmEditField.Value,...					% xmax_mm
 					APP.LatLonXYTab_Map_yminmmEditField.Value,...					% ymin_mm
@@ -195,25 +199,25 @@ try
 				end
 				% Recalculate map printout data printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_Map');
-
+				
 		end
 		% Editbox formatting:
 		calculator_latlonxy_format;
 		return
 	end
-
+	
 	% Ellipsoidal model of the figure of the Earth (needed for grn2eqa)
 	ellipsoid		= referenceSphere('Earth');
-
+	
 	% Assign origin:
 	origin_deg		= [latorigin_deg lonorigin_deg];
-
+	
 	% Distance between the (outer) OSM data and the (inner) map printout limits / mm:
 	xmin_mm			= xmin_mm-dist_osm_printout;
 	xmax_mm			= xmax_mm+dist_osm_printout;
 	ymin_mm			= ymin_mm-dist_osm_printout;
 	ymax_mm			= ymax_mm+dist_osm_printout;
-
+	
 	% Conversion of x, y from mm to lat, lon in degree:
 	limits_c	= cell(0,0);
 	% Left limit:
@@ -272,7 +276,32 @@ try
 		try
 			[lat_v,lon_v]	= eqa2grn(x_v_m,y_v_m,origin_deg,ellipsoid);
 		catch ME
-			errormessage('lon,lat - x,y: Invalid input.',ME);
+			% The xy-values are invalid:
+			% Replace them by the values calculated with the latlon-values:
+			try
+				calculator_latlon_xy(dataset);
+				switch dataset
+					case 'OSM'
+						lonmin_deg	= APP.LatLonXYTab_OSM_lonminEditField.Value;
+						lonmax_deg	= APP.LatLonXYTab_OSM_lonmaxEditField.Value;
+						latmin_deg	= APP.LatLonXYTab_OSM_latminEditField.Value;
+						latmax_deg	= APP.LatLonXYTab_OSM_latmaxEditField.Value;
+					case 'Osmosis'
+						lonmin_deg	= APP.LatLonXYTab_Osmosis_lonminEditField.Value;
+						lonmax_deg	= APP.LatLonXYTab_Osmosis_lonmaxEditField.Value;
+						latmin_deg	= APP.LatLonXYTab_Osmosis_latminEditField.Value;
+						latmax_deg	= APP.LatLonXYTab_Osmosis_latmaxEditField.Value;
+					case 'Map'
+						lonmin_deg	= APP.LatLonXYTab_Map_lonminEditField.Value;
+						lonmax_deg	= APP.LatLonXYTab_Map_lonmaxEditField.Value;
+						latmin_deg	= APP.LatLonXYTab_Map_latminEditField.Value;
+						latmax_deg	= APP.LatLonXYTab_Map_latmaxEditField.Value;
+				end
+				lon_v		= [lonmin_deg lonmax_deg];
+				lat_v		= [latmin_deg latmax_deg];
+			catch ME
+				errormessage('x,y - lon,lat: Invalid input.',ME);
+			end
 		end
 		% Command
 		eval(limits_c{i_lim,3});
@@ -285,7 +314,7 @@ try
 	lonmax_deg	= round(lonmax_deg,5);
 	latmin_deg	= round(latmin_deg,5);
 	latmax_deg	= round(latmax_deg,5);
-
+	
 	% Testing:
 	if (nargin==0)&&(testing==1)
 		switch dataset
@@ -298,7 +327,7 @@ try
 		% Editbox formatting:
 		calculator_latlonxy_format;
 	end
-
+	
 	% old:
 	% % Conversion of x, y from mm to lat, lon in degree:
 	% xy_bounds_mm	= [...
@@ -314,7 +343,7 @@ try
 	% lonmax_deg		= max(lon_bounds([2 3]));
 	% latmin_deg		= min(lat_bounds([1 2]));
 	% latmax_deg		= max(lat_bounds([3 4]));
-
+	
 catch ME
 	errormessage('',ME);
 end

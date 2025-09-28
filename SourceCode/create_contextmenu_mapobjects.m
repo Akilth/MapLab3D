@@ -69,7 +69,7 @@ try
 		'interp2');											% interpolation method
 	% Conversion of the elevation from model scale (unit mm), to real scale:
 	intersectionpoint_z_m_	= intersectionpoint_z/1000*PP.project.scale/PP.general.superelevation;
-	uimenu(hcmenu,'Label',sprintf('x = %gmm',intersectionpoint(1,1)));
+	firstentry=uimenu(hcmenu,'Label',sprintf('x = %gmm',intersectionpoint(1,1)));
 	uimenu(hcmenu,'Label',sprintf('y = %gmm',intersectionpoint(1,2)));
 	if any(isnan(intersectionpoint_z))
 		uimenu(hcmenu,'Label',sprintf('z = ?'));
@@ -78,6 +78,9 @@ try
 			intersectionpoint_z,...
 			intersectionpoint_z_m_));
 	end
+	% In 2025a, the color scheme is not always applied to context menus.
+	% Therefore, the text color used by default is saved as the standard color here:
+	textfgdcolor_default		= firstentry.ForegroundColor;
 	
 	if isempty(imapobj_v)
 		set(clicked_object,'uicontextmenu',hcmenu);
@@ -288,11 +291,11 @@ try
 	end
 	
 	% Relation ID:
-	norel_v						= [];
+	relid_v						= uint64([]);
 	mapobject_is_preview		= true;
 	for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-		if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'norel')
-			norel_v		= [norel_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.norel];
+		if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
+			relid_v		= [relid_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid];
 		end
 		if strcmp(MAP_OBJECTS(imapobj,1).h(i,1).Type,'line')
 			if  ~(contains(lower(MAP_OBJECTS(imapobj,1).disp),'preview'          )||...
@@ -313,27 +316,27 @@ try
 	end
 	if mapobject_is_preview
 		% The selected object is a preview line or polygon
-		if isempty(norel_v)
-			norel_v	= 0;
+		if isempty(relid_v)
+			relid_v	= uint64(0);
 		else
-			norel_v	= unique(norel_v);
+			relid_v	= unique(relid_v);
 		end
-		if length(norel_v)==1
-			label_str	= sprintf('Relation ID: %s',num2str(norel_v));
-		elseif length(norel_v)==2
+		if isscalar(relid_v)
+			label_str	= sprintf('Relation ID: %s',num2str(relid_v));
+		elseif length(relid_v)==2
 			label_str	= sprintf('Relation ID: %s, %s ',...
-				num2str(min(norel_v)),...
-				num2str(max(norel_v)));
+				num2str(min(relid_v)),...
+				num2str(max(relid_v)));
 		else
 			label_str	= sprintf('Relation ID: %s .. %s (no: %s)',...
-				num2str(min(norel_v)),...
-				num2str(max(norel_v)),...
-				num2str(length(norel_v)));
+				num2str(min(relid_v)),...
+				num2str(max(relid_v)),...
+				num2str(length(relid_v)));
 		end
 		item_set_relation_id		= uimenu(hcmenu,'Label',label_str,'Separator','on');
 		uimenu(item_set_relation_id,...
 			'Label',sprintf('Change'),...
-			'MenuSelectedFcn',@(src,event)plot_modify('change_relno',imapobj,norel_v(1)));
+			'MenuSelectedFcn',@(src,event)plot_modify('change_relid',imapobj,relid_v(1)));
 	end
 	
 	% Number of regions:
@@ -455,14 +458,14 @@ try
 		end
 		% Specification:
 		if MAP_OBJECTS(imapobj,1).cnuc~=0
-			fgdcol_regdim		= 'k';
+			fgdcol_regdim		= textfgdcolor_default;
 			if wmax>maxdimx
 				swmax				= sprintf(' > %gmm at (%g,%g) --> out of spec!',maxdimx,xywmax(1),xywmax(2));
 				fgdcol_wmax		= 'r';
 				fgdcol_regdim	= 'r';
 			else
 				swmax				= sprintf(' <= %gmm at (%g,%g)',maxdimx,xywmax(1),xywmax(2));
-				fgdcol_wmax		= 'k';
+				fgdcol_wmax		= textfgdcolor_default;
 			end
 			if hmax>maxdimy
 				shmax				= sprintf(' > %gmm at (%g,%g) --> out of spec!',maxdimy,xyhmax(1),xyhmax(2));
@@ -470,7 +473,7 @@ try
 				fgdcol_regdim	= 'r';
 			else
 				shmax				= sprintf(' <= %gmm at (%g,%g)',maxdimy,xyhmax(1),xyhmax(2));
-				fgdcol_hmax		= 'k';
+				fgdcol_hmax		= textfgdcolor_default;
 			end
 			if dmax>maxdiag
 				sdmax				= sprintf(' > %gmm at (%g,%g) --> out of spec!',maxdiag,xydmax(1),xydmax(2));
@@ -478,7 +481,7 @@ try
 				fgdcol_regdim	= 'r';
 			else
 				sdmax				= sprintf(' <= %gmm at (%g,%g)',maxdiag,xydmax(1),xydmax(2));
-				fgdcol_dmax		= 'k';
+				fgdcol_dmax		= textfgdcolor_default;
 			end
 			if dzmax>maxdimz
 				szmax				= sprintf(' > %gmm at (%g,%g) --> out of spec!',maxdimz,xydzmax(1),xydzmax(2));
@@ -494,7 +497,7 @@ try
 				fgdcol_regdim	= 'r';
 			else
 				swmin				= sprintf(' >= %gmm at (%g,%g)',mindimx,xywmin(1),xywmin(2));
-				fgdcol_wmin		= 'k';
+				fgdcol_wmin		= textfgdcolor_default;
 			end
 			if hmin<mindimy
 				shmin				= sprintf(' < %gmm at (%g,%g) --> out of spec!',mindimy,xyhmin(1),xyhmin(2));
@@ -502,7 +505,7 @@ try
 				fgdcol_regdim	= 'r';
 			else
 				shmin				= sprintf(' >= %gmm at (%g,%g)',mindimy,xyhmin(1),xyhmin(2));
-				fgdcol_hmin		= 'k';
+				fgdcol_hmin		= textfgdcolor_default;
 			end
 			if dmin<mindiag
 				sdmin				= sprintf(' < %gmm at (%g,%g) --> out of spec!',mindiag,xydmin(1),xydmin(2));
@@ -510,10 +513,10 @@ try
 				fgdcol_regdim	= 'r';
 			else
 				sdmin				= sprintf(' >= %gmm at (%g,%g)',mindiag,xydmin(1),xydmin(2));
-				fgdcol_dmin		= 'k';
+				fgdcol_dmin		= textfgdcolor_default;
 			end
 			szmin				= sprintf(' at (%g,%g)',xydzmin(1),xydzmin(2));
-			fgdcol_zmin	= 'k';
+			fgdcol_zmin	= textfgdcolor_default;
 		else
 			swmax				= sprintf(' at (%g,%g)',xywmax(1),xywmax(2));
 			shmax				= sprintf(' at (%g,%g)',xyhmax(1),xyhmax(2));
@@ -523,26 +526,15 @@ try
 			shmin				= sprintf(' at (%g,%g)',xyhmin(1),xyhmin(2));
 			sdmin				= sprintf(' at (%g,%g)',xydmin(1),xydmin(2));
 			szmin				= sprintf(' at (%g,%g)',xydzmin(1),xydzmin(2));
-			fgdcol_regdim	= 'k';
-			fgdcol_wmax		= 'k';
-			fgdcol_hmax		= 'k';
-			fgdcol_dmax		= 'k';
+			fgdcol_regdim	= textfgdcolor_default;
+			fgdcol_wmax		= textfgdcolor_default;
+			fgdcol_hmax		= textfgdcolor_default;
+			fgdcol_dmax		= textfgdcolor_default;
 			fgdcol_zmax		= 'm';
-			fgdcol_wmin		= 'k';
-			fgdcol_hmin		= 'k';
-			fgdcol_dmin		= 'k';
-			fgdcol_zmin		= 'k';
-		end
-		if APP.MapLab3D.Theme.BaseColorStyle=="dark"
-			if strcmp(fgdcol_regdim,'k'), fgdcol_regdim='w'; end
-			if strcmp(fgdcol_wmax,'k'), fgdcol_wmax='w'; end
-			if strcmp(fgdcol_hmax,'k'), fgdcol_hmax='w'; end
-			if strcmp(fgdcol_dmax,'k'), fgdcol_dmax='w'; end
-			if strcmp(fgdcol_zmax,'k'), fgdcol_zmax='w'; end
-			if strcmp(fgdcol_wmin,'k'), fgdcol_wmin='w'; end
-			if strcmp(fgdcol_hmin,'k'), fgdcol_hmin='w'; end
-			if strcmp(fgdcol_dmin,'k'), fgdcol_dmin='w'; end
-			if strcmp(fgdcol_zmin,'k'), fgdcol_zmin='w'; end			
+			fgdcol_wmin		= textfgdcolor_default;
+			fgdcol_hmin		= textfgdcolor_default;
+			fgdcol_dmin		= textfgdcolor_default;
+			fgdcol_zmin		= textfgdcolor_default;
 		end
 		% xmin, xmax, ymin, ymax:
 		item_overall_dim	= uimenu(hcmenu,'Label','Bounding box limits','Separator','on');

@@ -35,18 +35,18 @@ function [connways_eqtags_filt,...
 
 try
 	
-	% Maximum value lines_norel, areas_norel (relation number):
-	if isempty(connways_eqtags_filt.lines_norel)
-		lines_norel_cwetf_max	= 0;
+	% Maximum value lines_relid, areas_relid (relation identification number):
+	if isempty(connways_eqtags_filt.lines_relid)
+		lines_relid_cwetf_max	= uint64(0);
 	else
-		lines_norel_cwetf_max	= max(connways_eqtags_filt.lines_norel);
+		lines_relid_cwetf_max	= max(connways_eqtags_filt.lines_relid);
 	end
-	if isempty(connways_eqtags_filt.areas_norel)
-		areas_norel_cwetf_max	= 0;
+	if isempty(connways_eqtags_filt.areas_relid)
+		areas_relid_cwetf_max	= uint64(0);
 	else
-		areas_norel_cwetf_max	= max(connways_eqtags_filt.areas_norel);
+		areas_relid_cwetf_max	= max(connways_eqtags_filt.areas_relid);
 	end
-	norel_cwetf_max		= max(lines_norel_cwetf_max,areas_norel_cwetf_max);
+	relid_cwetf_max		= max(lines_relid_cwetf_max,areas_relid_cwetf_max);
 	
 	% Calculate the dimensions of nodes and ways:
 	[  xmin_all_mm ,xmax_all_mm ,ymin_all_mm ,ymax_all_mm ,...
@@ -113,19 +113,19 @@ try
 			% Merge connways_eqtags with connways_eqtags_filt, without connecting lines:
 			connways_eqtags.lines(k_line,1).tag	= obj_eqtags_ioeqt;
 			if isempty(connways_eqtags_filt.lines)
-				connways_eqtags_filt.lines			= connways_eqtags.lines(k_line,1);
-				connways_eqtags_filt.lines_role	= connways_eqtags.lines_role(k_line,1);
-				connways_eqtags_filt.lines_norel	= connways_eqtags.lines_norel(k_line,1)+norel_cwetf_max;
-				connways_eqtags_filt.xy_start		= connways_eqtags.xy_start(k_line,:);
-				connways_eqtags_filt.xy_end		= connways_eqtags.xy_end(k_line,:);
-				connways_eqtags_filt.lino_max		= connways_eqtags.lino_max;
+				connways_eqtags_filt.lines				= connways_eqtags.lines(k_line,1);
+				connways_eqtags_filt.lines_isouter	= connways_eqtags.lines_isouter(k_line,1);
+				connways_eqtags_filt.lines_relid		= connways_eqtags.lines_relid(k_line,1)+relid_cwetf_max;
+				connways_eqtags_filt.xy_start			= connways_eqtags.xy_start(k_line,:);
+				connways_eqtags_filt.xy_end			= connways_eqtags.xy_end(k_line,:);
+				connways_eqtags_filt.lino_max			= connways_eqtags.lino_max;
 			else
-				connways_eqtags_filt.lines(end+1,1)			= connways_eqtags.lines(k_line,1);
-				connways_eqtags_filt.lines_role(end+1,1)	= connways_eqtags.lines_role(k_line,1);
-				connways_eqtags_filt.lines_norel(end+1,1)	= connways_eqtags.lines_norel(k_line,1)+norel_cwetf_max;
-				connways_eqtags_filt.xy_start(end+1,:)		= connways_eqtags.xy_start(k_line,:);
-				connways_eqtags_filt.xy_end(end+1,:)		= connways_eqtags.xy_end(k_line,:);
-				connways_eqtags_filt.lino_max					= max(...
+				connways_eqtags_filt.lines(end+1,1)				= connways_eqtags.lines(k_line,1);
+				connways_eqtags_filt.lines_isouter(end+1,1)	= connways_eqtags.lines_isouter(k_line,1);
+				connways_eqtags_filt.lines_relid(end+1,1)		= connways_eqtags.lines_relid(k_line,1)+relid_cwetf_max;
+				connways_eqtags_filt.xy_start(end+1,:)			= connways_eqtags.xy_start(k_line,:);
+				connways_eqtags_filt.xy_end(end+1,:)			= connways_eqtags.xy_end(k_line,:);
+				connways_eqtags_filt.lino_max						= max(...
 					connways_eqtags_filt.lino_max,connways_eqtags.lino_max);
 			end
 		end
@@ -138,8 +138,8 @@ try
 			connways_eqtags.areas(k_area,1).tag	= obj_eqtags_ioeqt;
 		end
 		connways_eqtags_filt.areas					= connways_eqtags.areas;
-		connways_eqtags_filt.areas_role			= connways_eqtags.areas_role;
-		connways_eqtags_filt.areas_norel			= connways_eqtags.areas_norel+norel_cwetf_max;
+		connways_eqtags_filt.areas_isouter		= connways_eqtags.areas_isouter;
+		connways_eqtags_filt.areas_relid			= connways_eqtags.areas_relid+relid_cwetf_max;
 	else
 		for k_area=1:size(connways_eqtags.areas,1)
 			if    force_keep_data                               ||(...
@@ -158,13 +158,13 @@ try
 				% Merge connways_eqtags with connways_eqtags_filt:
 				connways_eqtags.areas(k_area,1).tag	= obj_eqtags_ioeqt;
 				if isempty(connways_eqtags_filt.areas)
-					connways_eqtags_filt.areas						= connways_eqtags.areas(k_area,1);
-					connways_eqtags_filt.areas_role				= connways_eqtags.areas_role(k_area,1);
-					connways_eqtags_filt.areas_norel				= connways_eqtags.areas_norel(k_area,1)+norel_cwetf_max;
+					connways_eqtags_filt.areas							= connways_eqtags.areas(k_area,1);
+					connways_eqtags_filt.areas_isouter				= connways_eqtags.areas_isouter(k_area,1);
+					connways_eqtags_filt.areas_relid					= connways_eqtags.areas_relid(k_area,1)+relid_cwetf_max;
 				else
-					connways_eqtags_filt.areas(end+1,1)			= connways_eqtags.areas(k_area,1);
-					connways_eqtags_filt.areas_role(end+1,1)	= connways_eqtags.areas_role(k_area,1);
-					connways_eqtags_filt.areas_norel(end+1,1)	= connways_eqtags.areas_norel(k_area,1)+norel_cwetf_max;
+					connways_eqtags_filt.areas(end+1,1)				= connways_eqtags.areas(k_area,1);
+					connways_eqtags_filt.areas_isouter(end+1,1)	= connways_eqtags.areas_isouter(k_area,1);
+					connways_eqtags_filt.areas_relid(end+1,1)		= connways_eqtags.areas_relid(k_area,1)+relid_cwetf_max;
 				end
 			end
 		end

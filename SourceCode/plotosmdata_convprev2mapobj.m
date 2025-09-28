@@ -172,10 +172,10 @@ try
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 				
 				% Relation number of the preview:
-				if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'norel')
-					norel		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.norel;
+				if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
+					relid		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid;
 				else
-					norel		= 0;
+					relid		= uint64(0);
 				end
 				
 				% Add the data to connways_preview:
@@ -193,7 +193,7 @@ try
 				x		= x(:);
 				y		= y(:);
 				connways_preview		= connect_ways(connways_preview,[],x,y,...
-					iobj,[],PLOTDATA.obj(iobj,1).linewidth,1,1,lino_new_min,[],norel,tag);
+					iobj,[],PLOTDATA.obj(iobj,1).linewidth,1,1,lino_new_min,[],relid,tag);
 				
 				% Delete the open lines 'area - not closed':
 				% Disabled: the open lines should be retained to control the manual correction.
@@ -202,7 +202,7 @@ try
 					if    (abs(x(1)-x(end))<GV.tol_1)&&...
 							(abs(y(1)-y(end))<GV.tol_1)
 						% The preview is a closed line or a polygon:
-						k_line_v		= find(PLOTDATA.obj(iobj,1).connways.lines_norel==norel);
+						k_line_v		= find(PLOTDATA.obj(iobj,1).connways.lines_relid==relid);
 						for ik_line=1:length(k_line_v)
 							k_line		= k_line_v(ik_line);
 							% The line k_line has the same relation number than the preview:
@@ -264,12 +264,12 @@ try
 			end
 		end
 		if ~isempty(k_line_delete)
-			k_line_delete																= unique(k_line_delete);
-			PLOTDATA.obj(iobj,1).connways.lines(k_line_delete,:)			= [];
-			PLOTDATA.obj(iobj,1).connways.lines_role(k_line_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.lines_norel(k_line_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.xy_start(k_line_delete,:)		= [];
-			PLOTDATA.obj(iobj,1).connways.xy_end(k_line_delete,:)			= [];
+			k_line_delete																	= unique(k_line_delete);
+			PLOTDATA.obj(iobj,1).connways.lines(k_line_delete,:)				= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_line_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_relid(k_line_delete,:)		= [];
+			PLOTDATA.obj(iobj,1).connways.xy_start(k_line_delete,:)			= [];
+			PLOTDATA.obj(iobj,1).connways.xy_end(k_line_delete,:)				= [];
 		end
 		PLOTDATA.obj(iobj,1).connways		= connect_ways(PLOTDATA.obj(iobj,1).connways,connways_preview);
 		PLOTDATA.obj(iobj,1).ud_in_v		= unique(PLOTDATA.obj(iobj,1).ud_in_v);

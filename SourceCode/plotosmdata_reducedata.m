@@ -311,11 +311,11 @@ try
 				end
 			end
 			% Delete lines in PLOTDATA.col(icno,1).connways.lines:
-			PLOTDATA.col(icno,1).connways.lines(k_delete,:)			= [];
-			PLOTDATA.col(icno,1).connways.lines_role(k_delete,:)	= [];
-			PLOTDATA.col(icno,1).connways.lines_norel(k_delete,:)	= [];
-			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)		= [];
-			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)		= [];
+			PLOTDATA.col(icno,1).connways.lines(k_delete,:)				= [];
+			PLOTDATA.col(icno,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.col(icno,1).connways.lines_relid(k_delete,:)		= [];
+			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)			= [];
+			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
 	% Delete lines in PLOTDATA.obj(iobj,1).connways.lines:
@@ -332,11 +332,11 @@ try
 					end
 				end
 			end
-			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)			= [];
-			PLOTDATA.obj(iobj,1).connways.lines_role(k_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.lines_norel(k_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)		= [];
-			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)		= [];
+			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)				= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_relid(k_delete,:)		= [];
+			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)			= [];
+			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
 
@@ -578,13 +578,13 @@ try
 										end
 									end
 									% Delete line k1:
-									PLOTDATA.col(icno,1).connways.lines(k1,:)			= [];
-									PLOTDATA.col(icno,1).connways.lines_role(k1,:)	= [];
-									PLOTDATA.col(icno,1).connways.lines_norel(k1,:)	= [];
-									PLOTDATA.col(icno,1).connways.xy_start(k1,:)		= [];
-									PLOTDATA.col(icno,1).connways.xy_end(k1,:)		= [];
-									ci_sp(k1,:)													= [];
-									ci_ep(k1,:)													= [];
+									PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
+									PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+									PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
+									PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
+									PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
+									ci_sp(k1,:)														= [];
+									ci_ep(k1,:)														= [];
 									break
 								else
 									[xi,~] = polyxpoly(...
@@ -615,13 +615,13 @@ try
 											end
 										end
 										% Delete line k1:
-										PLOTDATA.col(icno,1).connways.lines(k1,:)			= [];
-										PLOTDATA.col(icno,1).connways.lines_role(k1,:)	= [];
-										PLOTDATA.col(icno,1).connways.lines_norel(k1,:)	= [];
-										PLOTDATA.col(icno,1).connways.xy_start(k1,:)		= [];
-										PLOTDATA.col(icno,1).connways.xy_end(k1,:)		= [];
-										ci_sp(k1,:)													= [];
-										ci_ep(k1,:)													= [];
+										PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
+										PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+										PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
+										PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
+										PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
+										ci_sp(k1,:)														= [];
+										ci_ep(k1,:)														= [];
 										break
 									end
 								end
@@ -685,11 +685,11 @@ try
 									nan(1,size(PLOTDATA.col(icno,1).connways.lines(k2,1).xy,2));...
 									PLOTDATA.col(icno,1).connways.lines(k1,1).xy];
 								% Delete line k1:
-								PLOTDATA.col(icno,1).connways.lines(k1,:)			= [];
-								PLOTDATA.col(icno,1).connways.lines_role(k1,:)	= [];
-								PLOTDATA.col(icno,1).connways.lines_norel(k1,:)	= [];
-								PLOTDATA.col(icno,1).connways.xy_start(k1,:)		= [];
-								PLOTDATA.col(icno,1).connways.xy_end(k1,:)		= [];
+								PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
+								PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+								PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
+								PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
+								PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
 								% Add polygon k1 to polygon k2:
 								connways_lines_poly(k2,1)	= union(connways_lines_poly(k2,1),connways_lines_poly(k1,1),...
 									'KeepCollinearPoints',false);
@@ -832,11 +832,11 @@ try
 				end
 			end
 			% Delete lines in PLOTDATA.col(icno,1).connways.lines:
-			PLOTDATA.col(icno,1).connways.lines(k_delete,:)			= [];
-			PLOTDATA.col(icno,1).connways.lines_role(k_delete,:)	= [];
-			PLOTDATA.col(icno,1).connways.lines_norel(k_delete,:)	= [];
-			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)		= [];
-			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)		= [];
+			PLOTDATA.col(icno,1).connways.lines(k_delete,:)				= [];
+			PLOTDATA.col(icno,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.col(icno,1).connways.lines_relid(k_delete,:)		= [];
+			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)			= [];
+			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
 	% Delete lines in PLOTDATA.obj(iobj,1).connways.lines:
@@ -863,11 +863,11 @@ try
 					end
 				end
 			end
-			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)			= [];
-			PLOTDATA.obj(iobj,1).connways.lines_role(k_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.lines_norel(k_delete,:)	= [];
-			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)		= [];
-			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)		= [];
+			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)				= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_relid(k_delete,:)		= [];
+			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)			= [];
+			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
 

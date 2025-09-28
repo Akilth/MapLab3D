@@ -134,11 +134,11 @@ function imapobj_new_v=plot_modify(action,imapobj_v,par1,par2,par3,par4,par5)
 %					textfile							Save and load map object boundaries
 %														par1='to'						to text file
 %														par1='from'						from text file
-%					change_relno					Change the relation ID of preview lines or preview polygons.
+%					change_relid					Change the relation ID of preview lines or preview polygons.
 %														This is needed to add the preview as a map object to the map.
 %														All objects with the same relation ID are merged using "addboundary".
 %														All objects with no relation ID or ID=0 are merged using "union".
-%														par1=norel_old					existing relation ID
+%														par1=relid_old					existing relation ID
 % 					delete_all_previews			delete alle preview objects
 % 					delete_lastadded_preview	delete the last added preview object
 %
@@ -1796,7 +1796,7 @@ try
 			ud_iw_v					= [];
 			ud_ir_v					= [];
 			cncl_v					= [];
-			norel_v					= [];
+			relid_v					= uint64([]);
 			for k=1:length(imapobj_v)
 				imapobj			= imapobj_v(k);
 				cncl_v			= [cncl_v MAP_OBJECTS(imapobj,1).cncl];
@@ -1836,14 +1836,14 @@ try
 						role				= 'outer';	% Function of a member in a multipolygon relation:
 						tag				= '';			% Lines with different tags are not connected, but saved separatly.
 						% Relation number of the line:
-						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'norel')
-							norel		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.norel;
+						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
+							relid			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid;
 						else
-							norel		= 0;
+							relid			= uint64(0);
 						end
-						norel_v			= unique([norel_v;norel]);
+						relid_v			= unique([relid_v;relid]);
 						% Connect only lines that have the same relation number:
-						if length(norel_v)~=1
+						if length(relid_v)~=1
 							errortext	= sprintf([...
 								'The selected map objects have different relation IDs.\n',...
 								'You can only connect lines that have the same relation ID:\n',...
@@ -1855,7 +1855,7 @@ try
 						end
 						% Connect the ways:
 						connways_preview		= connect_ways(connways_preview,[],x,y,...
-							iobj,lino,liwi,l2a,s,lino_new_min,role,norel,tag,tol);
+							iobj,lino,liwi,l2a,s,lino_new_min,role,relid,tag,tol);
 						% Additional userdata:
 						ud_in_v	= [ud_in_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.in(:)];
 						ud_iw_v	= [ud_iw_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:)];
@@ -1944,7 +1944,7 @@ try
 					ud.in				= ud_in_v;
 					ud.iw				= ud_iw_v;
 					ud.ir				= ud_ir_v;
-					ud.norel			= norel_v;
+					ud.relid			= relid_v;
 					ud.rotation		= 0;
 					ud.shape0		= poly;
 					% Plot the preview as polygon:
@@ -1995,7 +1995,7 @@ try
 					ud.in				= ud_in_v;
 					ud.iw				= ud_iw_v;
 					ud.ir				= ud_ir_v;
-					ud.norel			= norel_v;
+					ud.relid			= relid_v;
 					ud.rotation		= 0;
 					ud.xy0			= [x y];
 					% Plot the preview as line:
@@ -3759,19 +3759,19 @@ try
 				% New polygon:
 				% Because the reference point is only one node, the size of poly_bgd, poly_obj is equal to the
 				% number of text lines!
-				lino				= [];			% line number
-				liwi				= [];			% line width of the new way
-				l2a				= 1;			% l2a=1:	store closed lines as area
-				s					= 1;			% Scale all data in connways by s
-				lino_new_min	= 1;			% The numbering of new lines in connways begins with this number.
-				role				= 'outer';	% Function of a member in a multipolygon relation:
-				tag				= '';			% Lines with different tags are not connected, but saved separatly.
-				norel				= 0;			% relation number
+				lino				= [];					% line number
+				liwi				= [];					% line width of the new way
+				l2a				= 1;					% l2a=1:	store closed lines as area
+				s					= 1;					% Scale all data in connways by s
+				lino_new_min	= 1;					% The numbering of new lines in connways begins with this number.
+				role				= 'outer';			% Function of a member in a multipolygon relation:
+				tag				= '';					% Lines with different tags are not connected, but saved separatly.
+				relid				= uint64(0);		% relation number
 				x					= xcenter_old;
 				y					= ycenter_old;
 				connways_eqtags_select		= connect_ways([]);
 				connways_eqtags_select		= connect_ways(connways_eqtags_select,[],x,y,...
-					iobj,lino,liwi,l2a,s,lino_new_min,role,norel,tag);
+					iobj,lino,liwi,l2a,s,lino_new_min,role,relid,tag);
 				[poly_bgd,poly_obj,~,~,~,~]		= texteqtags2poly(...
 					iobj,...								% iobj
 					iteqt,...							% iteqt
@@ -4526,7 +4526,7 @@ try
 
 
 			%------------------------------------------------------------------------------------------------------------
-		case 'change_relno'
+		case 'change_relid'
 			% Change the relation ID of preview lines or preview polygons:
 
 			% Check imapobj_v:
@@ -4566,15 +4566,15 @@ try
 					return
 				end
 				warntext		= '';
-				norel		= str2double(answer{1,1});
-				if    any(isnan(norel))||...
-						(length(norel)~=1)
+				relid		= str2double(answer{1,1});
+				if    any(isnan(relid))||...
+						(length(relid)~=1)
 					warntext	= sprintf([...
 						'Error:\n',...
 						'Invalid value.\n',...
 						'You must enter a number.']);
 				else
-					if ~isequal(norel,round(norel))
+					if ~isequal(relid,round(relid))
 						warntext	= sprintf([...
 							'Error:\n',...
 							'Invalid value.\n',...
@@ -4595,10 +4595,11 @@ try
 					end
 				end
 			end
+			relid		= uint64(relid);
 
 			% Assign the relation ID:
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-				MAP_OBJECTS(imapobj,1).h(i,1).UserData.norel		= norel;
+				MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid		= relid;
 			end
 
 

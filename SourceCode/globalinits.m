@@ -131,7 +131,7 @@ try
 	% Project parameters:
 	PP												= [];
 	
-	% Test samples: 
+	% Test samples:
 	GV.testsample_no_max							= 30;		% before set_settings('init') !
 	
 	% Initialize SETTINGS:
@@ -242,20 +242,21 @@ try
 	GV.plotsettings.poly_limits_osmdata.LineStyle		= '-';
 	GV.plotsettings.poly_limits_osmdata.EdgeColor		= 'k';
 	GV.plotsettings.poly_limits_osmdata.FaceAlpha		= 0;
-		
+	
 	% Preview plot settings:
-	GV.preview.Color			= [1 0 0];			% 'r'
-	GV.preview.EdgeColor		= [1 0 0];			% 'r'
-	GV.preview.FaceColor		= [1 0 0];			% 'r'
-	GV.preview.LineStyle		= '-';
-	GV.preview.LineWidth		= 3;
-	GV.preview.Marker			= '.';
-	GV.preview.MarkerSize	= 30;
-	GV.tempprev.Color			= [1 0 1];			% 'm'
-	GV.tempprev.LineStyle	= '-';
-	GV.tempprev.LineWidth	= 3;
-	GV.tempprev.Marker		= '.';
-	GV.tempprev.MarkerSize	= 30;
+	GV.preview.Color				= [1 0 0];			% 'r'
+	GV.preview.EdgeColor			= [1 0 0];			% 'r'
+	GV.preview.FaceColor			= [1 0 0];			% 'r'
+	GV.preview.LineStyle			= '-';
+	GV.preview.LineWidth			= 3;
+	GV.preview.Marker				= '.';
+	GV.preview.MarkerSize		= 30;
+	GV.preview.MarkerSizeFlash	= 50;					% disappears after 1s
+	GV.tempprev.Color				= [1 0 1];			% 'm'
+	GV.tempprev.LineStyle		= '-';
+	GV.tempprev.LineWidth		= 3;
+	GV.tempprev.Marker			= '.';
+	GV.tempprev.MarkerSize		= 30;
 	
 	% Visibilty plot settings:
 	GV.visibility.show.facealpha		= 0.35;
@@ -444,7 +445,7 @@ try
 	GV.open_ele.definput_res{1,1}												= 3600;	% ppdlon
 	GV.open_ele.definput_res{2,1}												= 3600;	% ppdlat
 	GV.open_ele.definput_bb														= [];
-
+	
 	% Adding elements in OSMDATA_TABLE to the plot data:
 	% -	GV.get_nodes_ways_repeatedly=false:
 	%		If a node or way is already part of a relation, it is no longer added to the data.
@@ -457,9 +458,24 @@ try
 	%		Because the plot data now stores whether an area belongs to a relation or not, a distinction can be made
 	%		between the use of addboundary (relations) and union (closed ways, after relations) when creating polygons
 	%		(in the connwaysarea2polyarea function). This prevents addboundary from being used twice with the same area.
+	% Problem with GV.get_nodes_ways_repeatedly=true:
+	% Relations of rivers consist of ways that also have the tag waterway=river.
+	% Rivers are therefore always created twice with GV.get_nodes_ways_repeatedly=true.
+	% Solution:
+	% -	In different relations, the multiple use of nodes and ways is always permitted.
+	% -	For individual ways, a distinction is made depending on the type of display:
+	%		-	When displayed as an area, the repeated use of ways is also permitted in certain cases if they are
+	%			already part of a relation, because it could be an area within a hole in a relation.
+	%			Therefore, repeated use as a single way is only permitted for members with role=inner, 
+	%			but not for all other members of a relation: see plotosmdata_getdata.m.
+	%		-	When displayed as a line (not as an area), the repeated use of ways is not permitted if they are
+	%			already part of a relation, because otherwise the way would exist twice.
+	%		-	The parameter GV.get_nodes_ways_repeatedly is retained nonetheless in order to identify 
+	%			where in the program these measures are taken.
+	% -	Nodes are used for text and symbols and have their own parameters:
+	%		If a text or symbol has already been generated for a relation, the same text or symbol does not
+	%		need to be created for individual ways that are part of this relation:
 	GV.get_nodes_ways_repeatedly				= true;
-	% If a text or symbol has already been generated for a relation, the same text or symbol does not
-	% need to be created for individual ways that are part of this relation:
 	GV.get_nodes_ways_repeatedly_texts		= false;
 	GV.get_nodes_ways_repeatedly_symbols	= false;
 	

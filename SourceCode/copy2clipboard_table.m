@@ -32,7 +32,7 @@ try
 		if ~stateisbusy
 			if etime(clock,waitbar_t1)>=GV.waitbar_dtupdate
 				waitbar_t1	= clock;
-				progress		= min((imapobj-1)/size(map_obj_table,1),1);
+				progress		= min((r-1)/rmax,1);
 				set(GV_H.patch_waitbar,'XData',[0 progress progress 0]);
 				drawnow;
 			end

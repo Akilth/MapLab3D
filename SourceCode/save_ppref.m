@@ -12,7 +12,7 @@ try
 	
 	% MapLab3D_PP_Reference.xlsx pathname:
 	if nargin==0
-		filename_ppref_xlsx		= 'MapLab3D_ProjectParameters_1_0_1_0_Reference';
+		filename_ppref_xlsx		= 'MapLab3D_ProjectParameters_1_1_0_0_Reference';
 		pathname_ppref_xlsx		= 'G:\Daten\Projekte\MapLab3D\';
 		pathname_ppref_xlsx		= 'C:\Daten\Projekte\MapLab3D\';
 	end

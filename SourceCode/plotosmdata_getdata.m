@@ -178,15 +178,17 @@ try
 		% Get the data of lines and areas:
 		if get_liar
 			PLOTDATA.obj(iobj,1).connways			= connect_ways([]);		% Initialize the connected ways
-			id_obj_node_v		= zeros(0,1);
-			id_obj_way_v		= zeros(0,1);
+			id_obj_node_v		= uint64([]);
+			id_obj_way_v		= uint64([]);
+			id_rel_node_v		= uint64([]);					% id_obj_node_v of relations
+			id_rel_way_v		= uint64([]);					% id_obj_way_v  of relations
 			for i_itable=1:length(i_table_plot)
 				itable						= i_table_plot(i_itable);
 				% Read the OSM-data:
 				if strcmp(OSMDATA_TABLE.Type(itable),'relation')
 					if GV.get_nodes_ways_repeatedly
-						id_obj_node_v		= zeros(0,1);
-						id_obj_way_v		= zeros(0,1);
+						id_obj_node_v		= uint64([]);
+						id_obj_way_v		= uint64([]);
 					end
 					[~,~,~,PLOTDATA.obj(iobj,1).connways,~,id_obj_node_v,id_obj_way_v]	= getdata_relation(...
 						OSMDATA_TABLE_INWR(itable),...		% ir
@@ -198,11 +200,21 @@ try
 						id_obj_node_v,...							% id_obj_node_v
 						id_obj_way_v);								% id_obj_way_v
 				end
+				if GV.get_nodes_ways_repeatedly
+					id_rel_node_v		= unique([id_rel_node_v;id_obj_node_v]);
+					id_rel_way_v		= unique([id_rel_way_v ;id_obj_way_v ]);
+				end
 			end
 			if GV.get_nodes_ways_repeatedly
-				id_obj_node_v		= zeros(0,1);
-				id_obj_way_v		= zeros(0,1);
+				if PP.obj(iobj).display_as_area~=0
+					id_obj_node_v		= uint64([]);
+					id_obj_way_v		= uint64([]);
+				else
+					id_obj_node_v		= id_rel_node_v;
+					id_obj_way_v		= id_rel_way_v;
+				end
 			end
+			ways		= [];
 			for i_itable=1:length(i_table_plot)
 				itable						= i_table_plot(i_itable);	% itable: Index in OSMDATA_TABLE_INWR and OSMDATA_TABLE
 				% Read the OSM-data:
@@ -214,7 +226,7 @@ try
 							if ~isnan(x)&&~isnan(y)
 								PLOTDATA.obj(iobj,1).connways	= connect_ways(PLOTDATA.obj(iobj,1).connways,[],x,y,...
 									iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
-								if ~GV.get_nodes_ways_repeatedly
+								if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 									id_obj_node_v(end+1,1)				= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
 								end
 							end
@@ -226,9 +238,12 @@ try
 							y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 							[xc,yc]	= polysplit(x,y);
 							for ic=1:size(xc,1)
-								PLOTDATA.obj(iobj,1).connways	= connect_ways(PLOTDATA.obj(iobj,1).connways,[],xc{ic,1},yc{ic,1},...
-									iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
-								if ~GV.get_nodes_ways_repeatedly
+								iw							= size(ways,1)+1;
+								ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+								ways(iw,1).relid		= uint64(0);						% uint64 number: OpenStreetMap dataset ID
+								ways(iw,1).role		= '';									% character array
+								ways(iw,1).tag			= '';									% character array
+								if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 									if ic==1
 										id_obj_way_v(end+1,1)				= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
 									end
@@ -237,6 +252,17 @@ try
 						end
 				end
 			end
+			% Connect the ways:
+			PLOTDATA.obj(iobj,1).connways		= connect_ways_longest_line(...
+				PLOTDATA.obj(iobj,1).connways,...	% connways
+				ways,...										% ways
+				iobj,...										% iobj
+				[],...										% lino
+				PLOTDATA.obj(iobj,1).linewidth,...	% liwi
+				1,...											% l2a
+				1,...											% s
+				1,...											% lino_new_min
+				GV.tol_1);									% tol
 		end
 		
 		% Collect the data of all symbols:
@@ -352,12 +378,7 @@ try
 		% Initializations:
 		if get_liar
 			% Initialize the connected ways:
-			PLOTDATA.obj(iobj,1).connways									= connect_ways([]);
-			% Use each OSM ID only once!
-			% Exception: neighboring relations (for example neighboring countries) use the same ways.
-			% The data selection of relations is therefore not restricted.
-			id_obj_node_v						= zeros(0,1);
-			id_obj_way_v						= zeros(0,1);
+			PLOTDATA.obj(iobj,1).connways		= connect_ways([]);
 		end
 		if get_text
 			% If GV.get_nodes_ways_repeatedly_texts=false: Use each OSM ID for every text only once!
@@ -382,96 +403,94 @@ try
 			id_sym_way_cv_0					= id_sym_way_cv;
 		end
 		
-		% It may be that the same way with a different index ioeqt is contained in itable_obj_eqtags,
-		% for example if the relation contains key=name:de, but in the way only key=name:
-		% PLOTDATA.obj(iobj,1).obj_eqtags = 6×1 cell array
-		%    {'name=Neckar'    }		Way
-		%    {'name=Ulfenbach' }		Way
-		%    {'name:de=Neckar' }		Relation
-		% Therefore, first ALL lines itable must be searched for relations and then for ways and nodes:
-		for read_nodesways_notrelations=0:1
+		for ioeqt=1:length(itable_obj_eqtags)
+			if ~isempty(GV.test_readosm)
+				GV.test_readosm.ioeqt		= ioeqt;
+			end
+			create_map_log_firstline		= false;
+			itable_obj_eqtags_ioeqt			= itable_obj_eqtags{ioeqt,1};
 			
-			for ioeqt=1:length(itable_obj_eqtags)
-				if ~isempty(GV.test_readosm)
-					GV.test_readosm.ioeqt		= ioeqt;
-				end
-				create_map_log_firstline		= false;
+			if ~isempty(itable_obj_eqtags_ioeqt)
 				
-				% Reduce itable_obj_eqtags:
-				keep_itable_logical				= false(size(itable_obj_eqtags{ioeqt,1},1),1);
-				for i_itable=1:length(itable_obj_eqtags{ioeqt,1})
-					itable				= itable_obj_eqtags{ioeqt,1}(i_itable,1);
-					if read_nodesways_notrelations==0
-						% 1. step: read only relations:
-						if strcmp(OSMDATA_TABLE.Type(itable),'relation')
-							keep_itable_logical(i_itable,1)	= true;
-						end
-					else
-						% 2. step: read only nodes and ways:
-						if ~strcmp(OSMDATA_TABLE.Type(itable),'relation')
-							keep_itable_logical(i_itable,1)	= true;
-						end
-					end
-				end
-				itable_obj_eqtags_ioeqt	= itable_obj_eqtags{ioeqt,1}(keep_itable_logical,:);
-				if ~isempty(itable_obj_eqtags_ioeqt)
-					
-					% Check if all data found shall be printed, without filtering:
-					force_keep_data	= false;
-					for c_tags=1:size(PP.obj(iobj,1).filter_by_key.incltagkey,2)
-						if ~isempty(PP.obj(iobj,1).filter_by_key.incltagkey{1,c_tags})
-							for c_keep_val=1:size(PP.obj(iobj,1).filter_by_key.keep_values,2)
-								if strcmp(...
-										PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...						% e.g.:	'name=Rotach'
-										sprintf('%s=%s',...
-										PP.obj(iobj,1).filter_by_key.incltagkey{1,c_tags},...			%			'name'
-										PP.obj(iobj,1).filter_by_key.keep_values{1,c_keep_val}))		%			'Rotach'
-									force_keep_data	= true;
-									break
-								end
+				% Check if all data found shall be printed, without filtering:
+				force_keep_data	= false;
+				for c_tags=1:size(PP.obj(iobj,1).filter_by_key.incltagkey,2)
+					if ~isempty(PP.obj(iobj,1).filter_by_key.incltagkey{1,c_tags})
+						for c_keep_val=1:size(PP.obj(iobj,1).filter_by_key.keep_values,2)
+							if strcmp(...
+									PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...						% e.g.:	'name=Rotach'
+									sprintf('%s=%s',...
+									PP.obj(iobj,1).filter_by_key.incltagkey{1,c_tags},...			%			'name'
+									PP.obj(iobj,1).filter_by_key.keep_values{1,c_keep_val}))		%			'Rotach'
+								force_keep_data	= true;
+								break
 							end
 						end
-						if force_keep_data
-							break
-						end
 					end
-					
-					% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-					% Relations:
-					for i_itable=1:length(itable_obj_eqtags_ioeqt)
-						itable				= itable_obj_eqtags_ioeqt(i_itable,1);
-						if ~isempty(GV.test_readosm)
-							GV.test_readosm.itable		= itable;
-						end
-						if strcmp(OSMDATA_TABLE.Type(itable),'relation')
+					if force_keep_data
+						break
+					end
+				end
+				
+				% Control repeated use of nodes and ways:
+				id_obj_node_v		= uint64([]);
+				id_obj_way_v		= uint64([]);
+				id_rel_node_v		= uint64([]);					% id_obj_node_v of relations
+				id_rel_way_v		= uint64([]);					% id_obj_way_v  of relations
+				
+				% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+				% Relations:
+				for i_itable=1:length(itable_obj_eqtags_ioeqt)
+					itable				= itable_obj_eqtags_ioeqt(i_itable,1);
+					if ~isempty(GV.test_readosm)
+						GV.test_readosm.itable		= itable;
+					end
+					if strcmp(OSMDATA_TABLE.Type(itable),'relation')
+						
+						% Get the data of lines and areas:
+						if get_liar
 							
-							% Get the data of lines and areas:
-							if get_liar
-								
-								connways_eqtags	= connect_ways([]);
-								if isempty(PLOTDATA.obj(iobj,1).connways)
-									lino_new_min	= 1;
-								else
-									lino_new_min	= PLOTDATA.obj(iobj,1).connways.lino_max+1;
-								end
-								
-								% Read the OSM-data: relations:
-								id_obj_node_rel_v				= zeros(0,1);
-								id_obj_way_rel_v				= zeros(0,1);
-								[~,~,~,connways_eqtags,~,id_obj_node_rel_v,id_obj_way_rel_v]	= getdata_relation(...
-									OSMDATA_TABLE_INWR(itable),...					% ir
-									connways_eqtags,...									% connways
-									iobj,...													% iobj
-									[],...													% lino
-									PLOTDATA.obj(iobj,1).linewidth,...				% liwi
-									[],...													% in_relation_v
-									id_obj_node_rel_v,...								% id_obj_node_v
-									id_obj_way_rel_v,...									% id_obj_way_v
-									lino_new_min);											% lino_new_min
-								if ~GV.get_nodes_ways_repeatedly
-									id_obj_node_v					= unique([id_obj_node_v;id_obj_node_rel_v]);
-									id_obj_way_v					= unique([id_obj_way_v;id_obj_way_rel_v]);
-								end
+							connways_eqtags	= connect_ways([]);
+							if isempty(PLOTDATA.obj(iobj,1).connways)
+								lino_new_min	= 1;
+							else
+								lino_new_min	= PLOTDATA.obj(iobj,1).connways.lino_max+1;
+							end
+							
+							% % % if OSMDATA_TABLE.ID(itable)==390371
+							% % % 	set_breakpoint=1;
+							% % % end
+							% % % if strcmp(PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},'name:de=Main')
+							% % % 	set_breakpoint=1;
+							% % % end
+							
+							% Read the OSM-data: relations:
+							if GV.get_nodes_ways_repeatedly
+								id_obj_node_v		= uint64([]);
+								id_obj_way_v		= uint64([]);
+							end
+							[~,~,~,connways_eqtags,~,id_obj_node_v,id_obj_way_v]	= getdata_relation(...
+								OSMDATA_TABLE_INWR(itable),...					% ir
+								connways_eqtags,...									% connways
+								iobj,...													% iobj
+								[],...													% lino
+								PLOTDATA.obj(iobj,1).linewidth,...				% liwi
+								[],...													% in_relation_v
+								id_obj_node_v,...										% id_obj_node_v
+								id_obj_way_v,...										% id_obj_way_v
+								lino_new_min);											% lino_new_min
+							if GV.get_nodes_ways_repeatedly
+								id_rel_node_v		= unique([id_rel_node_v;id_obj_node_v]);
+								id_rel_way_v		= unique([id_rel_way_v ;id_obj_way_v ]);
+							end
+							
+							% It may happen that connways_eqtags does not contain any data, for example if the values
+							% defined in the project parameters for relation_role_incl and relation_role_excl
+							% exclude all data contained in the relation.
+							if    ~isempty(connways_eqtags.nodes)||...
+									~isempty(connways_eqtags.lines)||...
+									~isempty(connways_eqtags.areas)
+								% connways_eqtags contains data:
 								
 								% Filter small objects out and save the OSM data of relations in PLOTDATA:
 								filter_nla_separatly		= 0;							% Always use the dimension of the whole relation!
@@ -535,137 +554,176 @@ try
 								
 							end
 							
-							% Collect the data of all symbols:
-							if    (PP.obj(iobj).symbolpar.display==1)           &&...
-									APP.CreatemapSettingsCreateSymbolsMenu.Checked&&...
-									get_symb
-								filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
-								read_relations							= true;
-								read_nodes_ways						= false;
-								id_sym_node_rel_cv					= id_sym_node_cv_0;		% cell array of empty elements
-								id_sym_way_rel_cv						= id_sym_way_cv_0;		% cell array of empty elements
-								[id_sym_node_rel_cv,id_sym_way_rel_cv]	= plotosmdata_getdata_symbols(...
-									iobj,...
-									itable,...
-									force_keep_data,...
-									filter_nla_separatly,...
-									isym_symbol_eqtags,...
-									itable_symbol_eqtags,...
-									text_tag_symbol_eqtags,...
-									id_sym_node_rel_cv,...
-									id_sym_way_rel_cv,...
-									read_relations,...
-									read_nodes_ways,...
-									PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
-								if ~GV.get_nodes_ways_repeatedly_symbols
-									for iseqt=1:size(id_sym_node_cv,1)
-										id_sym_node_cv{iseqt,1}	= unique([id_sym_node_cv{iseqt,1};id_sym_node_rel_cv{iseqt,1}]);
-										id_sym_way_cv{iseqt,1}	= unique([id_sym_way_cv{iseqt,1} ;id_sym_way_rel_cv{iseqt,1}]);
-									end
+						end
+						
+						% Collect the data of all symbols:
+						if    (PP.obj(iobj).symbolpar.display==1)           &&...
+								APP.CreatemapSettingsCreateSymbolsMenu.Checked&&...
+								get_symb
+							filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
+							read_relations							= true;
+							read_nodes_ways						= false;
+							id_sym_node_rel_cv					= id_sym_node_cv_0;		% cell array of empty elements
+							id_sym_way_rel_cv						= id_sym_way_cv_0;		% cell array of empty elements
+							[id_sym_node_rel_cv,id_sym_way_rel_cv]	= plotosmdata_getdata_symbols(...
+								iobj,...
+								itable,...
+								force_keep_data,...
+								filter_nla_separatly,...
+								isym_symbol_eqtags,...
+								itable_symbol_eqtags,...
+								text_tag_symbol_eqtags,...
+								id_sym_node_rel_cv,...
+								id_sym_way_rel_cv,...
+								read_relations,...
+								read_nodes_ways,...
+								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+							if ~GV.get_nodes_ways_repeatedly_symbols
+								for iseqt=1:size(id_sym_node_cv,1)
+									id_sym_node_cv{iseqt,1}	= unique([id_sym_node_cv{iseqt,1};id_sym_node_rel_cv{iseqt,1}]);
+									id_sym_way_cv{iseqt,1}	= unique([id_sym_way_cv{iseqt,1} ;id_sym_way_rel_cv{iseqt,1}]);
+								end
+							end
+						end
+						
+						% Collect the data of all texts:
+						if    (PP.obj(iobj).textpar.display==1)           &&...
+								APP.CreatemapSettingsCreateTextsMenu.Checked&&...
+								get_text
+							filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
+							read_relations							= true;
+							read_nodes_ways						= false;
+							id_txt_node_rel_cv					= id_txt_node_cv_0;		% cell array of empty elements
+							id_txt_way_rel_cv						= id_txt_way_cv_0;		% cell array of empty elements
+							[id_txt_node_rel_cv,id_txt_way_rel_cv]	= plotosmdata_getdata_texts(...
+								iobj,...
+								itable,...
+								force_keep_data,...
+								filter_nla_separatly,...
+								itable_text_eqtags,...
+								id_txt_node_rel_cv,...
+								id_txt_way_rel_cv,...
+								read_relations,...
+								read_nodes_ways,...
+								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+							if ~GV.get_nodes_ways_repeatedly_texts
+								for iteqt=1:length(itable_text_eqtags)
+									id_txt_node_cv{iteqt,1}	= unique([id_txt_node_cv{iteqt,1};id_txt_node_rel_cv{iteqt,1}]);
+									id_txt_way_cv{iteqt,1}	= unique([id_txt_way_cv{iteqt,1};id_txt_way_rel_cv{iteqt,1}]);
 								end
 							end
 							
-							% Collect the data of all texts:
-							if    (PP.obj(iobj).textpar.display==1)           &&...
-									APP.CreatemapSettingsCreateTextsMenu.Checked&&...
-									get_text
-								filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
-								read_relations							= true;
-								read_nodes_ways						= false;
-								id_txt_node_rel_cv					= id_txt_node_cv_0;		% cell array of empty elements
-								id_txt_way_rel_cv						= id_txt_way_cv_0;		% cell array of empty elements
-								[id_txt_node_rel_cv,id_txt_way_rel_cv]	= plotosmdata_getdata_texts(...
-									iobj,...
-									itable,...
-									force_keep_data,...
-									filter_nla_separatly,...
-									itable_text_eqtags,...
-									id_txt_node_rel_cv,...
-									id_txt_way_rel_cv,...
-									read_relations,...
-									read_nodes_ways,...
-									PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
-								if ~GV.get_nodes_ways_repeatedly_texts
-									for iteqt=1:length(itable_text_eqtags)
-										id_txt_node_cv{iteqt,1}	= unique([id_txt_node_cv{iteqt,1};id_txt_node_rel_cv{iteqt,1}]);
-										id_txt_way_cv{iteqt,1}	= unique([id_txt_way_cv{iteqt,1};id_txt_way_rel_cv{iteqt,1}]);
-									end
-								end
-								
-							end
-							
+						end
+						
+					end
+				end
+				
+				% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+				% Nodes and ways:
+				
+				% Get the data of lines and areas:
+				if get_liar
+					% Begin a new structure connways_eqtags:
+					% 1) The remaining nodes and ways should not be connected with the relations.
+					% 2) Optionally, every single connected line will be filtered out according to its dimension
+					%    (PP.obj(iobj,1).filter_by_key.filter_nla_separatly~=0)
+					
+					% % % if OSMDATA_TABLE.ID(itable)==84202525
+					% % % 	set_breakpoint=1;
+					% % % end
+					% % % if strcmp(PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},'name=Main')
+					% % % 	set_breakpoint=1;
+					% % % end
+					
+					connways_eqtags	= connect_ways([]);
+					if isempty(PLOTDATA.obj(iobj,1).connways)
+						lino_new_min	= 1;
+					else
+						lino_new_min	= PLOTDATA.obj(iobj,1).connways.lino_max+1;
+					end
+					if GV.get_nodes_ways_repeatedly
+						if PP.obj(iobj).display_as_area~=0
+							id_obj_node_v		= uint64([]);
+							id_obj_way_v		= uint64([]);
+						else
+							id_obj_node_v		= id_rel_node_v;
+							id_obj_way_v		= id_rel_way_v;
 						end
 					end
-					
-					% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-					% Nodes and ways:
-					
-					% Get the data of lines and areas:
-					if get_liar
-						% Begin a new structure connways_eqtags:
-						% 1) The remaining nodes and ways should not be connected with the relations.
-						% 2) Optionally, every single connected line will be filtered out according to its dimension
-						%    (PP.obj(iobj,1).filter_by_key.filter_nla_separatly~=0)
-						connways_eqtags	= connect_ways([]);
-						if isempty(PLOTDATA.obj(iobj,1).connways)
-							lino_new_min	= 1;
-						else
-							lino_new_min	= PLOTDATA.obj(iobj,1).connways.lino_max+1;
+					ways		= [];
+					for i_itable=1:length(itable_obj_eqtags_ioeqt)
+						itable			= itable_obj_eqtags_ioeqt(i_itable,1);
+						if ~isempty(GV.test_readosm)
+							GV.test_readosm.itable		= itable;
 						end
-						if GV.get_nodes_ways_repeatedly
-							id_obj_node_v		= zeros(0,1);
-							id_obj_way_v		= zeros(0,1);
-						end
-						for i_itable=1:length(itable_obj_eqtags_ioeqt)
-							itable			= itable_obj_eqtags_ioeqt(i_itable,1);
-							if ~isempty(GV.test_readosm)
-								GV.test_readosm.itable		= itable;
-							end
-							
-							% Read the OSM-data: nodes and ways:
-							switch OSMDATA_TABLE.Type(itable)
-								case 'node'
-									if ~any(OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable))==id_obj_node_v)
-										x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
-										y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
-										if ~isnan(x)&&~isnan(y)
-											connways_eqtags					= connect_ways(connways_eqtags,[],x,y,...
-												iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
-											if ~GV.get_nodes_ways_repeatedly
-												id_obj_node_v(end+1,1)				= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
+						
+						% Read the OSM-data: nodes and ways:
+						switch OSMDATA_TABLE.Type(itable)
+							case 'node'
+								if ~any(OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable))==id_obj_node_v)
+									x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
+									y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
+									if ~isnan(x)&&~isnan(y)
+										connways_eqtags					= connect_ways(connways_eqtags,[],x,y,...
+											iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
+										if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
+											id_obj_node_v(end+1,1)				= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
+										end
+									end
+								end
+							case 'way'
+								if ~any(OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable))==id_obj_way_v)||...
+										(PP.obj(iobj,1).add_ways_only_once==0)
+									x	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).x_mm;
+									y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
+									if ~isempty(GV.test_readosm)
+										if    (sum(abs([x(1)   y(1)  ]-GV.test_readosm.p1))<1e-3)||...
+												(sum(abs([x(end) y(end)]-GV.test_readosm.p1))<1e-3)
+											GV.test_readosm.line(end+1).xy	= [x y];
+											GV.test_readosm.iw_v(end+1)		= OSMDATA_TABLE_INWR(itable);
+											GV.test_readosm.idw_v(end+1)		= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
+											GV.test_readosm.itable_v(end+1)	= GV.test_readosm.itable;
+											GV.test_readosm.ioeqt_v(end+1)	= GV.test_readosm.ioeqt;
+											set_breakpoint	= 1;
+										end
+									end
+									[xc,yc]	= polysplit(x,y);
+									for ic=1:size(xc,1)
+										iw							= size(ways,1)+1;
+										ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+										ways(iw,1).relid		= uint64(0);						% uint64 number: OSM dataset ID
+										ways(iw,1).role		= '';									% character array
+										ways(iw,1).tag			= '';									% character array
+										if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
+											if ic==1
+												id_obj_way_v(end+1,1)				= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
 											end
 										end
 									end
-								case 'way'
-									if ~any(OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable))==id_obj_way_v)||...
-											(PP.obj(iobj,1).add_ways_only_once==0)
-										x	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).x_mm;
-										y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
-										if ~isempty(GV.test_readosm)
-											if    (sum(abs([x(1)   y(1)  ]-GV.test_readosm.p1))<1e-3)||...
-													(sum(abs([x(end) y(end)]-GV.test_readosm.p1))<1e-3)
-												GV.test_readosm.line(end+1).xy	= [x y];
-												GV.test_readosm.iw_v(end+1)		= OSMDATA_TABLE_INWR(itable);
-												GV.test_readosm.idw_v(end+1)		= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
-												GV.test_readosm.itable_v(end+1)	= GV.test_readosm.itable;
-												GV.test_readosm.ioeqt_v(end+1)	= GV.test_readosm.ioeqt;
-												set_breakpoint	= 1;
-											end
-										end
-										[xc,yc]	= polysplit(x,y);
-										for ic=1:size(xc,1)
-											connways_eqtags					= connect_ways(connways_eqtags,[],xc{ic,1},yc{ic,1},...
-												iobj,[],PLOTDATA.obj(iobj,1).linewidth,1,1,lino_new_min);
-											if ~GV.get_nodes_ways_repeatedly
-												if ic==1
-													id_obj_way_v(end+1,1)				= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
-												end
-											end
-										end
-									end
-							end
-							
+								end
 						end
+						
+					end		% end of: for i_itable=1:length(itable_obj_eqtags_ioeqt)
+					
+					% Connect the ways:
+					connways_eqtags		= connect_ways_longest_line(...
+						connways_eqtags,...						% connways
+						ways,...										% ways
+						iobj,...										% iobj
+						[],...										% lino
+						PLOTDATA.obj(iobj,1).linewidth,...	% liwi
+						1,...											% l2a
+						1,...											% s
+						lino_new_min,...							% lino_new_min
+						GV.tol_1);									% tol
+					
+					% It may happen that connways_eqtags does not contain any data, for example if the values
+					% defined in the project parameters for relation_role_incl and relation_role_excl
+					% exclude all data contained in the relation.
+					if    ~isempty(connways_eqtags.nodes)||...
+							~isempty(connways_eqtags.lines)||...
+							~isempty(connways_eqtags.areas)
+						% connways_eqtags contains data:
 						
 						% Filter small objects out and save the OSM data of nodes and ways in PLOTDATA:
 						[PLOTDATA.obj(iobj,1).connways,...
@@ -774,53 +832,53 @@ try
 						
 					end
 					
-					% Collect the data of all symbols:
-					if    (PP.obj(iobj).symbolpar.display==1)           &&...
-							APP.CreatemapSettingsCreateSymbolsMenu.Checked&&...
-							get_symb
-						read_relations		= false;
-						read_nodes_ways	= true;
-						[~,~]					= plotosmdata_getdata_symbols(...
-							iobj,...
-							itable_obj_eqtags_ioeqt,...
-							force_keep_data,...
-							PP.obj(iobj,1).filter_by_key.filter_nla_separatly,...
-							isym_symbol_eqtags,...
-							itable_symbol_eqtags,...
-							text_tag_symbol_eqtags,...
-							id_sym_node_cv,...
-							id_sym_way_cv,...
-							read_relations,...
-							read_nodes_ways,...
-							PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
-					end
-					
-					% Collect the data of all texts:
-					if    (PP.obj(iobj).textpar.display==1)           &&...
-							APP.CreatemapSettingsCreateTextsMenu.Checked&&...
-							get_text
-						read_relations		= false;
-						read_nodes_ways	= true;
-						[~,~]					= plotosmdata_getdata_texts(...
-							iobj,...
-							itable_obj_eqtags_ioeqt,...
-							force_keep_data,...
-							PP.obj(iobj,1).filter_by_key.filter_nla_separatly,...
-							itable_text_eqtags,...
-							id_txt_node_cv,...
-							id_txt_way_cv,...
-							read_relations,...
-							read_nodes_ways,...
-							PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
-					end
-					
-				end		% end of: "if ~isempty(itable_obj_eqtags_ioeqt)"
+				end
 				
-			end			% end of: "for ioeqt=1:length(itable_obj_eqtags)"
+				% Collect the data of all symbols:
+				if    (PP.obj(iobj).symbolpar.display==1)           &&...
+						APP.CreatemapSettingsCreateSymbolsMenu.Checked&&...
+						get_symb
+					read_relations		= false;
+					read_nodes_ways	= true;
+					[~,~]					= plotosmdata_getdata_symbols(...
+						iobj,...
+						itable_obj_eqtags_ioeqt,...
+						force_keep_data,...
+						PP.obj(iobj,1).filter_by_key.filter_nla_separatly,...
+						isym_symbol_eqtags,...
+						itable_symbol_eqtags,...
+						text_tag_symbol_eqtags,...
+						id_sym_node_cv,...
+						id_sym_way_cv,...
+						read_relations,...
+						read_nodes_ways,...
+						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+				end
+				
+				% Collect the data of all texts:
+				if    (PP.obj(iobj).textpar.display==1)           &&...
+						APP.CreatemapSettingsCreateTextsMenu.Checked&&...
+						get_text
+					read_relations		= false;
+					read_nodes_ways	= true;
+					[~,~]					= plotosmdata_getdata_texts(...
+						iobj,...
+						itable_obj_eqtags_ioeqt,...
+						force_keep_data,...
+						PP.obj(iobj,1).filter_by_key.filter_nla_separatly,...
+						itable_text_eqtags,...
+						id_txt_node_cv,...
+						id_txt_way_cv,...
+						read_relations,...
+						read_nodes_ways,...
+						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+				end
+				
+			end		% end of: "if ~isempty(itable_obj_eqtags_ioeqt)"
 			
-		end				% end of: "for read_nodesways_notrelations=0:1"
+		end			% end of: "for ioeqt=1:length(itable_obj_eqtags)"
 		
-	end					% end of: "if ~filter_by_key"
+	end				% end of: "if ~filter_by_key"
 	
 	
 	%------------------------------------------------------------------------------------------------------------------

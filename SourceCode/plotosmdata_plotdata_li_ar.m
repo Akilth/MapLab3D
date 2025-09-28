@@ -129,17 +129,17 @@ try
 		else
 			% The objects are intended to be plotted separatly:
 			% connways_obj is a part of connways_obj_all:
-			% The fields nodes, xy_start, xy_end, lino_max, areas_role are not necessary here.
+			% The fields nodes, xy_start, xy_end, lino_max, areas_isouter are not necessary here.
 			connways_obj						= connect_ways([]);
 			if ~isempty(oeqt(ioeqt,1).k_lines)
-				connways_obj.lines			= connways_obj_all.lines(oeqt(ioeqt,1).k_lines,1);
-				connways_obj.lines_role		= connways_obj_all.lines_role(oeqt(ioeqt,1).k_lines,1);
-				connways_obj.lines_norel	= connways_obj_all.lines_norel(oeqt(ioeqt,1).k_lines,1);
+				connways_obj.lines				= connways_obj_all.lines(oeqt(ioeqt,1).k_lines,1);
+				connways_obj.lines_isouter		= connways_obj_all.lines_isouter(oeqt(ioeqt,1).k_lines,1);
+				connways_obj.lines_relid		= connways_obj_all.lines_relid(oeqt(ioeqt,1).k_lines,1);
 			end
 			if ~isempty(oeqt(ioeqt,1).k_areas)
-				connways_obj.areas			= connways_obj_all.areas(oeqt(ioeqt,1).k_areas,1);
-				connways_obj.areas_role		= connways_obj_all.areas_role(oeqt(ioeqt,1).k_areas,1);
-				connways_obj.areas_norel	= connways_obj_all.areas_norel(oeqt(ioeqt,1).k_areas,1);
+				connways_obj.areas				= connways_obj_all.areas(oeqt(ioeqt,1).k_areas,1);
+				connways_obj.areas_isouter		= connways_obj_all.areas_isouter(oeqt(ioeqt,1).k_areas,1);
+				connways_obj.areas_relid		= connways_obj_all.areas_relid(oeqt(ioeqt,1).k_areas,1);
 			end
 		end
 
@@ -163,7 +163,7 @@ try
 			% --------------------------------------------------------------------------------------------------------------
 			% Areas:
 			if PP.obj(iobj).display_as_area~=0
-				if ~isequal(size(connways_obj.areas_norel),size(connways_obj.areas))
+				if ~isequal(size(connways_obj.areas_relid),size(connways_obj.areas))
 					errormessage;
 				end
 
@@ -200,7 +200,7 @@ try
 					ud.ir				= ud_ir_v;
 					ud.rotation		= 0;
 					ud.xy0			= [x(:) y(:)];
-					ud.norel			= connways_obj.lines_norel(k,1);
+					ud.relid			= connways_obj.lines_relid(k,1);
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 					end

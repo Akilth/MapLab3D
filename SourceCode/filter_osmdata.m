@@ -1035,7 +1035,7 @@ try
 			end
 		end
 	end
-	% Assigne the rows of the table to include:
+	% Assign the rows of the table to include:
 	r_table_filtercrit_incl	= true(size(OSMDATA_TABLE,1),1);
 	for r_filt=1:size(filter_incl,1)
 		if crit_is_valid(1,r_filt)
@@ -1109,14 +1109,23 @@ try
 	r_table_filtercrit	= ~r_table_filtercrit_incl | r_table_filtercrit_excl;
 	
 	% Delete the rows in the table, that do not meet the criterion:
-	OSMDATA_TABLE(r_table_filtercrit,:)	= [];
+	OSMDATA_TABLE(r_table_filtercrit,:)			= [];
+	OSMDATA_TABLE_INWR(r_table_filtercrit,:)	= [];
+	
+	% Sort the elements by length in descending order. This way, when connect_ways is called,
+	% all long ways are connected first, increasing the probability of creating the longest possible line.
+	OSMDATA_TABLE_No		= OSMDATA_TABLE.No;
+	[~,isort]				= sort(OSMDATA_TABLE.Length,'descend');
+	OSMDATA_TABLE			= OSMDATA_TABLE(isort,:);
+	OSMDATA_TABLE_INWR	= OSMDATA_TABLE_INWR(isort,:);
+	OSMDATA_TABLE.No		= OSMDATA_TABLE_No;
 	
 	% Display the table:
 	if update_osmdata_table~=0
 		create_new_tablefigure	= false;
 		if isempty(APP)
 			% Only for testing, without app:
-			if ~isfield(GV_H,'OSMDATA_TABLE')
+			if ~isfield(GV_H,'osmdata_table')
 				create_new_tablefigure	= true;
 			else
 				if isempty(GV_H.osmdata_table)
@@ -1141,6 +1150,12 @@ try
 			% Replace the data in the existing table:
 			GV_H.osmdata_table.Data				= OSMDATA_TABLE;
 			GV_H.osmdata_table.ColumnWidth	= 'fit';
+			if size(OSMDATA_TABLE,1)==0
+				APP.FilterOSMData_FilterResults_Label.Text	= 'Filter results:';
+			else
+				APP.FilterOSMData_FilterResults_Label.Text	= ...
+					sprintf('Filter results (%g entries):',size(OSMDATA_TABLE,1));
+			end
 		end
 		drawnow;
 	end

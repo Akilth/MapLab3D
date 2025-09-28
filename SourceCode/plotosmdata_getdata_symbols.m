@@ -26,8 +26,8 @@ try
 			
 			% Read the OSM-data:
 			if GV.get_nodes_ways_repeatedly_symbols
-				id_sym_node_cv{iseqt,1}		= zeros(0,1);
-				id_sym_way_cv{iseqt,1}		= zeros(0,1);
+				id_sym_node_cv{iseqt,1}		= uint64([]);
+				id_sym_way_cv{iseqt,1}		= uint64([]);
 			end
 			if read_relations
 				for i_itable=1:length(itable_symbol_eqtags{iseqt,1})
@@ -49,10 +49,11 @@ try
 				end
 			end
 			if GV.get_nodes_ways_repeatedly_symbols
-				id_sym_node_cv{iseqt,1}		= zeros(0,1);
-				id_sym_way_cv{iseqt,1}		= zeros(0,1);
+				id_sym_node_cv{iseqt,1}		= uint64([]);
+				id_sym_way_cv{iseqt,1}		= uint64([]);
 			end
 			if read_nodes_ways
+				ways		= [];
 				for i_itable=1:length(itable_symbol_eqtags{iseqt,1})
 					itable							= itable_symbol_eqtags{iseqt,1}(i_itable,1);
 					if any(itable==itable_obj_eqtags_ioeqt)
@@ -76,8 +77,11 @@ try
 									y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 									[xc,yc]	= polysplit(x,y);
 									for ic=1:size(xc,1)
-										connways_eqtags		= connect_ways(connways_eqtags,[],xc{ic,1},yc{ic,1},...
-											iobj,itable,PLOTDATA.obj(iobj,1).linewidth,1);
+										iw							= size(ways,1)+1;
+										ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+										ways(iw,1).relid		= uint64(0);						% uint64 number: OSM dataset ID
+										ways(iw,1).role		= '';									% character array
+										ways(iw,1).tag			= '';									% character array
 										if ~GV.get_nodes_ways_repeatedly_symbols
 											if ic==1
 												id_sym_way_cv{iseqt,1}(end+1,1)	= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
@@ -89,6 +93,17 @@ try
 						end
 					end
 				end
+				% Connect the ways:
+				connways_eqtags		= connect_ways_longest_line(...
+					connways_eqtags,...	% connways
+					ways,...										% ways
+					iobj,...										% iobj
+					[],...										% lino
+					PLOTDATA.obj(iobj,1).linewidth,...	% liwi
+					1,...											% l2a
+					1,...											% s
+					1,...											% lino_new_min
+					GV.tol_1);									% tol
 			end
 			
 			if iseqt_has_data
@@ -160,14 +175,14 @@ try
 							text_tag_symbol_eqtags{iseqt,1});
 					else
 						for k_line=1:size(connways_eqtags_filt.lines,1)
-							connways_eqtags_select					= connect_ways([]);
-							connways_eqtags_select.lines			= connways_eqtags_filt.lines(k_line,1);
-							connways_eqtags_select.lines_role	= connways_eqtags_filt.lines_role(k_line,1);
-							connways_eqtags_select.lines_norel	= connways_eqtags_filt.lines_norel(k_line,1);
-							connways_eqtags_select.xy_start		= connways_eqtags_filt.xy_start(k_line,1);
-							connways_eqtags_select.xy_end			= connways_eqtags_filt.xy_end(k_line,1);
-							connways_eqtags_select.lino_max		= connways_eqtags_filt.lino_max;
-							lino_v										= connways_eqtags_filt.lines(k_line,1).xy(:,4);
+							connways_eqtags_select						= connect_ways([]);
+							connways_eqtags_select.lines				= connways_eqtags_filt.lines(k_line,1);
+							connways_eqtags_select.lines_isouter	= connways_eqtags_filt.lines_isouter(k_line,1);
+							connways_eqtags_select.lines_relid		= connways_eqtags_filt.lines_relid(k_line,1);
+							connways_eqtags_select.xy_start			= connways_eqtags_filt.xy_start(k_line,1);
+							connways_eqtags_select.xy_end				= connways_eqtags_filt.xy_end(k_line,1);
+							connways_eqtags_select.lino_max			= connways_eqtags_filt.lino_max;
+							lino_v											= connways_eqtags_filt.lines(k_line,1).xy(:,4);
 							% alt 1:
 							% connways_eqtags_select	= connect_ways([]);
 							% connways_eqtags_select	= connect_ways(...
@@ -190,10 +205,10 @@ try
 								text_tag_symbol_eqtags{iseqt,1});
 						end
 						for k_area=1:size(connways_eqtags_filt.areas,1)
-							connways_eqtags_select					= connect_ways([]);
-							connways_eqtags_select.areas			= connways_eqtags_filt.areas(k_area,1);
-							connways_eqtags_select.areas_role	= connways_eqtags_filt.areas_role(k_area,1);
-							connways_eqtags_select.areas_norel	= connways_eqtags_filt.areas_norel(k_area,1);
+							connways_eqtags_select						= connect_ways([]);
+							connways_eqtags_select.areas				= connways_eqtags_filt.areas(k_area,1);
+							connways_eqtags_select.areas_isouter	= connways_eqtags_filt.areas_isouter(k_area,1);
+							connways_eqtags_select.areas_relid		= connways_eqtags_filt.areas_relid(k_area,1);
 							% alt 1:
 							% connways_eqtags_select			= connect_ways([]);
 							% connways_eqtags_select	= connect_ways(...

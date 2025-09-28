@@ -1306,13 +1306,16 @@ try
 		end
 		
 		% Search all members of the relation:
+		try
 		connways			= connect_ways([]);
 		[  OSMDATA.relation(1,ir).no_nodes,...			% no_nodes
 			OSMDATA.relation(1,ir).no_ways,...			% no_ways
 			OSMDATA.relation(1,ir).no_relations,...	% no_relations
 			connways,...
 			in_relation_v]=getdata_relation(ir,connways,0,0,[],in_relation_v);
-		
+		catch
+			test=1;
+		end
 		% Calculate the dimensions in x- and y-direction:
 		[  OSMDATA.relation_xmin_mm(1,ir),...
 			OSMDATA.relation_xmax_mm(1,ir),...

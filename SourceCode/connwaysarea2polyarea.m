@@ -34,15 +34,15 @@ try
 	% So the holes remain holes, but when two relations overlap (for example the relation leisure=stadium
 	% overlaps a relation amenity=university) the inner relation will not become a hole.
 	k_waitbar	= 0;
-	no_rel_v		= unique(connways_obj.areas_norel);		% numbers of all relations of all areas
+	relid_v		= unique(connways_obj.areas_relid);		% numbers of all relations of all areas
 	% Because the same areas can occur both in relations and as individual ways, the relations should first be created
 	% with addboundary and then the rest with union:
-	no_rel_v		= sort(no_rel_v,'descend');
-	for i_no_rel_v=1:size(no_rel_v,1)
-		norel				= no_rel_v(i_no_rel_v,1);
+	relid_v		= sort(relid_v,'descend');
+	for i_relid_v=1:size(relid_v,1)
+		relid				= relid_v(i_relid_v,1);
 		poly_rel			= polyshape();
 		% Add all areas to the current relation poly_rel:
-		k_v				= find(connways_obj.areas_norel==norel);
+		k_v				= find(connways_obj.areas_relid==relid);
 		for i_k_v=1:size(k_v,1)
 			k					= k_v(i_k_v,1);
 			% Waitbar:
@@ -76,7 +76,7 @@ try
 				end
 				poly_area_k			= polyshape(x,y);
 				% Simplify objects and delete or connect small objects by moving the outlines of areas:
-				if (simplify_moveoutline~=0)&&(norel==0)
+				if (simplify_moveoutline~=0)&&(relid==uint32(0))
 					% No relation: move outline of each individual area:
 					[poly_area_k,replaceplots_area]	= plotosmdata_simplify_moveoutline(...
 						iobj,...										% ObjColNo
@@ -85,11 +85,11 @@ try
 						testplot,...								% testplot
 						replaceplots_area);						% replaceplots
 				end
-				if norel>0
-					% norel>0: the current area belongs to a relation: use "addboundary":
+				if relid>uint32(0)
+					% relid>0: the current area belongs to a relation: use "addboundary":
 					poly_rel	= addboundary(poly_rel,poly_area_k.Vertices,'Simplify',true,'KeepCollinearPoints',false);
 				else
-					% norel=0: the current area does not belong to a relation: use "union":
+					% relid=0: the current area does not belong to a relation: use "union":
 					poly_rel	= union(poly_rel,poly_area_k,'KeepCollinearPoints',false);
 				end
 				if GV.warnings_off
@@ -99,7 +99,7 @@ try
 			end
 		end
 		% Simplify objects and delete or connect small objects by moving the outlines of areas:
-		if (simplify_moveoutline~=0)&&(norel>0)
+		if (simplify_moveoutline~=0)&&(relid>uint32(0))
 			% Relation: move the outline of the whole relation:
 			[poly_rel,replaceplots_area]	= plotosmdata_simplify_moveoutline(...
 				iobj,...										% ObjColNo

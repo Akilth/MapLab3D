@@ -518,9 +518,9 @@ try
 						margin_xy	= [margin_xy(end,:);margin_xy(1:(end-1),:)];
 					end
 					[xc,yc] = polysplit(margin_xy(:,1),margin_xy(:,2));
-					for i=1:size(xc,1)
+					for ixc=1:size(xc,1)
 						% Delete the extra points:
-						xyc_v								= xc{i,1}+1i*yc{i,1};
+						xyc_v								= xc{ixc,1}+1i*yc{ixc,1};
 						imax								= length(xyc_v)-1;
 						i									= 1:imax;
 						direction						= angle(xyc_v(i+1)-xyc_v(i));

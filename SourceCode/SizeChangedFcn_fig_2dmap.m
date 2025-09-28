@@ -80,8 +80,8 @@ try
 			% Set map limits:
 			% fit=1: Zoom on the printout limits.
 			% fit=2: Zoom on the OSM data and the tiles.		
-			if isfield(GV_H,'poly_map_printout_obj_limits')
-				if numboundaries(GV_H.poly_map_printout_obj_limits.Shape)>0
+			if isfield(GV_H,'poly_map_printout')
+				if numboundaries(GV_H.poly_map_printout.Shape)>0
 					tile_no_max		= 0;
 					if isfield(GV_H,'poly_tiles')
 						tile_no_max		= size(GV_H.poly_tiles,1);
@@ -92,8 +92,8 @@ try
 					ylim			= ones(imax,2)*1e10;
 					xlim(:,2)	= -xlim(:,2);
 					ylim(:,2)	= -ylim(:,2);
-					i = i+1; [xlim(i,:),ylim(i,:)] = boundingbox(GV_H.poly_map_printout_obj_limits.Shape);
-					i = i+1; [xlim(i,:),ylim(i,:)] = boundingbox(GV_H.poly_map_printout_obj_limits.Shape);
+					i = i+1; [xlim(i,:),ylim(i,:)] = boundingbox(GV_H.poly_map_printout.Shape);
+					i = i+1; [xlim(i,:),ylim(i,:)] = boundingbox(GV_H.poly_map_printout.Shape);
 					if fit==2
 						if    isfield(GV_H,'poly_limits_osmdata')         &&...
 								isfield(GV_H,'poly_tiles')

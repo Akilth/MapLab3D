@@ -1357,7 +1357,7 @@ for iobj=1:length(obj_bot_bh.poly)
 end
 
 % Es kann passieren, dass Löcher in boundarys wieder gefüllt werden, wenn nur ein Punkt des Lochs auf der
-% äußeren Randlinie  liegt (in diesem Fall wird im command window eine Warnung ausgegeben):
+% äußeren Randlinie liegt (in diesem Fall wird im command window eine Warnung ausgegeben):
 % Zur Sicherheit alle Polygone wieder voneinaner abziehen:
 xlim											= cell(size(obj_bot_bh_reg.poly,1),1);
 ylim											= cell(size(obj_bot_bh_reg.poly,1),1);
@@ -2710,6 +2710,7 @@ for iobj=2:length(obj_bot_bh_reg.poly)
 			axes(ha4);
 			trisurf(Tplot4,'EdgeColor',[0 0 0],'FaceColor',[1 1 1]*0.95,'FaceAlpha',facealpha,'EdgeAlpha',edgealpha,...
 				'Marker','.','MarkerEdgeColor','r','MarkerSize',8);
+			set_breakpoint	= 1;
 		end
 		
 		% nächste Triangulation vorbereiten:

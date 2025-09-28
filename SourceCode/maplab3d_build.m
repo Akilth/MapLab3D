@@ -31,8 +31,7 @@ packageOpts	= [];
 %		-	maplab3d.Name			MapLab3D_x_x_x_x
 %			maplab3d.Version		x.x
 %		-	app.MapLab3D.Name		MapLab3D x.x.x.x
-% -	README.md
-% -	Version history files
+% -	CHANGELOG.md
 
 % Documentation of the changes contained in the new version.
 
@@ -48,7 +47,10 @@ packageOpts	= [];
 % Create new release:
 % Github:						Tag:					v1.0.0.3-beta
 %									Release title:		MapLab3D 1.0.0.3 Public Beta
-%									Release notes:		First published version
+%									Release notes:		Download the MapLab3D_1_0_0_3_Public_Beta file to install and run the program. Installation instructions can be found [here](https://github.com/Akilth/MapLab3D/blob/main/README.md) and in the [Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
+% 
+%															First published version
+% 
 %															or enter changelog
 %									Upload the zip file
 % Matlab Branch Manager:	New Tag:				v1.0.0.3-beta

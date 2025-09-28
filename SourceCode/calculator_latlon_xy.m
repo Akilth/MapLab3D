@@ -1,5 +1,9 @@
-function [xmin_mm,xmax_mm,ymin_mm,ymax_mm]=...
-	calculator_latlon_xy(...
+function [...
+	xmin_mm,...
+	xmax_mm,...
+	ymin_mm,...
+	ymax_mm...
+	]=calculator_latlon_xy(...
 	dataset,...
 	lonmin_deg,...
 	lonmax_deg,...
@@ -15,7 +19,7 @@ function [xmin_mm,xmax_mm,ymin_mm,ymax_mm]=...
 global APP
 
 try
-
+	
 	testing	= 0;
 	if nargin==0
 		testing	= 0;
@@ -51,12 +55,12 @@ try
 			return
 		end
 	end
-
+	
 	if nargin==1
 		lonorigin_deg	= APP.LatLonXYTab_OriginLongitudeEditField.Value;		% lonorigin_deg
 		latorigin_deg	= APP.LatLonXYTab_OriginLatitudeEditField.Value;		% latorigin_deg
 		switch dataset					% 'OSM', 'Osmosis', 'Map'
-
+			
 			case 'OSM'
 				% OSM data:
 				[  APP.LatLonXYTab_OSM_LatCenter_EditField.Value,...				% latcenter
@@ -76,7 +80,7 @@ try
 					APP.LatLonXYTab_OSM_yminmmEditField.Value,...					% ymin_mm
 					APP.LatLonXYTab_OSM_ymaxmmEditField.Value]=...					% ymax_mm
 					calculator_latlon_xy(...
-					[],...																		% dataset
+					'OSM',...																	% dataset
 					APP.LatLonXYTab_OSM_lonminEditField.Value,...					% lonmin_deg
 					APP.LatLonXYTab_OSM_lonmaxEditField.Value,...					% lonmax_deg
 					APP.LatLonXYTab_OSM_latminEditField.Value,...					% latmin_deg
@@ -108,7 +112,7 @@ try
 				end
 				% Recalculate OSM data printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_OSM');
-
+				
 			case 'Osmosis'
 				% Osmosis settings:
 				[  APP.LatLonXYTab_Osmosis_LatCenter_EditField.Value,...			% latcenter
@@ -128,7 +132,7 @@ try
 					APP.LatLonXYTab_Osmosis_yminmmEditField.Value,...				% ymin_mm
 					APP.LatLonXYTab_Osmosis_ymaxmmEditField.Value]=...				% ymax_mm
 					calculator_latlon_xy(...
-					[],...																		% dataset
+					'Osmosis',...																% dataset
 					APP.LatLonXYTab_Osmosis_lonminEditField.Value,...				% lonmin_deg
 					APP.LatLonXYTab_Osmosis_lonmaxEditField.Value,...				% lonmax_deg
 					APP.LatLonXYTab_Osmosis_latminEditField.Value,...				% latmin_deg
@@ -160,7 +164,7 @@ try
 				end
 				% Recalculate Osmosis settings printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_Osmosis');
-
+				
 			case 'Map'
 				% Map printout:
 				[  APP.LatLonXYTab_Map_LatCenter_EditField.Value,...				% latcenter
@@ -176,7 +180,7 @@ try
 					APP.LatLonXYTab_Map_yminmmEditField.Value,...					% ymin_mm
 					APP.LatLonXYTab_Map_ymaxmmEditField.Value]=...					% ymax_mm
 					calculator_latlon_xy(...
-					[],...																		% dataset
+					'Map',...																	% dataset
 					APP.LatLonXYTab_Map_lonminEditField.Value,...					% lonmin_deg
 					APP.LatLonXYTab_Map_lonmaxEditField.Value,...					% lonmax_deg
 					APP.LatLonXYTab_Map_latminEditField.Value,...					% latmin_deg
@@ -208,19 +212,19 @@ try
 				end
 				% Recalculate map printout data printout size:
 				calculator_latlonxy_recalculate('PrintoutSize_Map');
-
+				
 		end
 		% Editbox formatting:
 		calculator_latlonxy_format;
 		return
 	end
-
+	
 	% Assign origin:
 	origin_deg		= [latorigin_deg lonorigin_deg];
-
+	
 	% Ellipsoidal model of the figure of the Earth (needed for grn2eqa)
 	ellipsoid		= referenceSphere('Earth');
-
+	
 	% % Conversion of lat, lon from degrees to x,y in mm:
 	limits_c	= cell(0,0);
 	% Left limit:
@@ -279,7 +283,32 @@ try
 			% disp('Test in calculator_latlon_xy');
 			% a=1, a(2)
 		catch ME
-			errormessage('Invalid input.',ME);
+			% The latlon-values are invalid:
+			% Replace them by the values calculated with the xy-values:
+			try
+				calculator_xy_latlon(dataset);
+				switch dataset
+					case 'OSM'
+						xmin_mm		= APP.LatLonXYTab_OSM_xminmmEditField.Value;
+						xmax_mm		= APP.LatLonXYTab_OSM_xmaxmmEditField.Value;
+						ymin_mm		= APP.LatLonXYTab_OSM_yminmmEditField.Value;
+						ymax_mm		= APP.LatLonXYTab_OSM_ymaxmmEditField.Value;
+					case 'Osmosis'
+						xmin_mm		= APP.LatLonXYTab_Osmosis_xminmmEditField.Value;
+						xmax_mm		= APP.LatLonXYTab_Osmosis_xmaxmmEditField.Value;
+						ymin_mm		= APP.LatLonXYTab_Osmosis_yminmmEditField.Value;
+						ymax_mm		= APP.LatLonXYTab_Osmosis_ymaxmmEditField.Value;
+					case 'Map'
+						xmin_mm		= APP.LatLonXYTab_Map_xminmmEditField.Value;
+						xmax_mm		= APP.LatLonXYTab_Map_xmaxmmEditField.Value;
+						ymin_mm		= APP.LatLonXYTab_Map_yminmmEditField.Value;
+						ymax_mm		= APP.LatLonXYTab_Map_ymaxmmEditField.Value;
+				end
+				x_v_m		= [xmin_mm xmax_mm];
+				y_v_m		= [ymin_mm ymax_mm];
+			catch ME
+				errormessage('lon,lat - x,y: Invalid input.',ME);
+			end
 		end
 		x_v_mm			= x_v_m*1000/scale;
 		y_v_mm			= y_v_m*1000/scale;
@@ -290,13 +319,13 @@ try
 			plot(ha,x_v_mm,y_v_mm)
 		end
 	end
-
+	
 	% Distance between the (outer) OSM data and the (inner) map printout limits / mm:
 	xmin_mm	= round(xmin_mm,2)+dist_osm_printout;
 	xmax_mm	= round(xmax_mm,2)-dist_osm_printout;
 	ymin_mm	= round(ymin_mm,2)+dist_osm_printout;
 	ymax_mm	= round(ymax_mm,2)-dist_osm_printout;
-
+	
 	% Testing:
 	if (nargin==0)&&(testing==1)
 		switch dataset
@@ -338,7 +367,7 @@ try
 			calculator_latlonxy_plot(dataset);
 		end
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

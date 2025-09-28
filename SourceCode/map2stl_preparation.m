@@ -1285,7 +1285,7 @@ try
 	
 	%------------------------------------------------------------------------------------------------------------------
 	% obj_top_reg
-	% Dies ist der  letzte Stand vor der Berechnung der Höhen mit interp_ele:
+	% Dies ist der letzte Stand vor der Berechnung der Höhen mit interp_ele:
 	% Hier müssen die Höhendaten um Polygone von Flächen erweitert werden, bei denen sich die Filtereinstellung
 	% von denen der Kachelbasis unterscheiden.
 	%------------------------------------------------------------------------------------------------------------------
