@@ -161,7 +161,7 @@ MATLAB program version and required add-ons:
 - Image Processing Toolbox
 - Matlab Compiler
 
-The following settings should be made in MATLAB Preferences under Editor/Debugger - Tab:
+The following settings should be made in MATLAB Settings under Editor/Debugger - Indenting:
 - Tab size: 3
 - Indent size: 3
 - Tab key inserts spaces: off

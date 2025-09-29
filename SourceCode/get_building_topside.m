@@ -41,7 +41,7 @@ if nargin==0
 	% Beispieldaten vorbereiten:
 	% -	MATLAB installieren und Einstellungen vornehmen
 	%		siehe README in https://github.com/Akilth/MapLab3D/tree/Development
-	% -	MapLab3D herunterladen und starten (development branch!)
+	% -	MapLab3D herunterladen (development branch!) und starten (maplab3d.mlapp)
 	% -	Projektparameter: Maßstabszahl maximal 10000 (project.scale), sonst werden Gebäude nicht dargestellt.
 	% -	Projektparameter laden
 	% -	"Menu File: Load OSM- and elevation-data settings - Do not load elevation-data (flat map)" aktivieren:
@@ -54,7 +54,7 @@ if nargin==0
 	id_n_v		= zeros(0,1);
 	id_w_v		= zeros(0,1);
 	id_r_v		= zeros(0,1);
-	testnr	= 4;
+	testnr	= 2;
 	switch testnr
 		case 1
 			% Muenchen_Frauenkirche.osm

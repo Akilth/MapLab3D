@@ -116,12 +116,12 @@ try
 	
 	% Add the preview of nodes to the map:
 	for in=1:size(nodes,1)
-		if ~isempty(nodes.x)&&~isempty(nodes.y)
+		if ~isempty(nodes(in,1).x)&&~isempty(nodes(in,1).y)
 			if ~ishandle(GV_H.ax_2dmap)
 				errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 			end
 			if strcmp(par,'temp')
-				GV_H.map_tempprevobjects(end+1,1).h	= plot(GV_H.ax_2dmap,nodes.x,nodes.y,...
+				GV_H.map_tempprevobjects(end+1,1).h	= plot(GV_H.ax_2dmap,nodes(in,1).x,nodes(in,1).y,...
 					'Color'     ,GV.tempprev.Color,...
 					'LineStyle' ,'none',...
 					'LineWidth' ,GV.tempprev.LineWidth,...
@@ -129,8 +129,8 @@ try
 					'MarkerSize',GV.tempprev.MarkerSize);
 			else
 				imapobj		= size(MAP_OBJECTS,1)+1;
-				ud.xy0		= [nodes.x(:) nodes.y(:)];
-				h_preview	= plot(GV_H.ax_2dmap,nodes.x,nodes.y,...
+				ud.xy0		= [nodes(in,1).x(:) nodes(in,1).y(:)];
+				h_preview	= plot(GV_H.ax_2dmap,nodes(in,1).x,nodes(in,1).y,...
 					'Color'     ,GV.preview.Color,...
 					'LineStyle' ,'none',...
 					'LineWidth' ,GV.preview.LineWidth,...
@@ -138,8 +138,8 @@ try
 					'MarkerSize',GV.preview.MarkerSize,...
 					'UserData'  ,ud);
 				% Save relevant data in the structure MAP_OBJECTS:
-				x_center	= mean(nodes.x);
-				y_center	= mean(nodes.y);
+				x_center	= mean(nodes(in,1).x);
+				y_center	= mean(nodes(in,1).y);
 				MAP_OBJECTS(imapobj,1).disp	= 'preview node';
 				MAP_OBJECTS(imapobj,1).h		= h_preview;
 				MAP_OBJECTS(imapobj,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
