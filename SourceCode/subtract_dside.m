@@ -77,7 +77,7 @@ if strcmp(GV.jointtype_bh,'miter')
 else
 	poly2_buff	= polybuffer(poly2,dbuffer,'JointType',GV.jointtype_bh);
 end
-poly1	= subtract(poly1,poly2_buff,'KeepCollinearPoints',false);
+poly1			= subtract(poly1,poly2_buff,'KeepCollinearPoints',false);
 
 % Cut object 2 by the already cut object 1:
 % (should not be necessary, but needed in some special cases)
@@ -86,7 +86,7 @@ if strcmp(GV.jointtype_bh,'miter')
 else
 	poly1_buff	= polybuffer(poly1,dbuffer,'JointType',GV.jointtype_bh);
 end
-poly2	= subtract(poly2,poly1_buff,'KeepCollinearPoints',false);
+poly2			= subtract(poly2,poly1_buff,'KeepCollinearPoints',false);
 
 
 

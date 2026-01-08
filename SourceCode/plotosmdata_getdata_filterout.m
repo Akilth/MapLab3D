@@ -26,27 +26,17 @@ function [connways_eqtags_filt,...
 	minarea,...
 	filter_nla_separatly,...
 	force_keep_data,...
-	obj_eqtags_ioeqt)
+	obj_eqtags_ioeqt,...
+	msg)
 % Filter out small objects in connways_eqtags and add the rest to connways_eqtags_filt
 % Used in:	plotosmdata_getdata
 %				plotosmdata_getdata_symbols
 %				plotosmdata_getdata_texts
 % Special case: minarea=-999999: The areas are not filtered, regardless of the other limit values.
 
+global GV GV_H WAITBAR
+
 try
-	
-	% Maximum value lines_relid, areas_relid (relation identification number):
-	if isempty(connways_eqtags_filt.lines_relid)
-		lines_relid_cwetf_max	= uint64(0);
-	else
-		lines_relid_cwetf_max	= max(connways_eqtags_filt.lines_relid);
-	end
-	if isempty(connways_eqtags_filt.areas_relid)
-		areas_relid_cwetf_max	= uint64(0);
-	else
-		areas_relid_cwetf_max	= max(connways_eqtags_filt.areas_relid);
-	end
-	relid_cwetf_max		= max(lines_relid_cwetf_max,areas_relid_cwetf_max);
 	
 	% Calculate the dimensions of nodes and ways:
 	[  xmin_all_mm ,xmax_all_mm ,ymin_all_mm ,ymax_all_mm ,...
@@ -70,9 +60,15 @@ try
 		length_lines_v_mm,...									% length_lines_v_mm
 		length_areas_v_mm]	= ...								% length_areas_v_mm
 		connways_length(connways_eqtags);
-	[  area_all_mm2,...											% area_mm2
-		area_v_mm2]	= ...											% area_v_mm2
-		connways_area(connways_eqtags);
+	if minarea>0
+		[  area_all_mm2,...											% area_mm2
+			area_v_mm2]	= ...											% area_v_mm2
+			connways_area(connways_eqtags,msg);
+	else
+		% Calculating areas can be time-consuming. Skip this step if it is not necessary:
+		area_v_mm2		= zeros(size(connways_eqtags.areas,1),1);
+		area_all_mm2	= 0;
+	end
 	
 	% Assign the nodes:
 	% Nodes are not filtered out if minlength>0 or minarea>0.
@@ -99,6 +95,12 @@ try
 	% Assign the lines:
 	% Lines are not filtered out if minarea>0.
 	for k_line=1:size(connways_eqtags.lines,1)
+		% Waitbar:
+		if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+			WAITBAR.t1	= clock;
+			set(GV_H.text_waitbar,'String',sprintf('%s lines: %g/%g',msg,k_line,size(connways_eqtags.lines,1)));
+			drawnow;
+		end
 		if    force_keep_data||(...
 				(dx_line_v_mm(k_line,1)     >=mindimx  )&&...
 				(dy_line_v_mm(k_line,1)     >=mindimy  )&&...
@@ -115,14 +117,16 @@ try
 			if isempty(connways_eqtags_filt.lines)
 				connways_eqtags_filt.lines				= connways_eqtags.lines(k_line,1);
 				connways_eqtags_filt.lines_isouter	= connways_eqtags.lines_isouter(k_line,1);
-				connways_eqtags_filt.lines_relid		= connways_eqtags.lines_relid(k_line,1)+relid_cwetf_max;
+				connways_eqtags_filt.lines_isinner	= connways_eqtags.lines_isinner(k_line,1);
+				connways_eqtags_filt.lines_relid		= connways_eqtags.lines_relid(k_line,1);
 				connways_eqtags_filt.xy_start			= connways_eqtags.xy_start(k_line,:);
 				connways_eqtags_filt.xy_end			= connways_eqtags.xy_end(k_line,:);
 				connways_eqtags_filt.lino_max			= connways_eqtags.lino_max;
 			else
 				connways_eqtags_filt.lines(end+1,1)				= connways_eqtags.lines(k_line,1);
 				connways_eqtags_filt.lines_isouter(end+1,1)	= connways_eqtags.lines_isouter(k_line,1);
-				connways_eqtags_filt.lines_relid(end+1,1)		= connways_eqtags.lines_relid(k_line,1)+relid_cwetf_max;
+				connways_eqtags_filt.lines_isinner(end+1,1)	= connways_eqtags.lines_isinner(k_line,1);
+				connways_eqtags_filt.lines_relid(end+1,1)		= connways_eqtags.lines_relid(k_line,1);
 				connways_eqtags_filt.xy_start(end+1,:)			= connways_eqtags.xy_start(k_line,:);
 				connways_eqtags_filt.xy_end(end+1,:)			= connways_eqtags.xy_end(k_line,:);
 				connways_eqtags_filt.lino_max						= max(...
@@ -139,9 +143,16 @@ try
 		end
 		connways_eqtags_filt.areas					= connways_eqtags.areas;
 		connways_eqtags_filt.areas_isouter		= connways_eqtags.areas_isouter;
-		connways_eqtags_filt.areas_relid			= connways_eqtags.areas_relid+relid_cwetf_max;
+		connways_eqtags_filt.areas_isinner		= connways_eqtags.areas_isinner;
+		connways_eqtags_filt.areas_relid			= connways_eqtags.areas_relid;
 	else
 		for k_area=1:size(connways_eqtags.areas,1)
+			% Waitbar:
+			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+				WAITBAR.t1	= clock;
+				set(GV_H.text_waitbar,'String',sprintf('%s areas: %g/%g',msg,k_area,size(connways_eqtags.areas,1)));
+				drawnow;
+			end
 			if    force_keep_data                               ||(...
 					(dx_area_v_mm(k_area,1)     >=mindimx  )&&...
 					(dy_area_v_mm(k_area,1)     >=mindimy  )&&...
@@ -160,11 +171,13 @@ try
 				if isempty(connways_eqtags_filt.areas)
 					connways_eqtags_filt.areas							= connways_eqtags.areas(k_area,1);
 					connways_eqtags_filt.areas_isouter				= connways_eqtags.areas_isouter(k_area,1);
-					connways_eqtags_filt.areas_relid					= connways_eqtags.areas_relid(k_area,1)+relid_cwetf_max;
+					connways_eqtags_filt.areas_isinner				= connways_eqtags.areas_isinner(k_area,1);
+					connways_eqtags_filt.areas_relid					= connways_eqtags.areas_relid(k_area,1);
 				else
 					connways_eqtags_filt.areas(end+1,1)				= connways_eqtags.areas(k_area,1);
 					connways_eqtags_filt.areas_isouter(end+1,1)	= connways_eqtags.areas_isouter(k_area,1);
-					connways_eqtags_filt.areas_relid(end+1,1)		= connways_eqtags.areas_relid(k_area,1)+relid_cwetf_max;
+					connways_eqtags_filt.areas_isinner(end+1,1)	= connways_eqtags.areas_isinner(k_area,1);
+					connways_eqtags_filt.areas_relid(end+1,1)		= connways_eqtags.areas_relid(k_area,1);
 				end
 			end
 		end

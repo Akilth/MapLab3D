@@ -56,7 +56,7 @@ try
 	w_max	= 0;
 	h_max	= 0;
 	for chstno=1:size(PP.charstyle,1)
-		% upper and lower case:
+		% Upper and lower case:
 		switch PP.charstyle(chstno,1).upperlowercase
 			case 'upper'
 				sampletext	= upper(SETTINGS.charstyle_sampletext);

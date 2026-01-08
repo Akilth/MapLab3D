@@ -70,7 +70,7 @@ else
 		'LevelList',zmajor_v,'PickableParts','none','HitTest','off');
 end
 % GV_H.poly_contour{1,1}.LineColor			= 'c';
-GV_H.poly_contour{1,1}.ButtonDownFcn	= @ButtonDownFcn_ax_2dmap;
+GV_H.poly_contour{1,1}.ButtonDownFcn	= GV.ax_2dmap_ButtonDownFcd;
 GV.contour_stepsize(1,1)					= dz_major;
 checked											= 'on';
 
@@ -105,7 +105,7 @@ if APP.View_ShowContourLines_Minor_Menu.Checked
 	GV_H.poly_contour{1,1}.LineWidth			= 2;
 	GV_H.poly_contour{2,1}.LineWidth			= 0.5;
 	% 	GV_H.poly_contour{2,1}.LineColor			= 'c';
-	GV_H.poly_contour{2,1}.ButtonDownFcn	= @ButtonDownFcn_ax_2dmap;
+	GV_H.poly_contour{2,1}.ButtonDownFcn	= GV.ax_2dmap_ButtonDownFcd;
 	GV.contour_stepsize(2,1)					= dz_minor;
 end
 

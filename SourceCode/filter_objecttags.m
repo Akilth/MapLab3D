@@ -58,9 +58,9 @@ function [object_eqtags,itable_object_eqtags]	= filter_objecttags(iobj,i_table_p
 global PP GV OSMDATA_TABLE WAITBAR GV_H
 
 try
-
+	
 	testout	 = 0;
-
+	
 	% Maximum number of tags in OSMDATA_TABLE:
 	no_tags_table	= 0;
 	for i1=1:length(OSMDATA_TABLE.Properties.VariableNames)
@@ -71,7 +71,7 @@ try
 			end
 		end
 	end
-
+	
 	% Keys and values fields in OSMDATA_TABLE with data:
 	itagtable_v		= zeros(0,1);
 	varname_key_c	= cell(0,1);
@@ -89,7 +89,7 @@ try
 			end
 		end
 	end
-
+	
 	% Search the table OSMDATA_TABLE for the keys given in PP.obj(iobj,1).filter_by_key.incltagkey:
 	object_eqtags			= cell(0,1);
 	itable_object_eqtags	= cell(0,1);
@@ -151,19 +151,22 @@ try
 		end
 	end
 	
-	% Add remaining indices in i_table_plot to the output variables:
-	i_table_plot_rest		= i_table_plot;
-	for i1=1:size(itable_object_eqtags,1)
-		for i2=1:size(itable_object_eqtags{i1,1},1)
-			i_table_plot_rest(itable_object_eqtags{i1,1}(i2,1)==i_table_plot_rest)	= 0;
-		end
-	end
-	i_table_plot_rest					= i_table_plot_rest(i_table_plot_rest~=0);
-	if ~isempty(i_table_plot_rest)
-		object_eqtags{end+1,1}		= '';
-		itable_object_eqtags{end+1,1}	= i_table_plot_rest;
-	end
-
+	% Add remaining indices in i_table_plot to the output variables: This has been disabled.
+	% It should be possible to create only objects with defined include tags (for example, only objects with a name).
+	% If all objects are to be displayed, all keys in PP.obj.tag_incl.k must also be specified in 
+	% PP.obj.filter_by_key.incltagkey.
+	% % % i_table_plot_rest		= i_table_plot;
+	% % % for i1=1:size(itable_object_eqtags,1)
+	% % % 	for i2=1:size(itable_object_eqtags{i1,1},1)
+	% % % 		i_table_plot_rest(itable_object_eqtags{i1,1}(i2,1)==i_table_plot_rest)	= 0;
+	% % % 	end
+	% % % end
+	% % % i_table_plot_rest					= i_table_plot_rest(i_table_plot_rest~=0);
+	% % % if ~isempty(i_table_plot_rest)
+	% % % 	object_eqtags{end+1,1}		= '';
+	% % % 	itable_object_eqtags{end+1,1}	= i_table_plot_rest;
+	% % % end
+	
 	% Test : output
 	if testout~=0
 		for i1=1:size(object_eqtags,1)
@@ -174,7 +177,7 @@ try
 				object_eqtags{i1,1});
 		end
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

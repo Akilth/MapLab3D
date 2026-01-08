@@ -19,7 +19,7 @@ function [poly_bgd,poly_obj]=text2poly(...
 % For test purposes the function can be called without arguments.
 
 try
-
+	
 	% Initializations, testdata:
 	if nargin<1
 		testplot				= 1;
@@ -68,7 +68,7 @@ try
 		text_namevalue{end+1,1}	= 'Margin';									% Space around text within the text box
 		text_namevalue{end+1,1}									= 3;			% >=1, default: 3
 	end
-
+	
 	% Create figure:
 	rand_screen_pixel	= 10;		% Distance of the figure to the edge of the screen
 	% Width and height of figure (w_f, h_f) and axis (w_a, h_a) in pixels:
@@ -87,7 +87,7 @@ try
 		w_f,...												% width
 		h_f];													% height
 	set(hf,'Position',f_pos);
-
+	
 	% Create text:
 	ha			= axes;
 	set(ha,'XLim',[-0.5 0.5]);
@@ -96,7 +96,6 @@ try
 	set(ha,'Position',[0 0 1 1]);		% [left bottom width height]
 	ht			= text(ha,0,0,text_str);
 	set(ht,'FontUnits','centimeters');
-	set(ht,'FontSize',fontsize_cm);
 	set(ht,'Interpreter','none');
 	set(ht,'Color','c');
 	set(ht,'Clipping','off');
@@ -105,7 +104,8 @@ try
 			set(ht,text_namevalue{i},text_namevalue{i+1});
 		end
 	end
-
+	set(ht,'FontSize',fontsize_cm);
+	
 	% Crop the figure on the text box so that the print command does not take so long:
 	set(ht,'Units','pixels');
 	text_position	= get(ht,'Position');
@@ -125,7 +125,7 @@ try
 	set(ht,'Position',[0 0]);
 	set(ht,'Units','normalized');
 	obj_extent		= get(ht,'Extent');
-
+	
 	% Further settings for the printout:
 	set(hf,'Units','inches');
 	hf_position_inches	= get(hf,'Position');
@@ -142,7 +142,7 @@ try
 	set(ha,'YColor'           ,'none');
 	set(ha,'Clipping'         ,'off');
 	set(ha,'Color',[1 1 1]);
-
+	
 	% Create bitmap:
 	% RGB:		Color of the pixels:						black	white	red	green	blue	yllw	mag	cyan
 	%				red:		obj_image_rgb(x,y,1) =		0		255	255	0		0		255	255	0
@@ -153,23 +153,25 @@ try
 	% Objekts in obj_image:			0 or black
 	% Background in obj_image:		1 or white
 	print_res_str	= sprintf('-r%1.0f',print_res);		% e. g. '-r300'
+	drawnow;												% Sometimes the font size is too large, and the reason is unknown: Test
 	obj_image_rgb	= print(hf,'-RGBImage',print_res_str);
+	drawnow;												% Sometimes the font size is too large, and the reason is unknown: Test
 	obj_image		= imbinarize(obj_image_rgb(:,:,1),graythresh(obj_image_rgb(:,:,1)));
 	set(hf,'Units','centimeters');
 	hf_position_centimeters	= get(hf,'Position');
 	height_image_mm			= hf_position_centimeters(4)*10;
-
+	
 	% Convert the bitmap into a polygon:
 	[poly_bgd,poly_obj]=image2poly(...
 		obj_image,height_image_mm,rotation,obj_extent,no_frame,par_frame,no_bgd,par_bgd,testplot);
-
+	
 	% Translate polygons to the given position:
 	poly_bgd	= translate(poly_bgd,x,y);
 	poly_obj	= translate(poly_obj,x,y);
-
+	
 	% Close the figure:
 	close(hf);
-
+	
 catch ME
 	errormessage('',ME);
 end

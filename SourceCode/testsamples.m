@@ -8,6 +8,7 @@ function testsamples(...
 %				testsample_no=1:		Color samples
 %				testsample_no=2:		Text samples
 %				testsample_no=3:		Symbol samples
+%				testsample_no=4:		Character style samples
 
 global PP GV GV_H VER WAITBAR SY
 
@@ -23,7 +24,8 @@ try
 	% For testing:
 	if nargin==0
 		% 30 Diamond Painting cup coaster
-		testsample_no		= 30;
+		% 31 Cross-stitch fabric clamp
+		testsample_no		= 31;
 		projectdirectory	= 'C:\Daten\Projekte\MapLab3D_Daten\Projects\temp\';
 	end
 	
@@ -879,9 +881,9 @@ try
 			ylim_sym_v		= zeros(length(symb_no_v),2);
 			ylim_txt_v		= zeros(length(symb_no_v),2);
 			xlim_txt_v		= zeros(length(symb_no_v),2);
-			fontsize_mm		= PP_ts.testsample.symbolsample.fontsize;
+			fontsize_mm		= PP_ts.testsample.symbolsample.legend_fontsize;
 			print_res		= PP_ts.testsample.symbolsample.print_res;
-			letterheight	= PP_ts.testsample.symbolsample.letterheight;
+			letterheight	= PP_ts.testsample.symbolsample.legend_letterheight;
 			for ksym=1:length(symb_no_v)
 				symb_no		= symb_no_v(ksym);
 				if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
@@ -890,6 +892,7 @@ try
 						msg,ksym,length(symb_no_v)));
 					drawnow;
 				end
+				
 				% Get sybmols and scale-up:
 				poly_bgd_v(ksym,1)				= SY(symb_no,1).poly_bgd;
 				poly_sym_v(ksym,1)				= SY(symb_no,1).poly_sym;
@@ -897,10 +900,11 @@ try
 					poly_bgd_v(ksym,1)			= scale(poly_bgd_v(ksym,1),scaleup_factor);
 					poly_sym_v(ksym,1)			= scale(poly_sym_v(ksym,1),scaleup_factor);
 				end
+				
 				% Get texts (symbol numbers):
 				text_namevalue		= {...
-					'FontName'           ;PP_ts.testsample.symbolsample.fontname;...		% 'Arial', ...
-					'FontWeight'         ;PP_ts.testsample.symbolsample.fontweight;...	% 'normal', 'bold'
+					'FontName'           ;PP_ts.testsample.symbolsample.legend_fontname;...		% 'Arial', ...
+					'FontWeight'         ;PP_ts.testsample.symbolsample.legend_fontweight;...	% 'normal', 'bold'
 					'HorizontalAlignment';'right';...		% 'left' (default) | 'center' | 'right'
 					'VerticalAlignment'  ;'middle';...;		% 'middle' (default) | 'top' | 'bottom' | 'baseline' | 'cap'
 					'Interpreter'        ;'none'};
@@ -916,10 +920,11 @@ try
 					1,...										% number: background polygon (methods see image2poly.m)
 					{},...									% cell array of parameters to create the background polygon
 					text_namevalue);						% cell array of additional name/value-pairs of text properties
-				if PP_ts.testsample.symbolsample.fontwidening~=0
-					fontwidening	= max(0,PP_ts.testsample.symbolsample.fontwidening);
+				if PP_ts.testsample.symbolsample.legend_fontwidening~=0
+					fontwidening	= max(0,PP_ts.testsample.symbolsample.legend_fontwidening);
 					poly_txt_v(ksym,1)			= polybuffer(poly_txt_v(ksym,1),fontwidening/2,'JointType','miter');
 				end
+				
 				% Row and column widths of texts and symbols:
 				[xlim_bgd_v(ksym,:),ylim_bgd_v(ksym,:)]	= boundingbox(poly_bgd_v(ksym,1));
 				[xlim_sym_v(ksym,:),ylim_sym_v(ksym,:)]	= boundingbox(poly_sym_v(ksym,1));
@@ -931,6 +936,7 @@ try
 					max(ylim_bgd_v(ksym,2),ylim_sym_v(ksym,2))-...
 					min(ylim_bgd_v(ksym,1),ylim_sym_v(ksym,1))    );
 				hsyte_v(ksym,1)									= max(hsyte_v(ksym,1),diff(ylim_txt_v(ksym,:)));
+				
 			end
 			
 			% Waitbar
@@ -1019,6 +1025,243 @@ try
 			symb_no_str(strfind(symb_no_str,'.'))						= 'p';
 			scaleup_factor_str(strfind(scaleup_factor_str,'.'))	= 'p';
 			filename	= sprintf('SySa - No %s - SF %s',symb_no_str,scaleup_factor_str);
+			
+			
+		case 4
+			% Character style sample:
+			
+			% Prompt for the character style numbers to be printed:
+			GV_H.create_charstylesample_getuserinput	= [];
+			create_charstylesample_getuserinput;
+			% Polling:
+			pause(0.1);
+			while isempty(GV_H.create_charstylesample_getuserinput)
+				pause(0.1);
+			end
+			while isvalid(GV_H.create_charstylesample_getuserinput)
+				pause(0.1);
+			end
+			if ~GV.create_charstylesamp.input_ok
+				display_on_gui('state',...
+					sprintf('Creating test sample ... canceled (%s).',dt_string(etime(clock,t_start_statebusy))),...
+					'notbusy','replace');
+				set(GV_H.patch_waitbar,'XData',[0 0 0 0]);
+				set(GV_H.text_waitbar,'String','');
+				return
+			end
+			chst_no_v			= GV.create_charstylesamp.CharStyles_ListBox.ValueIndex;
+			dz_symbol			= GV.create_charstylesamp.LiftingForeground_EditField.Value;
+			dz_bgd				= GV.create_charstylesamp.LiftingBackground_EditField.Value;
+			distmargintext		= GV.create_charstylesamp.DistanceMarginText_EditField.Value;
+			height_mm			= GV.create_charstylesamp.TotalTextHeight_EditField.Value-max(dz_symbol,dz_bgd);
+			
+			% Collect all texts (character style numbers) and sampletexts:
+			poly_bgd_v		= polyshape();
+			poly_sat_v		= polyshape();
+			poly_txt_v		= polyshape();
+			wsat_v			= zeros(length(chst_no_v),1);
+			hsat_v			= zeros(length(chst_no_v),1);
+			xlim_bgd_v		= zeros(length(chst_no_v),2);
+			ylim_bgd_v		= zeros(length(chst_no_v),2);
+			xlim_sat_v		= zeros(length(chst_no_v),2);
+			ylim_sat_v		= zeros(length(chst_no_v),2);
+			ylim_txt_v		= zeros(length(chst_no_v),2);
+			xlim_txt_v		= zeros(length(chst_no_v),2);
+			fontsize_mm		= PP_ts.testsample.charstylesample.legend_fontsize;
+			print_res		= PP_ts.testsample.charstylesample.print_res;
+			letterheight	= PP_ts.testsample.charstylesample.legend_letterheight;
+			for kchst=1:length(chst_no_v)
+				chstno		= chst_no_v(kchst);
+				if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+					WAITBAR.t1	= clock;
+					set(GV_H.text_waitbar,'String',sprintf('%s: convert texts to polygons %g/%g',...
+						msg,kchst,length(chst_no_v)));
+					drawnow;
+				end
+				
+				% Get sampletexts:
+				% Upper and lower case:
+				switch PP.charstyle(chstno,1).upperlowercase
+					case 'upper'
+						sampletext	= upper(GV.create_charstylesamp.SampleText_EditField.Value);
+					case 'lower'
+						sampletext	= lower(GV.create_charstylesamp.SampleText_EditField.Value);
+					otherwise
+						sampletext	= GV.create_charstylesamp.SampleText_EditField.Value;
+				end
+				% Character spacing:
+				character_spacing	= max(0,round(PP.charstyle(chstno,1).character_spacing));
+				if character_spacing>0
+					text_str	= sampletext;
+					kmax		= length(text_str);
+					if kmax>=2
+						k	= 1:kmax;
+						k1	= (character_spacing+1)*k-character_spacing;
+						sampletext		= blanks(k1(end));
+						sampletext(k1)	= text_str;
+					end
+				end
+				% Other settings:
+				text_namevalue		= {...
+					'FontName'           ;PP.charstyle(chstno,1).fontname;...
+					'FontWeight'         ;PP.charstyle(chstno,1).fontweight;...
+					'FontAngle'          ;PP.charstyle(chstno,1).fontangle;...
+					'HorizontalAlignment';'left';...										% left, center, right
+					'VerticalAlignment'  ;'middle';...									% middle, top, bottom, baseline, cap
+					'Interpreter'        ;'none'};
+				% Convert to polygons:
+				[  poly_bgd_v(kchst,1),...								% poly_bgd
+					poly_sat_v(kchst,1)...								% poly_obj
+					]=text2poly(...
+					0,...														% x
+					0,...														% y
+					sampletext,...											% text_str
+					PP.charstyle(chstno,1).fontsize/10,...			% fontsize_cm
+					0,...														% rotation
+					PP.charstyle(chstno,1).print_res,...			% print_res
+					PP.charstyle(chstno,1).no_frame,...				% no_frame
+					PP.charstyle(chstno,1).par_frame,...			% par_frame
+					PP.charstyle(chstno,1).no_bgd,...				% no_bgd
+					PP.charstyle(chstno,1).par_bgd,...				% par_bgd
+					text_namevalue);										% text_namevalue
+				% Font widening:
+				if PP.charstyle(chstno,1).fontwidening~=0
+					fontwidening			= max(0,PP.charstyle(chstno,1).fontwidening);
+					poly_sat_v(kchst,1)	= polybuffer(poly_sat_v(kchst,1),fontwidening/2,'JointType','miter');
+					poly_bgd_v(kchst,1)	= union(poly_bgd_v(kchst,1),poly_sat_v(kchst,1));
+				end
+				% The text foreground must be inside the text background (less problems in map2stl.m):
+				poly_bgd_buff	= polybuffer(poly_bgd_v(kchst,1),-GV.d_forebackgrd_plotobj,'JointType','miter','MiterLimit',2);
+				poly_sat_v(kchst,1)	= intersect(poly_sat_v(kchst,1),poly_bgd_buff,'KeepCollinearPoints',false);
+				
+				% Get character style numbers:
+				text_namevalue		= {...
+					'FontName'           ;PP_ts.testsample.charstylesample.legend_fontname;...		% 'Arial', ...
+					'FontWeight'         ;PP_ts.testsample.charstylesample.legend_fontweight;...	% 'normal', 'bold'
+					'HorizontalAlignment';'right';...		% 'left' (default) | 'center' | 'right'
+					'VerticalAlignment'  ;'middle';...;		% 'middle' (default) | 'top' | 'bottom' | 'baseline' | 'cap'
+					'Interpreter'        ;'none'};
+				[~,poly_txt_v(kchst,1)]=text2poly(...
+					0,...										% data point x where to place the text / mm
+					0,...										% data point y where to place the text / mm
+					num2str(chstno),...					% text string to convert
+					fontsize_mm/10,...					% fontsize / cm
+					0,...										% rotation / degrees
+					print_res,...							% print resolution / dpi
+					1,...										% number: frame around the objects (methods see image2poly.m)
+					{},...									% cell array of parameters to create the frame around the object
+					1,...										% number: background polygon (methods see image2poly.m)
+					{},...									% cell array of parameters to create the background polygon
+					text_namevalue);						% cell array of additional name/value-pairs of text properties
+				if PP_ts.testsample.charstylesample.legend_fontwidening~=0
+					fontwidening	= max(0,PP_ts.testsample.charstylesample.legend_fontwidening);
+					poly_txt_v(kchst,1)			= polybuffer(poly_txt_v(kchst,1),fontwidening/2,'JointType','miter');
+				end
+				
+				% Row and column widths of character style numbers and sampletexts:
+				[xlim_bgd_v(kchst,:),ylim_bgd_v(kchst,:)]	= boundingbox(poly_bgd_v(kchst,1));
+				[xlim_sat_v(kchst,:),ylim_sat_v(kchst,:)]	= boundingbox(poly_sat_v(kchst,1));
+				[xlim_txt_v(kchst,:),ylim_txt_v(kchst,:)]	= boundingbox(poly_txt_v(kchst,1));
+				wsat_v(kchst,1)									= ...
+					max(xlim_bgd_v(kchst,2),xlim_sat_v(kchst,2))-...
+					min(xlim_bgd_v(kchst,1),xlim_sat_v(kchst,1));
+				hsat_v(kchst,1)									= ...
+					max(ylim_bgd_v(kchst,2),ylim_sat_v(kchst,2))-...
+					min(ylim_bgd_v(kchst,1),ylim_sat_v(kchst,1));
+				hsat_v(kchst,1)									= max(hsat_v(kchst,1),diff(ylim_txt_v(kchst,:)));
+				
+			end
+			
+			% Waitbar
+			set(GV_H.text_waitbar,'String',sprintf('%s: create STL files',msg));
+			drawnow;
+			
+			% Combine the texts and symbols:
+			poly_bgd				= polyshape();
+			poly_sat				= polyshape();
+			poly_txt				= polyshape();
+			poly_boundary		= polyshape();
+			y_txtsat				= -hsat_v(1,1)/2;
+			xmin_boundary_mm	= 1e10;
+			for kchst=1:length(chst_no_v)
+				% Left-Alignement of the sampletext:
+				x_tr					= -min(xlim_bgd_v(kchst,1),xlim_sat_v(kchst,1));
+				y_tr					= -(min(ylim_bgd_v(kchst,1),ylim_sat_v(kchst,1))+max(ylim_bgd_v(kchst,2),ylim_sat_v(kchst,2)))/2;
+				poly_bgd_v(kchst,1) = translate(poly_bgd_v(kchst,1),x_tr+distmargintext,y_tr+y_txtsat);
+				poly_sat_v(kchst,1) = translate(poly_sat_v(kchst,1),x_tr+distmargintext,y_tr+y_txtsat);
+				% Right-Alignement of the text:
+				x_tr					= -xlim_txt_v(kchst,2);
+				y_tr					= -(ylim_txt_v(kchst,1)+ylim_txt_v(kchst,2))/2;
+				poly_txt_v(kchst,1) = translate(poly_txt_v(kchst,1),x_tr,y_tr+y_txtsat);
+				% Combine all polygons:
+				poly_bgd				= union(poly_bgd,poly_bgd_v(kchst,1));
+				poly_sat				= union(poly_sat,poly_sat_v(kchst,1));
+				poly_txt				= union(poly_txt,poly_txt_v(kchst,1));
+				% Next line:
+				if kchst<length(chst_no_v)
+					y_txtsat			= y_txtsat-hsat_v(kchst,1)/2-distmargintext-hsat_v(kchst+1,1)/2;
+				end
+				% Boundary:
+				[xlim,~]			= boundingbox(poly_txt_v(kchst,1));
+				xmin_boundary_mm	= min(xmin_boundary_mm,xlim(1)-distmargintext);
+			end
+			
+			% Boundary:
+			for kchst=1:length(chst_no_v)
+				poly_all			= union(poly_bgd_v(kchst,1),poly_sat_v(kchst,1));
+				poly_all			= union(poly_all,poly_txt_v(kchst,1));
+				[xlim,ylim]		= boundingbox(poly_all);
+				xmin_mm			= xmin_boundary_mm;		% xlim(1)-distmargintext
+				xmax_mm			= xlim(2)+distmargintext;
+				ymin_mm			= ylim(1)-distmargintext;
+				ymax_mm			= ylim(2)+distmargintext;
+				poly_boundary	= union(poly_boundary,polyshape(...
+					[xmin_mm xmax_mm xmax_mm xmin_mm],...
+					[ymin_mm ymin_mm ymax_mm ymax_mm]));
+			end
+			
+			% Plot boundary:
+			ud_tile.tile_no	= 0;
+			plot(ha_map,poly_boundary,'EdgeColor','k','FaceAlpha',0,'UserData',ud_tile);
+			
+			% Plot background:
+			ud_obj.color_no	= 0;
+			ud_obj.dz			= dz_bgd;
+			ud_obj.prio			= 5001;
+			ud_obj.surftype	= 400;
+			plot(ha_map,poly_bgd,'EdgeColor','k','UserData',ud_obj,...
+				'EdgeAlpha',GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha);
+			plot(ha_map,poly_bgd.Vertices(:,1),poly_bgd.Vertices(:,2),'Color','k','LineStyle','none','Marker','.');
+			
+			% Plot symbols:
+			ud_obj.color_no	= 0;
+			ud_obj.dz			= dz_symbol;
+			ud_obj.prio			= 5002;
+			ud_obj.surftype	= 402;
+			plot(ha_map,poly_sat,'EdgeColor','k','UserData',ud_obj,...
+				'EdgeAlpha',GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha);
+			plot(ha_map,poly_sat.Vertices(:,1),poly_sat.Vertices(:,2),'Color','k','LineStyle','none','Marker','.');
+			
+			% Plot texts (symbol numbers):
+			ud_obj.color_no	= 0;
+			ud_obj.dz			= letterheight;
+			ud_obj.prio			= 5003;
+			ud_obj.surftype	= 402;
+			plot(ha_map,poly_txt,'EdgeColor','k','UserData',ud_obj,...
+				'EdgeAlpha',GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha);
+			plot(ha_map,poly_txt.Vertices(:,1),poly_txt.Vertices(:,2),'Color','k','LineStyle','none','Marker','.');
+			
+			% Filename:
+			if isscalar(chst_no_v)
+				symb_no_str				= sprintf('%g',chst_no_v);
+			else
+				symb_no_str				= sprintf('%g-%g',min(chst_no_v),max(chst_no_v));
+			end
+			symb_no_str(strfind(symb_no_str,'.'))						= 'p';
+			filename	= sprintf('ChStSa - No %s',symb_no_str);
 			
 			
 			%------------------------------------------------------------------------------------------------------------
@@ -1574,7 +1817,7 @@ try
 			h_innergrid			= 0.6;		% inner height
 			h_innerlevel		= 1.0;		% inner height
 			w_margin				= 2;			% width margin
-			d						= 93.0;			% outer diameter		93: 933 pixel  /  
+			d						= 93.0;			% outer diameter		93: 933 pixel  /
 			%	di+w_margin		pixel
 			%	92.4				917
 			%	92.5				917
@@ -1638,6 +1881,7 @@ try
 			% Plot boundary:
 			ud_tile.tile_no	= 0;
 			poly_boundary		= poly_margin_outer;
+			plot(ha_map,poly_boundary,'EdgeColor','k','FaceAlpha',0,'UserData',ud_tile);
 			% Plot inner level:
 			ud_obj.color_no	= 0;
 			ud_obj.dz			= -(height_mm-h_innerlevel);
@@ -1646,7 +1890,6 @@ try
 			plot(ha_map,poly_margin_outer,'LineWidth',0.5,'EdgeColor','k','UserData',ud_obj,...
 				'EdgeAlpha',GV.visibility.show.edgealpha,...
 				'FaceAlpha',GV.visibility.show.facealpha);
-			plot(ha_map,poly_boundary,'EdgeColor','k','FaceAlpha',0,'UserData',ud_tile);
 			% Plot grid:
 			ud_obj.color_no	= 0;
 			ud_obj.dz			= -(height_mm-h_innergrid);
@@ -1683,10 +1926,115 @@ try
 			height		= ymax_mm-ymin_mm
 			
 			
+			%------------------------------------------------------------------------------------------------------------
+		case 31
+			% Cross-stitch fabric clamp
+			muster	= 4;
+			switch muster
+				case 1
+					height_mm			= 30;			% clamp height / mm
+					ds						= 0.5;		% distance of vertices / mm
+					alpha_deg			= 250;		% angle / degrees						250		/ 260 / 270
+					w						= 2.0;		% material width / mm				>=2.0 bei d_circle_slots=0.9 und 2 Perimeter
+					d_handles			= 3;			% diameter of the handles / mm
+					d_inner				= 20;		% inner diameter / mm					20.5		/ 19.5 / 20
+					d_circle_slots		= 0.9;
+				case 2
+					height_mm			= 30;			% clamp height / mm
+					ds						= 0.5;		% distance of vertices / mm
+					alpha_deg			= 250;		% angle / degrees						250		/ 260 / 270
+					w						= 2.0;		% material width / mm				>=2.0 bei d_circle_slots=0.9 und 2 Perimeter
+					d_handles			= 3;			% diameter of the handles / mm
+					d_inner				= 19.2;		% inner diameter / mm					20.5		/ 19.5 / 20
+					d_circle_slots		= 0.9;
+				case 3
+					height_mm			= 100;		% clamp height / mm
+					ds						= 0.5;		% distance of vertices / mm
+					alpha_deg			= 250;		% angle / degrees						250		/ 260 / 270
+					w						= 2.0;		% material width / mm				>=2.0 bei d_circle_slots=0.9 und 2 Perimeter
+					d_handles			= 3;			% diameter of the handles / mm
+					d_inner				= 19.5;		% inner diameter / mm					20.5		/ 19.5 / 20
+					d_circle_slots		= 0.9;
+				case 4									% gedruckt: 21St*75mm und 6St*40mm		!!!!!!!!!! VERWENDET !!!!!!!!!!
+					height_mm			= 40;			% clamp height / mm
+					ds						= 0.5;		% distance of vertices / mm
+					alpha_deg			= 250;		% angle / degrees						250		/ 260 / 270
+					w						= 2.0;		% material width / mm				>=2.0 bei d_circle_slots=0.9 und 2 Perimeter
+					d_handles			= 3;			% diameter of the handles / mm
+					d_inner				= 19.5;		% inner diameter / mm					20.5		/ 19.5 / 20
+					d_circle_slots		= 0.9;
+			end
+			
+			alpha					= alpha_deg*pi/180;
+			
+			dphi1					= ds/(d_inner+2*w)*2;			% ds=r*dphi1=(d_inner+2*w)/2*dphi1
+			n1_vertices			= ceil(alpha/dphi1);
+			dphi1					= alpha/n1_vertices;
+			phi1_start			= (2*pi-alpha)/2;
+			phi1_v				= (phi1_start:dphi1:(2*pi-phi1_start))';
+			poly1_c				= [d_inner/2*exp(1i*phi1_v);(d_inner+2*w)/2*exp(1i*phi1_v(end:-1:1))];
+			poly1					= polyshape(real(poly1_c),imag(poly1_c));
+			
+			ds2					= ds/2;
+			dphi2					= ds2/d_handles*2;			% ds2=r*dphi2=d_handles/2*dphi2
+			n2_vertices			= ceil(2*pi/dphi2);
+			dphi2					= 2*pi/n2_vertices;
+			phi2_v				= (0:dphi2:(2*pi))';
+			poly2_c				= d_handles/2*exp(1i*phi2_v);
+			poly2a_c				= poly2_c+(d_inner+d_handles)/2*exp(1i*phi1_start);
+			poly2a				= polyshape(real(poly2a_c),imag(poly2a_c));
+			poly2b_c				= poly2_c+(d_inner+d_handles)/2*exp(-1i*phi1_start);
+			poly2b				= polyshape(real(poly2b_c),imag(poly2b_c));
+			
+			poly_margin			= poly1;
+			poly_margin			= union(poly_margin,poly2a);
+			poly_margin			= union(poly_margin,poly2b);
+			
+			dist_slots			= 2*d_circle_slots;
+			
+			circle0_c			= d_circle_slots/2*exp(1i*(0:15:360)*pi/180)';
+			dphi					= dist_slots/d_inner*2;
+			phi					= pi+dphi;
+			while phi>(pi-alpha/2)
+				phi				= phi-dphi;
+				circle_c			= circle0_c+d_inner/2*exp(1i*phi);
+				circle_poly		= polyshape(real(circle_c),imag(circle_c));
+				poly_margin		= subtract(poly_margin,circle_poly);
+				circle_c			= circle0_c+d_inner/2*exp(-1i*phi);
+				circle_poly		= polyshape(real(circle_c),imag(circle_c));
+				poly_margin		= subtract(poly_margin,circle_poly);
+			end
 			
 			
+			% Plot boundary:
+			ud_tile.tile_no	= 0;
+			poly_boundary		= poly_margin;
+			plot(ha_map,poly_boundary,'EdgeColor','k','FaceAlpha',0,'UserData',ud_tile);
 			
+			% Plot margin:
+			ud_obj.color_no	= 0;
+			ud_obj.dz			= 0;
+			ud_obj.prio			= 5000;
+			ud_obj.surftype	= 200;
+			plot(ha_map,poly_margin,'LineWidth',0.5,'EdgeColor','k','UserData',ud_obj,...
+				'EdgeAlpha',GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha);
 			
+			% File name:
+			filename	= sprintf('CrossStitchFabricClamp_v%g',muster);
+			% filename	= sprintf('CrossStitchFabricClamp_H%g_A%g_W%g_DI%g_DH%g_DSL%g',...
+			% 	1000*height_mm,...			% clamp height / µm
+			% 	alpha_deg,...					% angle / degrees
+			% 	1000*w,...						% material width / µm
+			% 	1000*d_inner,...				% inner diameter / µm
+			% 	1000*d_handles,...				% diameter of the handles / µm
+			% 	1000*d_circle_slots);			%
+			
+			[xlim,ylim] = boundingbox(poly_margin);
+			xmin_mm		= xlim(1,1);
+			xmax_mm		= xlim(1,2);
+			ymin_mm		= ylim(1,1);
+			ymax_mm		= ylim(1,2);
 			
 			
 		otherwise

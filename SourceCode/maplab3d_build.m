@@ -18,6 +18,7 @@ packageOpts	= [];
 %		-	project.filename			MP1
 %		-	project.scale				100.000
 % -	Reset Columns DATASET_2 (My Project 1) and DATASET_3 (My Project 2)
+% -	Hide rows with Excel formulas
 
 % Set current version number in:
 % -	MapLab3D_ProjectParameters_x_x_x_x.xlsx						and

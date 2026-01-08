@@ -36,7 +36,7 @@ function zq=...				% elevation z at the query points
 % z_topside_legbgd	legend background z-value
 % poly_legbgd			legend background polygon
 % method					interpolation method: 'interp2', 'griddata'
-% use_scint)			Use scatteredInterpolant objects:
+% use_scint 			Use scatteredInterpolant objects:
 %							true		Use  ele.elecolor(colno,1).elepoly(ip,1).elescint if not empty (default)
 %							false		Skip ele.elecolor(colno,1).elepoly(ip,1).elescint
 %										Necessary to calculate the minimum z-value of the terrain for such objects.

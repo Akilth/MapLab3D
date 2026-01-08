@@ -129,6 +129,7 @@ function imapobj_new_v=plot_modify(action,imapobj_v,par1,par2,par3,par4,par5)
 %					change_liwi						Change line width (only if PP.obj(iobj).linestyle==3).
 %														Syntax:							plot_modify('change_liwi',imapobj)
 %					change_description			Change description
+%					change_texttag					Change text/tag
 %					enter_circle					Enter the data and draw a circle.
 %					enter_rectangle				Enter the data and draw a rectangle.
 %					textfile							Save and load map object boundaries
@@ -151,17 +152,17 @@ global MAP_OBJECTS MAP_OBJECTS_TABLE GV GV_H OSMDATA APP PP SETTINGS
 % Because this function can be called directly by the user through a callback,
 % a try/catch statement must be used here:
 try
-
+	
 	if isempty(MAP_OBJECTS)
 		return
 	end
-
+	
 	% Check if the axis GV_H.ax_2dmap exists:
 	% if ~ishandle(GV_H.ax_2dmap)||isempty(MAP_OBJECTS)
 	if ~ishandle(GV_H.ax_2dmap)
 		errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 	end
-
+	
 	if isempty(MAP_OBJECTS)
 		% The map is empty: Allow only commands, that add a new object to the map:
 		if  ~(strcmp(action,'new_line')                       ||...
@@ -173,7 +174,7 @@ try
 			errormessage(sprintf('Error:\nTo use this function the map must not be empty.'));
 		end
 	end
-
+	
 	imapobj_new_v	= [];
 	if nargin>1
 		imapobj0_v	= imapobj_v;
@@ -204,7 +205,7 @@ try
 	else
 		imapobj0_v	= -1;
 	end
-
+	
 	% Display state:
 	stateisbusy	= display_on_gui('state','','isbusy');
 	% For certain actions, the status does not need to be set to busy if these actions do not require
@@ -222,7 +223,7 @@ try
 		% t_start_statebusy	= clock;
 		display_on_gui('state','','busy');
 	end
-
+	
 	% Waitbar:
 	waitbar_t1			= clock;
 	if nargin==1
@@ -249,12 +250,12 @@ try
 			end
 		end
 	end
-
+	
 	switch action
-
+		
 		%------------------------------------------------------------------------------------------------------------
 		case 'move'
-
+			
 			dx		= par1;
 			dy		= par2;
 			for k=1:length(imapobj_v)
@@ -287,13 +288,13 @@ try
 			% Changing .Shape, .XData, .YData, .mod, .x or .y does not require updating the table!
 			% Update MAP_OBJECTS_TABLE:
 			% display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'rotate'
-
+			
 			rot		= par1;
-
+			
 			% Rotate objects:
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
@@ -344,15 +345,15 @@ try
 					MAP_OBJECTS(imapobj,1).h(i,1).UserData.rotation		= rotation_new;
 				end
 			end
-
+			
 			% Changing .Shape, .XData, .YData, .mod, .x or .y does not require updating the table!
 			% Update MAP_OBJECTS_TABLE:
 			% display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'reset'
-
+			
 			% User confirmation:
 			if isequal(imapobj0_v,-1)
 				answer	= [];
@@ -367,7 +368,7 @@ try
 					return
 				end
 			end
-
+			
 			% Reset:
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
@@ -419,14 +420,14 @@ try
 				MAP_OBJECTS(imapobj,1).x	= x;
 				MAP_OBJECTS(imapobj,1).y	= y;
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'hide'
-
+			
 			if nargin<3
 				par1	= 1;
 			end
@@ -480,11 +481,11 @@ try
 				% much slower:
 				% display_map_objects(imapobj_v);
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'show'
-
+			
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
 				% Waitbar:
@@ -507,6 +508,17 @@ try
 							MAP_OBJECTS(imapobj,1).h(i,1).FaceAlpha	= GV.visibility.show.facealpha;
 						end
 					end
+					% Display the source data of the selected object, if the object is selected:
+					if MAP_OBJECTS(imapobj,1).h(i,1).Selected
+						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+							% Source plot handles:
+							source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
+							source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
+							k_source		= ishandle(source);
+							% Make the source plots visible:
+							set(source(k_source),'Visible','on');
+						end
+					end
 				end
 			end
 			% Update MAP_OBJECTS_TABLE:
@@ -517,11 +529,11 @@ try
 			end
 			% slower:
 			% display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'gray_out'
-
+			
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
 				% Waitbar:
@@ -560,17 +572,17 @@ try
 			end
 			% slower:
 			% display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'select'
-
+			
 			% if length(imapobj_v)==1
 			%	if strcmp(MAP_OBJECTS(imapobj_v,1).h(1,1).Type,'line')
 			%		APP.Mod_LV_No_EditField.Value	= imapobj_v;
 			%	end
 			% end
-
+			
 			if nargin<3
 				par1	= 1;
 			end
@@ -580,25 +592,27 @@ try
 					if ~MAP_OBJECTS(imapobj,1).h(i,1).Selected
 						% Select the object:
 						MAP_OBJECTS(imapobj,1).h(i,1).Selected	= 'on';
-						% Display the source data of the selected object:
-						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-							% Source plot handles:
-							source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-							source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-							k_source		= ishandle(source);
-							% Make the source plots visible:
-							set(source(k_source),'Visible','on');
+						% Display the source data of the selected object, if the object is visible:
+						if MAP_OBJECTS(imapobj,1).h(i,1).Visible
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+								% Source plot handles:
+								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
+								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
+								k_source		= ishandle(source);
+								% Make the source plots visible:
+								set(source(k_source),'Visible','on');
+							end
 						end
 					end
 				end
 			end
-
+			
 			% Do not update MAP_OBJECTS_TABLE: not necessary!
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'deselect'
-
+			
 			if nargin<3
 				par1	= 1;
 			end
@@ -620,25 +634,25 @@ try
 					end
 				end
 			end
-
+			
 			% Do not update MAP_OBJECTS_TABLE: not necessary!
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'duplicate'
-
+			
 			if ~ishandle(GV_H.ax_2dmap)
 				errormessage(sprintf(['There exists no map where to plot the objects.\n',...
 					'Create the map first.']));
 			end
 			dx		= par1;
 			dy		= par2;
-
+			
 			% Delete legend:
 			if length(imapobj_v)>1
 				legend(GV_H.ax_2dmap,'off');
 			end
-
+			
 			% Delete objects in descending order!
 			imapobj_v	= sort(unique(imapobj_v),'descend');
 			for k=1:length(imapobj_v)
@@ -677,7 +691,7 @@ try
 								'LineStyle',MAP_OBJECTS(imapobj,1).h(i,1).LineStyle,...
 								'LineWidth',MAP_OBJECTS(imapobj,1).h(i,1).LineWidth,...
 								'UserData',ud,...
-								'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+								'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 						case 'line'
 							xy_line		= [MAP_OBJECTS(imapobj,1).h(i,1).XData(:) MAP_OBJECTS(imapobj,1).h(i,1).YData(:)];
 							xy_line		= xy_line+[dx*ones(size(xy_line,1),1) dy*ones(size(xy_line,1),1)];
@@ -694,7 +708,7 @@ try
 								'Marker'    ,MAP_OBJECTS(imapobj,1).h(i,1).Marker,...
 								'MarkerSize',MAP_OBJECTS(imapobj,1).h(i,1).MarkerSize,...
 								'UserData'  ,ud,...
-								'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+								'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					end
 				end
 				% Create/modify legend:
@@ -715,21 +729,21 @@ try
 						imapobj_new);					% position before the arrangement
 				end
 			end
-
+			
 			% Create/modify legend:
 			if length(imapobj_v)>1
 				create_legend_mapfigure;
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE: already executed by arrange_map_objects
 			if ~APP.AutoSortNewMapObjects_Menu.Checked
 				display_map_objects;
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'scale'
-
+			
 			sx		= par1;
 			sy		= par2;
 			for k=1:length(imapobj_v)
@@ -762,11 +776,11 @@ try
 			% Changing .Shape, .XData, .YData, .mod, .x or .y does not require updating the table!
 			% Update MAP_OBJECTS_TABLE:
 			% display_map_objects(imapobj_v);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'delete'
-
+			
 			% User confirmation:
 			if isequal(imapobj0_v,-1)
 				answer	= [];
@@ -781,7 +795,7 @@ try
 					return
 				end
 			end
-
+			
 			% Delete objects in descending order!
 			imapobj_v	= sort(unique(imapobj_v),'descend');
 			for k=1:length(imapobj_v)
@@ -796,7 +810,7 @@ try
 					end
 				end
 				iobj	= MAP_OBJECTS(imapobj).iobj;
-
+				
 				% Delete source data:
 				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 					if ishandle(MAP_OBJECTS(imapobj,1).h(i,1))
@@ -811,7 +825,7 @@ try
 						end
 					end
 				end
-
+				
 				% Check: is there another object on the map with this object number:
 				if iobj>0
 					iobj_remains_element_of_map	= false;
@@ -822,7 +836,7 @@ try
 						end
 					end
 				end
-
+				
 				% Delete:
 				delete(MAP_OBJECTS(imapobj).h);
 				if iobj>0
@@ -833,25 +847,25 @@ try
 					end
 				end
 				MAP_OBJECTS		= MAP_OBJECTS((1:length(MAP_OBJECTS))~=imapobj);
-
+				
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;				% Do not delete, is used by other actions!
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'ungroup'
-
+			
 			% Delete legend:
 			legend(GV_H.ax_2dmap,'off');
-
+			
 			imapobj_delete_v		= [];
 			size_map_objects_0	= size(MAP_OBJECTS,1);
 			for k=1:length(imapobj_v)
 				imapobj						= imapobj_v(k);
 				if size(MAP_OBJECTS(imapobj,1).h,1)>1
-
+					
 					% Sort elements of a group by object priority:
 					prio_hi_v		= [];
 					for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -906,7 +920,7 @@ try
 									'LineStyle',MAP_OBJECTS(imapobj,1).h(i,1).LineStyle,...
 									'LineWidth',MAP_OBJECTS(imapobj,1).h(i,1).LineWidth,...
 									'UserData',ud,...
-									'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+									'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 								% Save relevant data in the structure MAP_OBJECTS:
 								[xcenter,ycenter]						= centroid(MAP_OBJECTS(imapobj,1).h(i,1).Shape);
 								MAP_OBJECTS(imapobj_new,1).disp	= MAP_OBJECTS(imapobj,1).disp;
@@ -938,7 +952,7 @@ try
 									'Marker'    ,MAP_OBJECTS(imapobj,1).h(i,1).Marker,...
 									'MarkerSize',MAP_OBJECTS(imapobj,1).h(i,1).MarkerSize,...
 									'UserData'  ,ud,...
-									'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+									'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 								% Center point:
 								if isscalar(xdata)
 									MAP_OBJECTS(imapobj_new,1).x			= xdata;
@@ -964,20 +978,20 @@ try
 								MAP_OBJECTS(imapobj_new,1).cnuc	= MAP_OBJECTS(imapobj,1).cnuc;
 								MAP_OBJECTS(imapobj_new,1).vis0	= 1*MAP_OBJECTS(imapobj,1).h(i,1).Visible;
 						end
-
+						
 						% Select the ungrouped objects:
 						plot_modify('select',imapobj_new,0);
-
+						
 					end
 				end
 			end
-
+			
 			% Create/modify legend:
 			create_legend_mapfigure;
-
+			
 			% Number of new map objects:
 			no_new_map_objects	= size(MAP_OBJECTS,1)-size_map_objects_0;
-
+			
 			% Delete original polygons:
 			if ~isempty(imapobj_delete_v)
 				% Delete objects (MAP_OBJECTS_TABLE will be updated also):
@@ -986,7 +1000,7 @@ try
 				% Update MAP_OBJECTS_TABLE:
 				display_map_objects;
 			end
-
+			
 			% Arrange the new map objects:
 			if no_new_map_objects>=1
 				% Plot numbers of the new map objects:
@@ -1002,11 +1016,11 @@ try
 					display_map_objects;
 				end
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'group'
-
+			
 			% User confirmation:
 			if isequal(imapobj0_v,-1)
 				answer	= [];
@@ -1043,7 +1057,7 @@ try
 					return
 				end
 			end
-
+			
 			imapobj_delete_v	= [];
 			while ~isempty(imapobj_v)
 				k				= 0;
@@ -1060,14 +1074,14 @@ try
 							drawnow;
 						end
 					end
-
+					
 					% Create a new map object:
 					imapobj_new		= size(MAP_OBJECTS,1)+1;
 					MAP_OBJECTS(imapobj_new,1)			= MAP_OBJECTS(imapobj_v(k),1);
 					if MAP_OBJECTS(imapobj_new,1).iobj<0
 						MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
 					end
-
+					
 					% Add all similar objects to the first one:
 					imapobj_delete_v	= [imapobj_delete_v;imapobj_v(k)];
 					for k2=(k+1):length(imapobj_v)
@@ -1170,28 +1184,28 @@ try
 							imapobj_delete_v	= [imapobj_delete_v;imapobj_v(k2)];
 						end
 					end
-
+					
 					% Assign the center point:
 					[x,y]		= map_objects_center(imapobj_v(k));
 					MAP_OBJECTS(imapobj_new,1).x	= x;
 					MAP_OBJECTS(imapobj_new,1).y	= y;
-
+					
 					% End of the inner while-loop:
 					k	= length(imapobj_v);
-
+					
 				end
 				imapobj_v(k_delete)	= [];
 			end
-
+			
 			% Delete lines in MAP_OBJECTS:
 			MAP_OBJECTS(imapobj_delete_v,:)	= [];
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'mod_vertex'
-
+			
 			% Check whether imapobj_v is a scalar and the map object is a line:
 			if length(imapobj_v)~=1
 				errormessage(sprintf(['Error:\n',...
@@ -1212,7 +1226,7 @@ try
 						'This function is only applicable on lines.'],imapobj,MAP_OBJECTS(imapobj,1).h(1,1).Type));
 				end
 			end
-
+			
 			delete_imapobj		= false;
 			switch par1
 				case 'add'
@@ -1249,22 +1263,54 @@ try
 						MAP_OBJECTS(imapobj,1).x		= mean(MAP_OBJECTS(imapobj,1).h.XData);
 						MAP_OBJECTS(imapobj,1).y		= mean(MAP_OBJECTS(imapobj,1).h.YData);
 					end
-
+					
 				case 'move'
 					% Move a vertex:
 					if strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'line')
-						xdata				= MAP_OBJECTS(imapobj,1).h.XData';
-						ydata				= MAP_OBJECTS(imapobj,1).h.YData';
-						i_v				= find(...
-							(abs(xdata(par2,1)-xdata)<GV.tol_1)&...
-							(abs(ydata(par2,1)-ydata)<GV.tol_1)    );
+						xdata0				= MAP_OBJECTS(imapobj,1).h.XData';
+						ydata0				= MAP_OBJECTS(imapobj,1).h.YData';
+						i_v				= find(...				% if the start- and endpoint of a closed line has to be moved
+							(abs(xdata0(par2,1)-xdata0)<GV.tol_1)&...
+							(abs(ydata0(par2,1)-ydata0)<GV.tol_1)    );
+						xdata				= xdata0;
+						ydata				= ydata0;
 						xdata(i_v,1)	= par3;
 						ydata(i_v,1)	= par4;
-						[xi,~] = polyxpoly(xdata,ydata,xdata,ydata,'unique');
-						if (length(xi)~=length(xdata))           &&~(...
-								(length(xi)==(length(xdata)-1))        &&...
-								(abs(xdata(1,1)-xdata(end,1))<GV.tol_1)&&...
-								(abs(ydata(1,1)-ydata(end,1))<GV.tol_1)     )
+						self_intersection_detected	= false;
+						for i_i_v=1:length(i_v)
+							i		= i_v(i_i_v);
+							% Check for intersection of the line segment before vertex [xdata(i,1) ydata(i,1)]:
+							if i>1
+								[xi,yi] = polyxpoly(xdata0,ydata0,...
+									[xdata(i-1,1) xdata(i,1)],...
+									[ydata(i-1,1) ydata(i,1)],'unique');
+								% The startpoint of the new line segment is not an intersection point:
+								k_delete			= (...
+									(abs(xi-xdata(i-1,1))<GV.tol_1)&...
+									(abs(yi-ydata(i-1,1))<GV.tol_1)    );
+								xi(k_delete)	= [];
+								if ~isempty(xi)
+									self_intersection_detected	= true;
+									break
+								end
+							end
+							% Check for intersection of the line segment after vertex [xdata(i,1) ydata(i,1)]:
+							if i<(length(xdata)-1)
+								[xi,yi] = polyxpoly(xdata0,ydata0,...
+									[xdata(i,1) xdata(i+1,1)],...
+									[ydata(i,1) ydata(i+1,1)],'unique');
+								% The endpoint of the new line segment is not an intersection point:
+								k_delete			= (...
+									(abs(xi-xdata(i+1,1))<GV.tol_1)&...
+									(abs(yi-ydata(i+1,1))<GV.tol_1)    );
+								xi(k_delete)	= [];
+								if ~isempty(xi)
+									self_intersection_detected	= true;
+									break
+								end
+							end
+						end
+						if self_intersection_detected
 							errormessage(sprintf(['Error:\n',...
 								'The new point (%g,%g) results in an\n',...
 								'intersection with the existing line.'],par3,par4));
@@ -1305,7 +1351,7 @@ try
 					else
 						errormessage;
 					end
-
+					
 				case 'delvertex'
 					% Delete a vertex:
 					if length(MAP_OBJECTS(imapobj,1).h.XData)>=2
@@ -1336,7 +1382,7 @@ try
 							end
 						end
 					end
-
+					
 				case 'close'
 					% Close line: Set last vertex equal to first.
 					if    (abs(MAP_OBJECTS(imapobj,1).h.XData(1)-MAP_OBJECTS(imapobj,1).h.XData(end))>GV.tol_1)||...
@@ -1357,7 +1403,7 @@ try
 						MAP_OBJECTS(imapobj,1).h.YData	= ...
 							[MAP_OBJECTS(imapobj,1).h.YData(:);MAP_OBJECTS(imapobj,1).h.YData(1)];
 					end
-
+					
 				case 'insert'
 					% Insert one vertex between two vertices 1 and 2.
 					if strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'line')
@@ -1405,7 +1451,7 @@ try
 						MAP_OBJECTS(imapobj,1).h.Shape	= addboundary(polyshape(),xdata,ydata,'KeepCollinearPoints',true);
 						% MAP_OBJECTS(imapobj,1).h.Shape.Vertices	= [xdata ydata];
 					end
-
+					
 				case 'cut'
 					% Cut line: If the line is closed delete the last vertex.
 					if    (abs(MAP_OBJECTS(imapobj,1).h.XData(1)-MAP_OBJECTS(imapobj,1).h.XData(end))<GV.tol_1)&&...
@@ -1414,7 +1460,7 @@ try
 						MAP_OBJECTS(imapobj,1).h.XData(end)		= [];
 						MAP_OBJECTS(imapobj,1).h.YData(end)		= [];
 					end
-
+					
 				case {'delvertices','split'}
 					% Delete vertices and split the line (if par1='split').
 					if strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'line')
@@ -1439,7 +1485,7 @@ try
 						if size(i_delete,1)<size(xdata,1)
 							% The output is not empty:
 							switch par1
-
+								
 								case 'delvertices'
 									xdata(i_delete)	= [];
 									ydata(i_delete)	= [];
@@ -1485,7 +1531,7 @@ try
 											MAP_OBJECTS(imapobj,1).y		= mean(ydata);
 										end
 									end
-
+									
 								case 'split'
 									% Split: there is only 1 preview line object, no group and no polygon
 									% Split the line:
@@ -1536,13 +1582,13 @@ try
 									if size(MAP_OBJECTS(imapobj,1).h,1)>1
 										plot_modify('ungroup',imapobj);		% Includes also display_map_objects
 									end
-
+									
 							end
 						else
 							% The output is empty:
 							delete_imapobj		= true;
 						end
-
+						
 						if delete_imapobj
 							% Delete the whole object:
 							answer	= [];
@@ -1559,21 +1605,21 @@ try
 							plot_modify('delete',imapobj);		% Includes also display_map_objects
 						end
 					end
-
+					
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			if ~delete_imapobj&&~strcmp(par1,'split')
 				display_map_objects(imapobj);
 			end
-
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'new_line'
 			% par1	x_v_prev				3
 			% par2	y_v_prev				4
 			% par3	dscr_prev			5
 			% par4	text_prev			6
-
+			
 			% column vectors:
 			x_v_prev				= par1(:);
 			y_v_prev				= par2(:);
@@ -1627,7 +1673,7 @@ try
 				'Marker'    ,marker,...
 				'MarkerSize',GV.preview.MarkerSize,...
 				'UserData'  ,ud,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Create/modify legend:
 			create_legend_mapfigure;
 			% Save relevant data in the structure MAP_OBJECTS:
@@ -1654,20 +1700,20 @@ try
 			else
 				MAP_OBJECTS(imapobj_new,1).vis0	= 0;
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			plot_modify('deselect',-1,0);
 			plot_modify('select',imapobj_new,0);
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'new_poly'
 			% par1	preview polygon
 			% par2	dscr_prev
 			% par3	text_prev
 			% par4	select_prev
-
+			
 			if nargin<=3
 				dscr_prev		= '';
 			else
@@ -1717,7 +1763,7 @@ try
 							'LineStyle',GV.preview.LineStyle,...
 							'LineWidth',GV.preview.LineWidth,...
 							'UserData',ud,...
-							'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					end
 				end
 			end
@@ -1742,23 +1788,23 @@ try
 			MAP_OBJECTS(imapobj_new,1).cncl	= 0;
 			MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
 			MAP_OBJECTS(imapobj_new,1).vis0	= 1;
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			plot_modify('deselect',-1,0);
 			if select_prev
 				plot_modify('select',imapobj_new,0);
 			end
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'connect'
-
+			
 			% Delete legend:
 			if length(imapobj_v)>1
 				legend(GV_H.ax_2dmap,'off');
 			end
-
+			
 			% User input: Maximum distance at which the start and end points of two lines are connected:
 			prompt	= {sprintf([...
 				'Enter the maximum distance at which the start\n',...
@@ -1783,7 +1829,7 @@ try
 				return
 			end
 			GV.tol_connectways_manually	= tol;
-
+			
 			% Connect the ways:
 			imapobj_delete_v		= [];
 			size_map_objects_0	= size(MAP_OBJECTS,1);
@@ -1792,9 +1838,6 @@ try
 			connways_dscr			= '';
 			connways_text			= '';
 			iobj_v					= [];
-			ud_in_v					= [];
-			ud_iw_v					= [];
-			ud_ir_v					= [];
 			cncl_v					= [];
 			relid_v					= uint64([]);
 			for k=1:length(imapobj_v)
@@ -1828,18 +1871,13 @@ try
 						else
 							iobj			= [];											% object number of the new way
 						end
-						lino				= [];			% line number
-						liwi				= [];			% line width of the new way
-						l2a				= 1;			% l2a=1:	store closed lines as area
-						s					= 1;			% Scale all data in connways by s
-						lino_new_min	= 1;			% The numbering of new lines in connways begins with this number.
-						role				= 'outer';	% Function of a member in a multipolygon relation:
-						tag				= '';			% Lines with different tags are not connected, but saved separatly.
 						% Relation number of the line:
 						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
 							relid			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid;
+							ir				= find(OSMDATA.id.relation==relid,1);
 						else
 							relid			= uint64(0);
+							ir				= 0;
 						end
 						relid_v			= unique([relid_v;relid]);
 						% Connect only lines that have the same relation number:
@@ -1853,13 +1891,29 @@ try
 								'   (left + right click on the line: "Relation ID")']);
 							errormessage(errortext);
 						end
+						iw_v	= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:);
 						% Connect the ways:
-						connways_preview		= connect_ways(connways_preview,[],x,y,...
-							iobj,lino,liwi,l2a,s,lino_new_min,role,relid,tag,tol);
-						% Additional userdata:
-						ud_in_v	= [ud_in_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.in(:)];
-						ud_iw_v	= [ud_iw_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:)];
-						ud_ir_v	= [ud_ir_v;MAP_OBJECTS(imapobj,1).h(i,1).UserData.ir(:)];
+						connways_preview		= ...
+							connect_ways(...				%								Defaultvalues:
+							connways_preview,...			% connways					-
+							[],...							% connways_merge			[]
+							x,...								% x							[]
+							y,...								% y							[]
+							iobj,...							% iobj						[]
+							[],...							% lino						[]
+							[],...							% liwi						[]
+							0,...								% in							0
+							iw_v,...							% iw_v						0
+							ir,...							% ir							0
+							1,...								% l2a							1
+							1,...								% s							1
+							1,...								% lino_new_min				1
+							'outer',...						% role						'outer'
+							relid,...						% relid						uint64(0)
+							'',...							% tag							''
+							tol,...							% tol							GV.tol_1
+							true,...							% conn_with_rev			true
+							true);							% connect					true
 					end
 					% Collect descriptions and texts:
 					if isempty(strfind(connways_dscr,MAP_OBJECTS(imapobj,1).dscr))
@@ -1913,19 +1967,19 @@ try
 			end
 			cncl_v				= unique(cncl_v);
 			iobj_v				= unique(iobj_v);
-
+			
 			no_lines					= size(connways_preview.lines,1);
 			no_areas					= size(connways_preview.areas,1);
 			no_lines_connected	= no_lines_to_connect-no_lines-no_areas;
 			if no_lines_connected==0
 				% No lines have been connected: Cancel:
 				set(GV_H.text_waitbar,'String','No lines connected.');
-
+				
 			else
 				% Lines have been connected:
 				set(GV_H.text_waitbar,'String',...
 					sprintf('%g/%g lines connected.',no_lines_connected+1,no_lines_to_connect));
-
+				
 				% Plot the areas:
 				for k=1:size(connways_preview.areas,1)
 					x	= connways_preview.areas(k,1).xy(:,1);
@@ -1938,15 +1992,17 @@ try
 						warning('on','MATLAB:polyshape:repairedBySimplify');
 					end
 					% New line:
-					imapobj_new		= size(MAP_OBJECTS,1)+1;
+					imapobj_new			= size(MAP_OBJECTS,1)+1;
 					% Userdata:
-					ud					= [];
-					ud.in				= ud_in_v;
-					ud.iw				= ud_iw_v;
-					ud.ir				= ud_ir_v;
-					ud.relid			= relid_v;
-					ud.rotation		= 0;
-					ud.shape0		= poly;
+					ud						= [];
+					ud.in					= [];
+					ud.iw					= connways_preview.areas(k,1).iw_v(:);
+					ud.ir					= connways_preview.areas(k,1).ir(:);
+					ud.iw(ud.iw==0,:)	= [];
+					ud.ir(ud.ir==0,:)	= [];
+					ud.relid				= relid_v;
+					ud.rotation			= 0;
+					ud.shape0			= poly;
 					% Plot the preview as polygon:
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -1960,7 +2016,7 @@ try
 						'LineStyle',GV.preview.LineStyle,...
 						'LineWidth',GV.preview.LineWidth,...
 						'UserData',ud,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					% Create/modify legend:
 					if length(imapobj_v)==1
 						create_legend_mapfigure;
@@ -1983,21 +2039,23 @@ try
 					MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
 					MAP_OBJECTS(imapobj_new,1).vis0	= 1;
 				end
-
+				
 				% Plot the lines:
 				for k=1:size(connways_preview.lines,1)
 					x	= connways_preview.lines(k,1).xy(:,1);
 					y	= connways_preview.lines(k,1).xy(:,2);
 					% New line:
-					imapobj_new	= size(MAP_OBJECTS,1)+1;
+					imapobj_new		= size(MAP_OBJECTS,1)+1;
 					% Userdata:
-					ud					= [];
-					ud.in				= ud_in_v;
-					ud.iw				= ud_iw_v;
-					ud.ir				= ud_ir_v;
-					ud.relid			= relid_v;
-					ud.rotation		= 0;
-					ud.xy0			= [x y];
+					ud						= [];
+					ud.in					= [];
+					ud.iw					= connways_preview.lines(k,1).iw_v(:);
+					ud.ir					= connways_preview.lines(k,1).ir(:);
+					ud.iw(ud.iw==0,:)	= [];
+					ud.ir(ud.ir==0,:)	= [];
+					ud.relid				= relid_v;
+					ud.rotation			= 0;
+					ud.xy0				= [x y];
 					% Plot the preview as line:
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -2009,7 +2067,7 @@ try
 						'Marker','none',...
 						'MarkerSize',GV.preview.MarkerSize,...
 						'UserData',ud,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					% Create/modify legend:
 					if length(imapobj_v)==1
 						create_legend_mapfigure;
@@ -2044,15 +2102,15 @@ try
 					end
 					MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
 				end
-
+				
 				% Create/modify legend:
 				if length(imapobj_v)>1
 					create_legend_mapfigure;
 				end
-
+				
 				% Number of new map objects:
 				no_new_map_objects	= size(MAP_OBJECTS,1)-size_map_objects_0;
-
+				
 				% Delete the old map objects:
 				if ~isempty(imapobj_delete_v)
 					% Delete objects (MAP_OBJECTS_TABLE will be updated also):
@@ -2061,7 +2119,7 @@ try
 					% Update MAP_OBJECTS_TABLE:
 					display_map_objects;
 				end
-
+				
 				% Arrange the new map objects:
 				if no_new_map_objects>=1
 					% Plot numbers of the new map objects:
@@ -2079,14 +2137,14 @@ try
 						display_map_objects;
 					end
 				end
-
+				
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'poly2line'
 			% Convert one polygon to preview lines:
-
+			
 			% Check whether the map objects are polygons:
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
@@ -2098,12 +2156,12 @@ try
 					end
 				end
 			end
-
+			
 			% Delete legend:
 			if length(imapobj_v)>1
 				legend(GV_H.ax_2dmap,'off');
 			end
-
+			
 			% Plot the preview lines:
 			imapobj_delete_v		= [];
 			size_map_objects_0	= size(MAP_OBJECTS,1);
@@ -2145,7 +2203,7 @@ try
 							'Marker','none',...
 							'MarkerSize',GV.preview.MarkerSize,...
 							'UserData',ud,...
-							'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 						% Create/modify legend:
 						if length(imapobj_v)==1
 							create_legend_mapfigure;
@@ -2169,15 +2227,15 @@ try
 					end
 				end
 			end
-
+			
 			% Create/modify legend:
 			if length(imapobj_v)>1
 				create_legend_mapfigure;
 			end
-
+			
 			% Number of new map objects:
 			no_new_map_objects	= size(MAP_OBJECTS,1)-size_map_objects_0;
-
+			
 			% Delete the old map objects:
 			if ~isempty(imapobj_delete_v)
 				% Delete objects (MAP_OBJECTS_TABLE will be updated also):
@@ -2186,7 +2244,7 @@ try
 				% Update MAP_OBJECTS_TABLE:
 				display_map_objects;
 			end
-
+			
 			% Arrange the new map objects:
 			if no_new_map_objects>=1
 				% Plot numbers of the new map objects:
@@ -2204,12 +2262,12 @@ try
 					display_map_objects;
 				end
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'line2poly'
 			% Convert preview line to preview polygon:
-
+			
 			% Check whether imapobj_v is a scalar and the map object is a line:
 			if length(imapobj_v)>1
 				errormessage(sprintf(['Error:\n',...
@@ -2226,7 +2284,7 @@ try
 				errormessage(sprintf(['Error:\n',...
 					'Preview cutting lines cannot be converted to polygons.']));
 			end
-
+			
 			% Check whether the lines are closed:
 			for i=1:size(MAP_OBJECTS(imapobj_v,1).h,1)
 				if    (abs(MAP_OBJECTS(imapobj_v,1).h(i,1).XData(1)-MAP_OBJECTS(imapobj_v,1).h(i,1).XData(end))>GV.tol_1)||...
@@ -2236,12 +2294,12 @@ try
 					% 	'The lines must be closed to use this function.']));
 				end
 			end
-
+			
 			% Delete legend:
 			if size(MAP_OBJECTS(imapobj_v,1).h,1)>1
 				legend(GV_H.ax_2dmap,'off');
 			end
-
+			
 			% Plot the preview polygons:
 			imapobj_delete_v		= [];
 			size_map_objects_0	= size(MAP_OBJECTS,1);
@@ -2278,7 +2336,7 @@ try
 					'LineStyle',GV.preview.LineStyle,...
 					'LineWidth',GV.preview.LineWidth,...
 					'UserData',ud,...
-					'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+					'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 				% Create/modify legend:
 				if size(MAP_OBJECTS(imapobj,1).h,1)==1
 					create_legend_mapfigure;
@@ -2301,13 +2359,13 @@ try
 				MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
 				MAP_OBJECTS(imapobj_new,1).vis0	= 1;
 			end
-
+			
 			% Create/modify legend:
 			create_legend_mapfigure;
-
+			
 			% Number of new map objects:
 			no_new_map_objects	= size(MAP_OBJECTS,1)-size_map_objects_0;
-
+			
 			% Delete the old map objects:
 			if ~isempty(imapobj_delete_v)
 				% Delete objects (MAP_OBJECTS_TABLE will be updated also):
@@ -2316,7 +2374,7 @@ try
 				% Update MAP_OBJECTS_TABLE:
 				display_map_objects;
 			end
-
+			
 			% Arrange the new map objects:
 			if no_new_map_objects>=1
 				% Plot numbers of the new map objects:
@@ -2334,12 +2392,12 @@ try
 					display_map_objects;
 				end
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'convprevline'
 			% Convert preview line to map object:
-
+			
 			% Check whether the map objects are lines:
 			for i_imapobj=1:length(imapobj_v)
 				imapobj	= imapobj_v(i_imapobj);
@@ -2360,7 +2418,7 @@ try
 						'Preview cutting lines cannot be converted.']));
 				end
 			end
-
+			
 			% Assign the object number:
 			iobj				= APP.Mod_AddPrevToOutput_ObjNo_EditField.Value;
 			if iobj<1
@@ -2371,10 +2429,10 @@ try
 				errormessage(sprintf(['Error:\n',...
 					'The maximum object number is ObjNo=%g.'],size(PP.obj,1)));
 			end
-
+			
 			% Information about the usage of the object
 			obj_purpose		= {'map object'};
-
+			
 			% Parameters depending on par1:
 			switch par1
 				case '2connlinemapobj'
@@ -2437,6 +2495,7 @@ try
 						display_as	= lower(answer);
 					end
 					if strcmp(display_as,'line')
+						% line2poly: The assignment of in, iw, and ir is not necessary here.
 						[~,~,ud_line,~]	= line2poly(...
 							[],...										% x
 							[],...										% y
@@ -2446,6 +2505,7 @@ try
 							obj_purpose);								% obj_purpose
 						dz_bgd				= ud_line.dz;
 					elseif strcmp(display_as,'area')
+						% area2poly: The assignment of in, iw, and ir is not necessary here.
 						[~,~,ud_area,~]	= area2poly(...
 							polyshape(),...							% polyin
 							PP.obj(iobj).areapar,...				% par
@@ -2462,10 +2522,10 @@ try
 						edgealpha		= GV.visibility.show.edgealpha;
 					end
 			end
-
+			
 			% Delete legend:
 			legend(GV_H.ax_2dmap,'off');
-
+			
 			% Plot the preview polygons:
 			for i_imapobj=1:length(imapobj_v)
 				imapobj			= imapobj_v(i_imapobj);
@@ -2529,7 +2589,7 @@ try
 						'FaceAlpha',facealpha,...
 						'Visible'  ,visible,...
 						'UserData' ,ud,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					h_poly_v			= [h_poly_v;h_poly];
 				end
 				% Save relevant data in the structure MAP_OBJECTS:
@@ -2550,22 +2610,22 @@ try
 					MAP_OBJECTS(imapobj,1).vis0	= 0;
 				end
 			end
-
+			
 			% Create/modify legend:
 			create_legend_mapfigure;
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			if length(imapobj_v)==1
 				display_map_objects(imapobj_v);
 			else
 				display_map_objects;
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'prevcutline2cutline'
 			% Convert preview cutting line (line) to cutting line (polygon)
-
+			
 			% Color number of cutting lines (=0: normal preview):
 			cncl				= get_colno_cuttingline;
 			if cncl==0
@@ -2592,12 +2652,12 @@ try
 					end
 				end
 			end
-
+			
 			% Delete legend:
 			if length(imapobj_v)>1
 				legend(GV_H.ax_2dmap,'off');
 			end
-
+			
 			% Create cutting lines in descending order!
 			icolspec					= PP.color(cncl,1).spec;
 			imapobj_v				= sort(unique(imapobj_v),'descend');
@@ -2645,7 +2705,7 @@ try
 						'FaceAlpha',GV.visibility.show.facealpha,...
 						'Visible'  ,'on',...
 						'UserData',ud,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					% Create/modify legend:
 					if length(imapobj_v)==1
 						create_legend_mapfigure;
@@ -2672,15 +2732,15 @@ try
 				plot_modify('deselect',imapobj,0);
 				plot_modify('select',imapobj_new,0);
 			end
-
+			
 			% Create/modify legend:
 			if length(imapobj_v)>1
 				create_legend_mapfigure;
 			end
-
+			
 			% Number of new map objects:
 			no_new_map_objects	= size(MAP_OBJECTS,1)-size_map_objects_0;
-
+			
 			% Arrange the new map objects:
 			if no_new_map_objects>=1
 				% Plot numbers of the new map objects:
@@ -2696,12 +2756,12 @@ try
 					display_map_objects;
 				end
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'new_cutline'
 			% Create a new cutting line (polygon)
-
+			
 			% Create cutting line:
 			imapobj_new		= size(MAP_OBJECTS,1)+1;
 			colno				= par2;
@@ -2725,7 +2785,7 @@ try
 				'FaceAlpha',GV.visibility.show.facealpha,...
 				'Visible'  ,'on',...
 				'UserData' ,ud,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Create/modify legend:
 			create_legend_mapfigure;
 			% Save relevant data in the structure MAP_OBJECTS:
@@ -2741,16 +2801,16 @@ try
 			MAP_OBJECTS(imapobj_new,1).cncl		= colno;
 			MAP_OBJECTS(imapobj_new,1).cnuc		= 0;
 			MAP_OBJECTS(imapobj_new,1).vis0		= 0;
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			plot_modify('deselect',-1,0);
 			plot_modify('select',imapobj_new,0);
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'poly'
-
+			
 			% Check whether the map objects are polygons:
 			for k=1:length(imapobj_v)
 				imapobj				= imapobj_v(k);
@@ -2762,7 +2822,7 @@ try
 					end
 				end
 			end
-
+			
 			% User inputs:
 			if strcmp(par1,'simplify')
 				dmax		= [];
@@ -2789,13 +2849,13 @@ try
 					return
 				end
 			end
-
+			
 			% Delete legend:
 			legend(GV_H.ax_2dmap,'off');
-
+			
 			% Deselect all, so only the new objects are selected afterwards:
 			plot_modify('deselect',-1,0);
-
+			
 			% Edit objects in descending order!
 			imapobj_v	= sort(unique(imapobj_v),'descend');
 			for k=1:length(imapobj_v)
@@ -2818,7 +2878,7 @@ try
 				switch par1
 					% --------------------------------------------------------------------------------------------------
 					case 'dissolve_bound'
-
+						
 						i_poly	= 0;
 						for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 							for ib=1:numboundaries(MAP_OBJECTS(imapobj,1).h(i,1).Shape)
@@ -2852,7 +2912,7 @@ try
 									'LineStyle',MAP_OBJECTS(imapobj,1).h(i,1).LineStyle,...
 									'LineWidth',MAP_OBJECTS(imapobj,1).h(i,1).LineWidth,...
 									'UserData',ud,...
-									'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+									'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 								% Save relevant data in the structure MAP_OBJECTS:
 								[xcenter,ycenter]								= centroid(poly);
 								MAP_OBJECTS(imapobj_new,1).disp			= MAP_OBJECTS(imapobj,1).disp;
@@ -2868,7 +2928,7 @@ try
 								MAP_OBJECTS(imapobj_new,1).vis0			= 1;
 							end
 						end
-
+						
 						% -----------------------------------------------------------------------------------------------
 					case 'regions'
 						% Convert the selected map objects into groups of solid regions, each consisting of
@@ -2887,7 +2947,7 @@ try
 						%   is split into individual map objects.
 						% Application examples:
 						% - Hiding or deleting built-up areas that are too small.
-
+						
 						% Union of foreground and background objects:
 						poly_bgd		= polyshape();
 						poly_fgd		= polyshape();
@@ -2962,7 +3022,7 @@ try
 								end
 							end
 						end
-
+						
 						% The foreground must be inside the background (if the background exists):
 						if numboundaries(poly_bgd)>0
 							poly_bgd_buff	= polybuffer(poly_bgd,-GV.d_forebackgrd_plotobj,...
@@ -2970,7 +3030,7 @@ try
 							poly_fgd		= intersect(poly_fgd,poly_bgd_buff,...
 								'KeepCollinearPoints',false);
 						end
-
+						
 						% Assign the foreground objects to the background objects:
 						poly_regions_bgd		= regions(poly_bgd);
 						poly_regions_fgd		= regions(poly_fgd);
@@ -3008,7 +3068,7 @@ try
 								end
 							end
 						end
-
+						
 						% Plot objects:
 						if (size(poly_regions_bgd,1)>0)&&(size(poly_regions_fgd,1)>0)
 							poly_regions_1			= poly_regions_bgd;
@@ -3044,7 +3104,7 @@ try
 									drawnow;
 								end
 							end
-
+							
 							% Underlying object (background or foreground if no background exists):
 							% Create a new map object for every underlying object:
 							i_poly	= 0;
@@ -3072,7 +3132,7 @@ try
 								'LineStyle',MAP_OBJECTS(imapobj,1).h(1,1).LineStyle,...
 								'LineWidth',MAP_OBJECTS(imapobj,1).h(1,1).LineWidth,...
 								'UserData',ud_1,...
-								'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+								'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 							% Save relevant data in the structure MAP_OBJECTS:
 							[xcenter,ycenter]											= centroid(poly_regions_1(ir_1,1));
 							MAP_OBJECTS(imapobj_new(end,1),1).disp				= MAP_OBJECTS(imapobj,1).disp;
@@ -3086,7 +3146,7 @@ try
 							MAP_OBJECTS(imapobj_new(end,1),1).cncl				= MAP_OBJECTS(imapobj,1).cncl;
 							MAP_OBJECTS(imapobj_new(end,1),1).cnuc				= MAP_OBJECTS(imapobj,1).cnuc;
 							MAP_OBJECTS(imapobj_new(end,1),1).vis0				= 1;
-
+							
 							% Superimposed objects (foreground, if background exists):
 							% The foreground object ir_2 belongs to the background object ir_1=ir1_poly2(ir_2,1):
 							ir_2_v				= find(ir_1==ir1_poly2);
@@ -3112,16 +3172,16 @@ try
 									'LineStyle',MAP_OBJECTS(imapobj,1).h(1,1).LineStyle,...
 									'LineWidth',MAP_OBJECTS(imapobj,1).h(1,1).LineWidth,...
 									'UserData',ud_2,...
-									'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+									'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 								% Save relevant data in the structure MAP_OBJECTS:
 								MAP_OBJECTS(imapobj_new(end,1),1).h(i_poly,1)	= h_poly;
 							end
-
+							
 						end
-
+						
 						% -----------------------------------------------------------------------------------------------
 					case {'polybuffer','simplify'}
-
+						
 						i_poly	= 0;
 						for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 							switch par1
@@ -3152,7 +3212,7 @@ try
 								'LineStyle',MAP_OBJECTS(imapobj,1).h(i,1).LineStyle,...
 								'LineWidth',MAP_OBJECTS(imapobj,1).h(i,1).LineWidth,...
 								'UserData',ud,...
-								'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+								'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 							% Save relevant data in the structure MAP_OBJECTS:
 							[xcenter,ycenter]								= centroid(poly);
 							MAP_OBJECTS(imapobj_new,1).disp			= MAP_OBJECTS(imapobj,1).disp;
@@ -3167,7 +3227,7 @@ try
 							MAP_OBJECTS(imapobj_new,1).cnuc			= MAP_OBJECTS(imapobj,1).cnuc;
 							MAP_OBJECTS(imapobj_new,1).vis0			= 1;
 						end
-
+						
 				end
 				% -----------------------------------------------------------------------------------------------------
 				% Select the new objects:
@@ -3181,19 +3241,19 @@ try
 				% Delete the old object(MAP_OBJECTS_TABLE will be updated also):
 				plot_modify('delete',imapobj);		% Includes also display_map_objects
 			end
-
+			
 			% Create/modify legend:
 			create_legend_mapfigure;
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
-
-
+			
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'poly12'
 			% Functions on two polygons:
-
+			
 			% Check whether the map objects are scalar polygons:
 			imapobj1	= APP.Mod_Polygons_PlotNo1_EditField.Value;
 			imapobj2	= APP.Mod_Polygons_PlotNo2_EditField.Value;
@@ -3243,15 +3303,16 @@ try
 					'The selected object PlotNo=%g is a preview object.\n',...
 					'This function cannot be applied to preview objects.'],imapobj2));
 			end
-
+			
 			% Plot the preview polygon:
 			if GV.warnings_off
 				warning('off','MATLAB:polyshape:repairedBySimplify');
 			end
+			poly0		= MAP_OBJECTS(imapobj1,1).h.Shape;
 			switch par1
 				case 'subtract'
 					% Object 2 possibly is a group:
-					poly		= MAP_OBJECTS(imapobj1,1).h.Shape;
+					poly		= poly0;
 					for i=1:size(MAP_OBJECTS(imapobj2,1).h,1)
 						poly		= subtract(...
 							poly,...
@@ -3260,19 +3321,19 @@ try
 					end
 				case 'subtract_dside'
 					% Object 2 possibly is a group:
-					poly		= MAP_OBJECTS(imapobj1,1).h.Shape;
+					poly		= poly0;
 					for i=1:size(MAP_OBJECTS(imapobj2,1).h,1)
-					[  poly,...																	% poly1
-						MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
-						~...																		% dbuffer
-						]=subtract_dside(...
-						PP,...																	% PP_local
-						MAP_OBJECTS(imapobj1,1).h(1,1).UserData.color_no,...		% colno1
-						MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no,...		% colno2
-						poly,...																	% poly1
-						MAP_OBJECTS(imapobj2,1).h(i,1).Shape);							% poly2 (Subtrahend)
+						[  poly,...																	% poly1
+							MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
+							~...																		% dbuffer
+							]=subtract_dside(...
+							PP,...																	% PP_local
+							MAP_OBJECTS(imapobj1,1).h(1,1).UserData.color_no,...		% colno1
+							MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no,...		% colno2
+							poly,...																	% poly1
+							MAP_OBJECTS(imapobj2,1).h(i,1).Shape);							% poly2 (Subtrahend)
 					end
-
+					
 					% % old:
 					% poly_subtrahend	= polyshape();
 					% d_side				= 0;
@@ -3302,7 +3363,7 @@ try
 					% 		poly,poly_subtrahend(i,1),...
 					% 		'KeepCollinearPoints',false);
 					% end
-
+					
 				otherwise
 					% Object 2 is not a group:
 					poly_subtrahend	= MAP_OBJECTS(imapobj2,1).h.Shape;
@@ -3310,19 +3371,19 @@ try
 			switch par1
 				case 'union'
 					poly		= union(...
-						MAP_OBJECTS(imapobj1,1).h.Shape,poly_subtrahend,...
+						poly0,poly_subtrahend,...
 						'KeepCollinearPoints',false);
 				case 'intersect'
 					poly		= intersect(...
-						MAP_OBJECTS(imapobj1,1).h.Shape,poly_subtrahend,...
+						poly0,poly_subtrahend,...
 						'KeepCollinearPoints',false);
 				case 'xor'
 					poly		= xor(...
-						MAP_OBJECTS(imapobj1,1).h.Shape,poly_subtrahend,...
+						poly0,poly_subtrahend,...
 						'KeepCollinearPoints',false);
 				case 'addboundary'
 					poly		= addboundary(...
-						MAP_OBJECTS(imapobj1,1).h.Shape,poly_subtrahend.Vertices,...
+						poly0,poly_subtrahend.Vertices,...
 						'Simplify',true,'KeepCollinearPoints',false);
 			end
 			if GV.warnings_off
@@ -3337,16 +3398,33 @@ try
 			imapobj_new		= size(MAP_OBJECTS,1)+1;
 			% Extend the userdata:
 			ud					= MAP_OBJECTS(imapobj1,1).h.UserData;
-			if isfield(ud,'in')&&isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'in')
-				ud.in				= unique([ud.in(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.in(:)]);
+			if ~isfield(ud,'in')
+				ud.in				= [];
+				ud.in				= ud.in(:);
 			end
-			if isfield(ud,'iw')&&isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'iw')
-				ud.iw				= unique([ud.iw(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.iw(:)]);
+			if ~isfield(ud,'iw')
+				ud.iw				= [];
+				ud.iw				= ud.iw(:);
 			end
-			if isfield(ud,'ir')&&isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'ir')
-				ud.ir				= unique([ud.ir(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.ir(:)]);
+			if ~isfield(ud,'ir')
+				ud.ir				= [];
+				ud.ir				= ud.ir(:);
 			end
-			ud.shape0		= poly;
+			if    ~strcmp(par1,'subtract')      &&...
+					~strcmp(par1,'subtract_dside')&&...
+					~strcmp(par1,'intersect')
+				% The result of the operation also contains parts of MAP_OBJECTS(imapobj2,1).h:
+				if isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'in')
+					ud.in				= unique([ud.in(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.in(:)]);
+				end
+				if isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'iw')
+					ud.iw				= unique([ud.iw(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.iw(:)]);
+				end
+				if isfield(MAP_OBJECTS(imapobj2,1).h(1,1).UserData,'ir')
+					ud.ir				= unique([ud.ir(:);MAP_OBJECTS(imapobj2,1).h(1,1).UserData.ir(:)]);
+				end
+			end
+			ud.shape0		= poly0;
 			if MAP_OBJECTS(imapobj1,1).iobj>0
 				imapobj_new_iobj	= MAP_OBJECTS(imapobj1,1).iobj;
 			else
@@ -3354,28 +3432,32 @@ try
 			end
 			disp_new			= MAP_OBJECTS(imapobj1,1).disp;
 			dscr_new			= MAP_OBJECTS(imapobj1,1).dscr;
-			% % If several changes are made to an object, the texts can become too long.
-			% if isempty(strfind(dscr_new,MAP_OBJECTS(imapobj2,1).dscr))
-			% 	dscr_new		= [dscr_new ' - ' MAP_OBJECTS(imapobj2,1).dscr];
-			% end
-			for itext=1:size(MAP_OBJECTS(imapobj1,1).text,1)
-				if itext==1
-					text1	= MAP_OBJECTS(imapobj1,1).text{itext,1};
-				else
-					text1	= [text1,' ',MAP_OBJECTS(imapobj1,1).text{itext,1}];
-				end
-			end
-			for itext=1:size(MAP_OBJECTS(imapobj2,1).text,1)
-				if itext==1
-					text2	= MAP_OBJECTS(imapobj2,1).text{itext,1};
-				else
-					text2	= [text2,' ',MAP_OBJECTS(imapobj2,1).text{itext,1}];
-				end
-			end
-			if ~contains(text1,text2)
-				text_new		= {[text1 ' - ' text2]};
-			else
-				text_new		= {text1};
+			method_textnew	= 2;
+			switch method_textnew
+				case 1
+					% With this method: If several changes are made to an object, the texts can become too long.
+					for itext=1:size(MAP_OBJECTS(imapobj1,1).text,1)
+						if itext==1
+							text1	= MAP_OBJECTS(imapobj1,1).text{itext,1};
+						else
+							text1	= [text1,' ',MAP_OBJECTS(imapobj1,1).text{itext,1}];
+						end
+					end
+					for itext=1:size(MAP_OBJECTS(imapobj2,1).text,1)
+						if itext==1
+							text2	= MAP_OBJECTS(imapobj2,1).text{itext,1};
+						else
+							text2	= [text2,' ',MAP_OBJECTS(imapobj2,1).text{itext,1}];
+						end
+					end
+					if ~contains(text1,text2)
+						text_new		= {[text1 ' / ' text2]};
+					else
+						text_new		= {text1};
+					end
+				case 2
+					% Do not change the text of object 1:
+					text_new		= MAP_OBJECTS(imapobj1,1).text;
 			end
 			cncl_new			= MAP_OBJECTS(imapobj1,1).cncl;
 			cnuc_new			= MAP_OBJECTS(imapobj1,1).cnuc;
@@ -3392,7 +3474,7 @@ try
 				'LineStyle',MAP_OBJECTS(imapobj1,1).h.LineStyle,...
 				'LineWidth',MAP_OBJECTS(imapobj1,1).h.LineWidth,...
 				'UserData' ,ud,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Create/modify legend:
 			create_legend_mapfigure;
 			% Save relevant data in the structure MAP_OBJECTS:
@@ -3408,15 +3490,15 @@ try
 			MAP_OBJECTS(imapobj_new,1).cncl	= cncl_new;
 			MAP_OBJECTS(imapobj_new,1).cnuc	= cnuc_new;
 			MAP_OBJECTS(imapobj_new,1).vis0	= 1;
-
+			
 			% Select the new object::
 			% plot_modify('deselect',[imapobj1;imapobj2],0);
 			plot_modify('select',imapobj_new,0);
-
+			
 			% Delete the old objects (MAP_OBJECTS_TABLE will be updated also):
 			% plot_modify('delete',[imapobj1;imapobj2]);		% Includes also display_map_objects
 			plot_modify('delete',imapobj1);						% Includes also display_map_objects
-
+			
 			% Arrange imapobj_new (update MAP_OBJECTS_TABLE afterwards):
 			if APP.AutoSortNewMapObjects_Menu.Checked
 				arrange_imapobj_old	= size(MAP_OBJECTS,1);
@@ -3425,15 +3507,15 @@ try
 					arrange_imapobj_new,...				% position after the arrangement
 					arrange_imapobj_old);				% position before the arrangement
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'arrange'
 			% Update MAP_OBJECTS_TABLE afterwards!
-
+			
 			% Check whether imapobj_v is a scalar:
 			imapobj_v		= unique(imapobj_v);
 			if max(diff(imapobj_v))>1
@@ -3442,7 +3524,7 @@ try
 					'numbers may be selected to use this function.']));
 			end
 			imapobj_old		= imapobj_v;
-
+			
 			switch par1
 				case 'up'
 					% Move object imapobj one row up:
@@ -3450,28 +3532,28 @@ try
 					if imapobj_new<=(size(MAP_OBJECTS,1)+1)
 						arrange_map_objects(imapobj_new,imapobj_old);
 					end
-
+					
 				case 'down'
 					% Move object imapobj one row down:
 					imapobj_new		= min(imapobj_old)-1;
 					if imapobj_new>=1
 						arrange_map_objects(imapobj_new,imapobj_old);
 					end
-
+					
 				case 'first'
 					% Move object imapobj at the begin of MAP_OBJECTS or under all plot objects in the map:
 					imapobj_new		= 1;
 					if imapobj_new<min(imapobj_old)
 						arrange_map_objects(imapobj_new,imapobj_old);
 					end
-
+					
 				case 'last'
 					% Move object imapobj at the end of MAP_OBJECTS or on top of all plot objects in the map:
 					imapobj_new		= size(MAP_OBJECTS,1)+1;
 					if imapobj_new>(max(imapobj_old)+1)
 						arrange_map_objects(imapobj_new,imapobj_old);
 					end
-
+					
 				case 'set'
 					% Set the position of object imapobj:
 					imapobj_new		= par2;
@@ -3487,17 +3569,17 @@ try
 							end
 						end
 					end
-
+					
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'printoutlim2poly'
 			% Create preview polygon equal to the printout limits:
-
+			
 			% New line:
 			imapobj_new		= size(MAP_OBJECTS,1)+1;
 			% Userdata:
@@ -3520,7 +3602,7 @@ try
 				'LineStyle',GV.preview.LineStyle,...
 				'LineWidth',GV.preview.LineWidth,...
 				'UserData',ud,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Create/modify legend:
 			create_legend_mapfigure;
 			% Save relevant data in the structure MAP_OBJECTS:
@@ -3538,16 +3620,16 @@ try
 			MAP_OBJECTS(imapobj_new,1).vis0	= 1;
 			% Select the new objects:
 			plot_modify('select',imapobj_new,0);
-
-
+			
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects(imapobj_new);
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'set_printout'
 			% Set the printout limits:
-
+			
 			% Check whether imapobj_v is a scalar and the map object is a non-grouped polygon:
 			if length(imapobj_v)>1
 				errormessage(sprintf(['Error:\n',...
@@ -3563,12 +3645,12 @@ try
 					'The selected object PlotNo=%g is of the type "%s".\n',...
 					'This function is only applicable on polygons.'],imapobj_v,MAP_OBJECTS(imapobj_v,1).h.Type));
 			end
-
+			
 			% Set the printout limits:
 			poly	= MAP_OBJECTS(imapobj_v,1).h.Shape;
 			poly	= intersect(poly,GV_H.poly_limits_osmdata.Shape,'KeepCollinearPoints',false);
 			GV_H.poly_map_printout.Shape	= poly;
-
+			
 			% Distance between objects and printout limits:
 			poly_obj_limits			= GV_H.poly_map_printout.Shape;
 			dist_obj_printout			= max(0,PP.general.dist_obj_printout);
@@ -3582,29 +3664,29 @@ try
 					-dist_obj_printout,'JointType',GV.jointtype_bh);
 			end
 			GV_H.poly_map_printout_obj_limits.Shape	= poly_obj_limits;
-
+			
 			% Create/modify Frame:
 			plot_2dmap_frame;
-
+			
 			% The number of tiles possibly changes:
 			% First plot_2dmap_frame must be called!
 			plot_poly_tiles;
-
+			
 			% Create/modify legend:
 			create_legend_mapfigure;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'change_text'
 			% Change text:
-
+			
 			% Abort or skip on error:
 			if nargin<5
 				abort_on_error		= true;
 			else
 				abort_on_error		= par3;
 			end
-
+			
 			% Check imapobj_v:
 			if length(imapobj_v)~=1
 				errormessage(sprintf(['Error:\n',...
@@ -3616,7 +3698,7 @@ try
 					'The selected object PlotNo=%g is displayed as "%s".\n',...
 					'This function is only applicable on texts.'],imapobj,MAP_OBJECTS(imapobj,1).disp));
 			end
-
+			
 			% The selected group must have 2 elements: text foreground and background:
 			warntext		= '';
 			if size(MAP_OBJECTS(imapobj,1).h,1)~=2
@@ -3677,7 +3759,7 @@ try
 				end
 				return
 			end
-
+			
 			% Change texts:
 			iobj					= MAP_OBJECTS(imapobj,1).iobj;
 			if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'iteqt')
@@ -3691,7 +3773,7 @@ try
 			chstsettings_old	= MAP_OBJECTS(imapobj,1).h(1,1).UserData.chstsettings;
 			rotation_old		= MAP_OBJECTS(imapobj,1).h(1,1).UserData.rotation;
 			obj_purpose_old	= MAP_OBJECTS(imapobj,1).h(1,1).UserData.obj_purpose;
-
+			
 			% Change the characer style:
 			if strcmp(par1,'charstyle')
 				% Change the character style:
@@ -3702,7 +3784,7 @@ try
 				charstyle_no	= charstyle_no_old;
 				chstsettings	= chstsettings_old;
 			end
-
+			
 			% Change the text:
 			text_eqtags		= text_eqtags_old;
 			if strcmp(par1,'text')
@@ -3729,24 +3811,24 @@ try
 					text_eqtags(isempty_text_eqtags,:)	= [];
 				end
 			end
-
+			
 			% Call texteqtags2poly:
 			if ~isempty(text_eqtags)
 				% Do not check for
 				% isequal(charstyle_no,charstyle_no_old) end
 				% isequal(text_eqtags ,text_eqtags_old )
 				% because also the text settings could have changed (PP.charstyle(chstno,1)).
-
+				
 				% The text should be in the same place as before.
 				% Do not use the source data, so the current position of the text will not be changed.
-
+				
 				% Center point old polygon:
 				poly	= MAP_OBJECTS(imapobj,1).h(1,1).Shape;
 				for i=2:size(MAP_OBJECTS(imapobj,1).h,1)
 					poly	= union(poly,MAP_OBJECTS(imapobj,1).h(i,1).Shape);
 				end
 				[xcenter_old,ycenter_old]			= centroid(poly);
-
+				
 				% Text parameters:
 				[userdata_pp,textpar_pp,errortext]		= get_pp_mapobjsettings(iobj,'text',obj_purpose_old);
 				if ~isempty(errortext)
@@ -3755,23 +3837,32 @@ try
 				textpar_pp.charstyle_no				= charstyle_no;
 				textpar_pp.rotation					= rotation_old;
 				textpar_pp.line2refpoint_display	= 0;					% skip this calculation
-
+				
 				% New polygon:
 				% Because the reference point is only one node, the size of poly_bgd, poly_obj is equal to the
 				% number of text lines!
-				lino				= [];					% line number
-				liwi				= [];					% line width of the new way
-				l2a				= 1;					% l2a=1:	store closed lines as area
-				s					= 1;					% Scale all data in connways by s
-				lino_new_min	= 1;					% The numbering of new lines in connways begins with this number.
-				role				= 'outer';			% Function of a member in a multipolygon relation:
-				tag				= '';					% Lines with different tags are not connected, but saved separatly.
-				relid				= uint64(0);		% relation number
-				x					= xcenter_old;
-				y					= ycenter_old;
 				connways_eqtags_select		= connect_ways([]);
-				connways_eqtags_select		= connect_ways(connways_eqtags_select,[],x,y,...
-					iobj,lino,liwi,l2a,s,lino_new_min,role,relid,tag);
+				connways_eqtags_select		= ...
+					connect_ways(...					%								Defaultvalues:
+					connways_eqtags_select,...		% connways					-
+					[],...								% connways_merge			[]
+					xcenter_old,...					% x							[]
+					ycenter_old,...					% y							[]
+					iobj,...								% iobj						[]
+					[],...								% lino						[]
+					[],...								% liwi						[]
+					0,...									% in							0
+					0,...									% iw_v						0
+					0,...									% ir							0
+					1,...									% l2a							1
+					1,...									% s							1
+					1,...									% lino_new_min				1
+					'outer',...							% role						'outer'
+					uint64(0),...						% relid						uint64(0)
+					'',...								% tag							''
+					GV.tol_1,...						% tol							GV.tol_1
+					true,...								% conn_with_rev			true
+					true);								% connect					true
 				[poly_bgd,poly_obj,~,~,~,~]		= texteqtags2poly(...
 					iobj,...								% iobj
 					iteqt,...							% iteqt
@@ -3783,14 +3874,14 @@ try
 					userdata_pp,...					% userdata_pp (not used, the existing userdata is modified below)
 					textpar_pp,...						% textpar_pp
 					obj_purpose_old);					% obj_purpose
-
+				
 				% The text foreground must be inside the text background (less problems in map2stl.m):
 				if numboundaries(poly_bgd)~=0
 					poly_bgd_buff	= polybuffer(poly_bgd,-GV.d_forebackgrd_plotobj,...
 						'JointType','miter','MiterLimit',2);
 					poly_obj			= intersect(poly_obj,poly_bgd_buff,'KeepCollinearPoints',false);
 				end
-
+				
 				% Center point new polygon:
 				if numboundaries(poly_obj)==0
 					errormessage;
@@ -3805,13 +3896,13 @@ try
 					end
 				end
 				[xcenter,ycenter]	= centroid(poly);
-
+				
 				% Translate the new polygon to the position of the old polygon:
 				poly_obj				= translate(poly_obj,xcenter_old-xcenter,ycenter_old-ycenter);
 				if numboundaries(poly_bgd)~=0
 					poly_bgd			= translate(poly_bgd,xcenter_old-xcenter,ycenter_old-ycenter);
 				end
-
+				
 				% Replace the old text by the first line of the new text: change structure MAP_OBJECTS:
 				% (faster than creating the line anew and deleting the old one)
 				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -3852,10 +3943,10 @@ try
 				[xcenter,ycenter]						= centroid(union(poly_obj(1,1),poly_bgd(1,1)));
 				MAP_OBJECTS(imapobj,1).x			= xcenter;
 				MAP_OBJECTS(imapobj,1).y			= ycenter;
-
+				
 				% Create the rest of the new lines:
 				for i_line=size(text_eqtags,1):-1:2
-
+					
 					imapobj_new						= size(MAP_OBJECTS,1)+1;
 					MAP_OBJECTS(imapobj_new,1)	= MAP_OBJECTS(imapobj,1);
 					ud_bgd.text_eqtags			= text_eqtags(i_line,1);
@@ -3870,7 +3961,7 @@ try
 						ud_bgd.chstsettings			= PP.charstyle(charstyle_no,1);
 						ud_obj.chstsettings			= PP.charstyle(charstyle_no,1);
 					end
-
+					
 					% Every text line must have it's own source plot:
 					% If a line is deleted, the source plots of the other source plots remain:
 					source			= copy_source(ud_bgd);			% Create a new source data plot
@@ -3878,7 +3969,7 @@ try
 						ud_bgd.source	= source;
 						ud_obj.source	= source;
 					end
-
+					
 					% Text background:
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf(['There exists no map where to plot the objects.\n',...
@@ -3893,12 +3984,12 @@ try
 						'LineStyle'    ,linestyle_bgd,...
 						'LineWidth'    ,linewidth_bgd,...
 						'UserData'     ,ud_bgd,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					% The text foreground must be inside the text background (less problems in map2stl.m):
 					poly_bgd_buff			= polybuffer(poly_bgd(i_line,1),-GV.d_forebackgrd_plotobj,...
 						'JointType','miter','MiterLimit',2);
 					poly_obj(i_line,1)	= intersect(poly_obj(i_line,1),poly_bgd_buff,'KeepCollinearPoints',false);
-
+					
 					% Text foreground:
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf(['There exists no map where to plot the objects.\n',...
@@ -3913,8 +4004,8 @@ try
 						'LineStyle'    ,linestyle_fgd,...
 						'LineWidth'    ,linewidth_fgd,...
 						'UserData'     ,ud_obj,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
-
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
+					
 					% Save relevant data in the structure MAP_OBJECTS:
 					MAP_OBJECTS(imapobj_new,1).h		= [h_poly_bgd;h_poly_txt];
 					MAP_OBJECTS(imapobj,1).mod			= false;
@@ -3922,40 +4013,40 @@ try
 					[xcenter,ycenter]						= centroid(union(poly_obj(i_line,1),poly_bgd(i_line,1)));
 					MAP_OBJECTS(imapobj,1).x			= xcenter;
 					MAP_OBJECTS(imapobj,1).y			= ycenter;
-
+					
 					% Create/modify legend:
 					if length(imapobj_v)==1
 						create_legend_mapfigure;
 					end
-
+					
 					% Select the new object:
 					plot_modify('select',imapobj_new,0);
-
+					
 					% Arrange the new map objects (includes also display_map_objects):
 					if APP.AutoSortNewMapObjects_Menu.Checked
 						arrange_map_objects(...
 							imapobj+1,...					% position after the arrangement
 							imapobj_new);					% position before the arrangement
-
+						
 					end
-
+					
 					% Update MAP_OBJECTS_TABLE: already executed by arrange_map_objects
 					if ~APP.AutoSortNewMapObjects_Menu.Checked
 						display_map_objects;
 					end
-
+					
 				end
-
+				
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			% display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'change_color'
 			% Change color:
-
+			
 			% Check imapobj_v:
 			for k=1:length(imapobj_v)
 				imapobj	= imapobj_v(k);
@@ -3965,7 +4056,7 @@ try
 						'This function is only applicable on polygons.'],imapobj,MAP_OBJECTS(imapobj,1).h.Type));
 				end
 			end
-
+			
 			% Change color:
 			for k=1:length(imapobj_v)
 				imapobj	= imapobj_v(k);
@@ -4014,14 +4105,14 @@ try
 					end
 				end
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects(imapobj);
-
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'change_liwi'
 			% Change text:
-
+			
 			if length(imapobj_v)~=1
 				errormessage(sprintf(['Error:\n',...
 					'Exactly one object must be selected to use this function.']));
@@ -4045,7 +4136,7 @@ try
 			end
 			linestyle	= 3;
 			ud_line		= MAP_OBJECTS(imapobj,1).h.UserData;
-
+			
 			% Get the line parameters:
 			% (without ud_line.linepar{4,1}: lifting dz (background) / mm)
 			prompt_one_line{1,1}		= 'Minimum line width / mm';
@@ -4138,17 +4229,18 @@ try
 			ud_line.linepar{6,1}	= ud_linepar_new{5,1};	% Increase in line width / per thousand (>=0)
 			ud_line.linepar{7,1}	= ud_linepar_new{6,1};	% The max line width is not reached before the end of the line (0/1)
 			ud_line.linepar{8,1}	= ud_linepar_new{7,1};	% The max line width is always reached at the end of the line (0/1)
-
+			
 			% Parameters for line plots (see also plotosmdata_plotdata_li_ar.m):
 			jointtype		= 'miter';
 			miterlimit		= 1;
-
+			
 			% Downsampling (see also plotosmdata_plotdata_li_ar.m):
 			dmax				= [];
 			nmin				= [];
 			dmin_lines		= PP.obj(iobj).reduce_lines.dmin;			% minimum distance between vertices
-
-			% Create the new line
+			
+			% Create the new line:
+			% The assignment of in, iw, and ir is not necessary here.
 			[  poly_line,...							% poly_line
 				~,...										% poly_lisy
 				ud_line_new,...						% ud_line
@@ -4163,10 +4255,10 @@ try
 				jointtype,...							% jointtype
 				miterlimit);							% miterlimit
 			poly_line		= changeresolution_poly(poly_line,dmax,dmin_lines,nmin);
-
+			
 			% Change the map object:
 			MAP_OBJECTS(imapobj,1).h.Shape						= poly_line;
-
+			
 			% Save the userdata that has possibly changed and don't change the rest:
 			MAP_OBJECTS(imapobj,1).h.UserData.linepar			= ud_line_new.linepar;
 			MAP_OBJECTS(imapobj,1).h.UserData.liwi_min		= ud_line_new.liwi_min;
@@ -4175,19 +4267,19 @@ try
 			MAP_OBJECTS(imapobj,1).h.UserData.xy_liwimax		= ud_line_new.xy_liwimax;
 			MAP_OBJECTS(imapobj,1).h.UserData.rotation		= 0;
 			MAP_OBJECTS(imapobj,1).h.UserData.shape0			= poly_line;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'change_description'
 			% Change description:
-
+			
 			% Check imapobj_v:
 			if length(imapobj_v)~=1
 				errormessage(sprintf(['Error:\n',...
 					'Exactly one object must be selected to use this function.']));
 			end
 			imapobj		= imapobj_v;
-
+			
 			% Change the description:
 			prompt	= {sprintf('Enter the new description of plot object %g:',imapobj)};
 			dlgtitle	= 'Enter description';
@@ -4202,15 +4294,52 @@ try
 				end
 				return
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects(imapobj);
-
-
+			
+			
+			%------------------------------------------------------------------------------------------------------------
+		case 'change_texttag'
+			% Change description:
+			
+			% Check imapobj_v:
+			if length(imapobj_v)~=1
+				errormessage(sprintf(['Error:\n',...
+					'Exactly one object must be selected to use this function.']));
+			end
+			imapobj		= imapobj_v;
+			
+			% Change the description:
+			prompt		= cell(size(MAP_OBJECTS(imapobj,1).text,1),1);
+			if size(MAP_OBJECTS(imapobj,1).text,1)==1
+				prompt{1,1}	= sprintf('Enter the new text/tag of plot object %g:',imapobj);
+			else
+				for i=1:size(MAP_OBJECTS(imapobj,1).text,1)
+					prompt{i,1}	= sprintf('Enter the new text/tag of plot object %g: Line %g',imapobj,i);
+				end
+			end
+			dlgtitle	= 'Enter text/tag';
+			dims		= 1;
+			definput	= MAP_OBJECTS(imapobj,1).text;
+			answer	= inputdlg_local(prompt,dlgtitle,dims,definput);
+			if ~isempty(answer)
+				MAP_OBJECTS(imapobj,1).text	= answer;
+			else
+				if ~stateisbusy
+					display_on_gui('state','','notbusy');
+				end
+				return
+			end
+			
+			% Update MAP_OBJECTS_TABLE:
+			display_map_objects(imapobj);
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'enter_circle'
 			% Enter the data and draw a circle.
-
+			
 			% Enter the data:
 			definput		= GV.plotmodify.entercircle_definput;
 			prompt		= {...
@@ -4290,17 +4419,17 @@ try
 				x_v		= x_v(1:(end-1));
 				y_v		= y_v(1:(end-1));
 			end
-
+			
 			% Draw the circle:
 			plot_modify('new_line',0,...
 				x_v,...			% x-values of the new vertex/vertices
 				y_v);        	% y-values of the new vertex/vertices
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'enter_rectangle'
 			% Enter the data and draw a rectangle.
-
+			
 			% Enter the data:
 			definput		= GV.plotmodify.enterrectangle_definput;
 			prompt		= {...
@@ -4375,17 +4504,17 @@ try
 				rect_center_y+rect_height/2;...
 				rect_center_y-rect_height/2;...
 				rect_center_y-rect_height/2];
-
+			
 			% Draw the rectangle:
 			plot_modify('new_line',0,...
 				x_v,...			% x-values of the new vertex/vertices
 				y_v);        	% y-values of the new vertex/vertices
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'textfile'
 			% Save and load map object boundaries:
-
+			
 			% Project directory:
 			if ~isfield(GV,'projectdirectory')
 				% The path name has not yet been requested:
@@ -4402,11 +4531,11 @@ try
 					projectdirectory	= SETTINGS.default_pathname;
 				end
 			end
-
+			
 			switch par1
 				case 'to'
 					% Save map object boundaries to text file:
-
+					
 					% Get the file name:
 					[filename,pathname]	= uiputfile_local('*.txt','Select destination file',projectdirectory);
 					% If the user clicks Cancel or the window close button (X):
@@ -4416,7 +4545,7 @@ try
 						end
 						return
 					end
-
+					
 					% Get the xy-data of all selected objects:
 					x_v		= [];
 					y_v		= [];
@@ -4436,7 +4565,7 @@ try
 						end
 					end
 					[x_v,y_v]		= removeExtraNanSeparators(x_v,y_v);
-
+					
 					% Save to tab-delimited ASCII file:
 					if ~isempty(x_v)
 						% The commands "save" and "writematrix" do not support 'DecimalSeparator'.
@@ -4461,10 +4590,10 @@ try
 						fprintf(fileID,'%s',xydata_str);
 						fclose(fileID);
 					end
-
+					
 				case 'from'
 					% Load map object boundaries from text file:
-
+					
 					% Get the file name:
 					[filename,pathname]	= uigetfile_local('*.txt','Select source file',projectdirectory);
 					% If the user clicks Cancel or the window close button (X):
@@ -4474,7 +4603,7 @@ try
 						end
 						return
 					end
-
+					
 					% Load the ASCII file:
 					pathfilename			= [pathname filename];
 					error_wrongformat		= false;
@@ -4510,7 +4639,7 @@ try
 							'- A new preview line begins after an empty row.'],...
 							pathfilename,PP.general.decimalseparator));
 					end
-
+					
 					% Draw the data:
 					[xdata,ydata]					= removeExtraNanSeparators(xydata(:,1),xydata(:,2));
 					[xdata_cells,ydata_cells]	= polysplit(xdata,ydata);
@@ -4523,19 +4652,19 @@ try
 				otherwise
 					errormessage;
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'change_relid'
 			% Change the relation ID of preview lines or preview polygons:
-
+			
 			% Check imapobj_v:
 			if length(imapobj_v)~=1
 				errormessage(sprintf(['Error:\n',...
 					'Exactly one object must be selected to use this function.']));
 			end
 			imapobj		= imapobj_v;
-
+			
 			% Enter the new relation ID:
 			definput		= {num2str(par1)};
 			prompt		= {sprintf([...
@@ -4566,7 +4695,7 @@ try
 					return
 				end
 				warntext		= '';
-				relid		= str2double(answer{1,1});
+				relid			= str2double(answer{1,1});
 				if    any(isnan(relid))||...
 						(length(relid)~=1)
 					warntext	= sprintf([...
@@ -4580,6 +4709,12 @@ try
 							'Invalid value.\n',...
 							'You must enter a whole number.']);
 					end
+				end
+				ir		= find(OSMDATA.id.relation==relid,1);
+				if isempty(ir)
+					warntext	= sprintf([...
+						'Error:\n',...
+						'The ID %g does not exist in the loaded OSM data.'],relid);
 				end
 				if ~isempty(warntext)
 					if isfield(GV_H.warndlg,'plot_modify')
@@ -4596,16 +4731,19 @@ try
 				end
 			end
 			relid		= uint64(relid);
-
+			
 			% Assign the relation ID:
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 				MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid		= relid;
+				% Note:
+				% The value ir is not assigned to MAP_OBJECTS(imapobj,1).h(i,1).UserData.ir
+				% because preview objects should be freely combinable.
 			end
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'delete_all_previews'
-
+			
 			% Color number of cutting lines (=0: normal preview):
 			cncl				= get_colno_cuttingline;
 			% User confirmation:
@@ -4650,14 +4788,14 @@ try
 				end
 			end
 			MAP_OBJECTS		= MAP_OBJECTS(~imapobj_v_delete,1);
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
-
+			
+			
 			%------------------------------------------------------------------------------------------------------------
 		case 'delete_lastadded_preview'
-
+			
 			% User confirmation:
 			% if isequal(imapobj0_v,-1)
 			%	answer	= [];
@@ -4672,28 +4810,28 @@ try
 			%		return
 			%	end
 			% end
-
+			
 			[~,imapobj]	= min([MAP_OBJECTS.iobj]);
 			if MAP_OBJECTS(imapobj,1).iobj<=-1
 				delete(MAP_OBJECTS(imapobj).h);
 				MAP_OBJECTS		= MAP_OBJECTS([MAP_OBJECTS.iobj]~=min([MAP_OBJECTS.iobj]));
 			end
-
+			
 			% Update MAP_OBJECTS_TABLE:
 			display_map_objects;
-
-
+			
+			
 	end
-
+	
 	% The map has been changed:
 	GV.map_is_saved	= 0;
-
+	
 	% Reset waitbar:
 	if waitbar_activ
 		set(GV_H.patch_waitbar,'XData',[0 0 0 0]);
 		set(GV_H.text_waitbar,'String','');
 	end
-
+	
 	% Display state:
 	if ~stateisbusy
 		% t_plot_modify	= etime(clock,t_start_statebusy)
@@ -4705,7 +4843,7 @@ try
 			drawnow;
 		end
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

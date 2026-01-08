@@ -178,11 +178,15 @@ try
 		
 		poly_all				= polyshape();
 		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-			colno					= MAP_OBJECTS(imapobj,1).h(i,1).UserData.color_no;
-			if colno==0
-				colno_interp_ele	= 1;			% tile base filter settings
+			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'colno')
+				colno					= MAP_OBJECTS(imapobj,1).h(i,1).UserData.color_no;
+				if colno==0
+					colno_interp_ele	= 1;			% tile base filter settings
+				else
+					colno_interp_ele	= colno;
+				end
 			else
-				colno_interp_ele	= colno;
+				colno_interp_ele	= 1;			% tile base filter settings
 			end
 			if strcmp(MAP_OBJECTS(imapobj,1).h(i,1).Type,'polygon')
 				poly_reg				= regions(MAP_OBJECTS(imapobj,1).h(i,1).Shape);

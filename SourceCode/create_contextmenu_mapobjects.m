@@ -8,7 +8,7 @@ function [poly_outside_spec,...
 % Create a context menu for the map object MAP_OBJECTS(imapobj_v,1)
 % imapobj_v can be a scalar or a vector.
 
-global MAP_OBJECTS PP GV_H GV ELE APP
+global MAP_OBJECTS PP GV_H GV ELE APP OSMDATA
 
 try
 	
@@ -38,12 +38,12 @@ try
 	end
 	
 	% Initializations:
+	colno	= [];
 	if ~isempty(imapobj_v)
 		% iobj:
 		iobj		= MAP_OBJECTS(imapobj,1).iobj;
 		% colno:
 		if iobj>=0
-			colno	= [];
 			if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'color_no')
 				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 					colno		= [colno MAP_OBJECTS(imapobj,1).h(i,1).UserData.color_no];
@@ -57,26 +57,30 @@ try
 	hcmenu	= uicontextmenu(GV_H.fig_2dmap);
 	
 	% Intersection point:
-	colno								= (1:size(PP.color,1))';
 	[poly_legbgd,~,~]				= get_poly_legbgd;
+	x_mm								= intersectionpoint(1,1);
+	y_mm								= intersectionpoint(1,2);
 	intersectionpoint_z			= interp_ele(...
-		intersectionpoint(1,1),...						% query points x
-		intersectionpoint(1,2),...						% query points y
+		x_mm,...												% query points x
+		y_mm,...												% query points y
 		ELE,...												% elevation structure
 		colno,...											% color numbers
 		GV.legend_z_topside_bgd,...					% legend background z-value
 		poly_legbgd,...									% legend background polygon
 		'interp2');											% interpolation method
 	% Conversion of the elevation from model scale (unit mm), to real scale:
-	intersectionpoint_z_m_	= intersectionpoint_z/1000*PP.project.scale/PP.general.superelevation;
-	firstentry=uimenu(hcmenu,'Label',sprintf('x = %gmm',intersectionpoint(1,1)));
-	uimenu(hcmenu,'Label',sprintf('y = %gmm',intersectionpoint(1,2)));
+	x_m							= x_mm/1000*PP.project.scale;
+	y_m							= y_mm/1000*PP.project.scale;
+	[lat_deg,lon_deg]			= eqa2grn(x_m,y_m,GV.map_origin,OSMDATA.ellipsoid);
+	intersectionpoint_z_m	= intersectionpoint_z/1000*PP.project.scale/PP.general.superelevation;
+	firstentry=uimenu(hcmenu,'Label',sprintf('x = %gmm (%g°)',x_mm,lon_deg));
+	uimenu(hcmenu,'Label',sprintf('y = %gmm (%g°)',y_mm,lat_deg));
 	if any(isnan(intersectionpoint_z))
 		uimenu(hcmenu,'Label',sprintf('z = ?'));
 	else
 		uimenu(hcmenu,'Label',sprintf('z = %gmm (%1.1fm)',...
 			intersectionpoint_z,...
-			intersectionpoint_z_m_));
+			intersectionpoint_z_m));
 	end
 	% In 2025a, the color scheme is not always applied to context menus.
 	% Therefore, the text color used by default is saved as the standard color here:
@@ -147,7 +151,7 @@ try
 		end
 	end
 	chstno		= unique(chstno);
-	if length(chstno)==1
+	if isscalar(chstno)
 		if chstno>0
 			label_str	= sprintf('Character style No. %g (%s)',chstno,PP.charstyle(chstno,1).description);
 			uimenu(hcmenu,'Label',label_str,'Separator','on');
@@ -175,7 +179,7 @@ try
 		end
 	end
 	isym		= unique(isym);
-	if length(isym)==1
+	if isscalar(isym)
 		if (isym>0)&&~isempty(tag_symbol)
 			label_str	= sprintf('Symbol No. %g (%s)',isym,tag_symbol);
 			uimenu(hcmenu,'Label',label_str,'Separator','on');
@@ -186,7 +190,7 @@ try
 	if iobj>=0
 		if (length(colno)>=1)&&(length(colno)<=2)
 			if ~isequal(colno,0)
-				if length(colno)==1
+				if isscalar(colno)
 					label_str	= sprintf('ColNo: %g (%s %s)',...
 						colno,...
 						PP.color(colno,1).brand,...
@@ -221,7 +225,7 @@ try
 		end
 		prio	= unique(prio);
 		if (length(prio)>=1)&&(length(prio)<=2)
-			if length(prio)==1
+			if isscalar(prio)
 				label_str	= sprintf('Prio: %s',num2str(prio));
 			else
 				label_str	= sprintf('Prio: %s, %s',num2str(prio(1)),num2str(prio(2)));
@@ -240,7 +244,7 @@ try
 		end
 		dz	= unique(dz);
 		if (length(dz)>=1)&&(length(dz)<=2)
-			if length(dz)==1
+			if isscalar(dz)
 				label_str	= sprintf('dz: %s mm',num2str(dz));
 			else
 				label_str	= sprintf('dz: %s mm, %s mm',num2str(dz(1)),num2str(dz(2)));
@@ -259,11 +263,11 @@ try
 		end
 		surftype	= unique(surftype);
 		if (length(surftype)>=1)&&(length(surftype)<=2)
-			if length(surftype)==1
-				label_str	= sprintf('surftype: %s',...
+			if isscalar(surftype)
+				label_str	= sprintf('SurfType: %s',...
 					num2str(mod(surftype,100)));
 			else
-				label_str	= sprintf('surftype: %s, %s',...
+				label_str	= sprintf('SurfType: %s, %s',...
 					num2str(mod(surftype(1),100)),...
 					num2str(mod(surftype(2),100)));
 			end
@@ -279,7 +283,7 @@ try
 		end
 	end
 	rotation_v		= unique(rotation_v);
-	if length(rotation_v)==1
+	if isscalar(rotation_v)
 		rotation_label	= sprintf('Rotation = %g°',rotation_v(1));
 	elseif length(rotation_v)>=2
 		rotation_label	= sprintf('Rotation = %g° ... %g°',min(rotation_v),max(rotation_v));
@@ -287,6 +291,69 @@ try
 	if ~isempty(rotation_v)
 		if ~isequal(rotation_v,0)
 			uimenu(hcmenu,'Label',rotation_label,'Separator','on');
+		end
+	end
+	
+	% All tags key=value:
+	i_inwr_max	= 10;		% Maximum number of displayed tags of nodes, ways and relations
+	i_in_max		= 0;
+	i_iw_max		= 0;
+	i_ir_max		= 0;
+	for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+		if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'in')
+			i_in_max		= size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.in,1);
+		end
+	end
+	for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+		if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'iw')
+			i_iw_max		= size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw,1);
+		end
+	end
+	for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+		if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'ir')
+			i_ir_max		= size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.ir,1);
+		end
+	end
+	if (i_in_max>=1)||(i_iw_max>=1)||(i_ir_max>=1)
+		item_tags	= uimenu(hcmenu,'Label','Tags','Separator','on');
+	end
+	% Tags of nodes:
+	for i_in=1:min(i_inwr_max,i_in_max)
+		type			= 'node';
+		inwr			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.in(i_in,1);
+		item_nwr		= uimenu(item_tags,'Label',sprintf('Node %g/%g: ID %1.0f',...
+			i_in,i_in_max,OSMDATA.id.(type)(1,inwr)));
+		if ~ismissing(OSMDATA.(type)(1,inwr).tag(1,1))
+			for it=1:size(OSMDATA.(type)(1,inwr).tag,2)
+				uimenu(item_nwr,'Label',sprintf('%s = %s',...
+					OSMDATA.(type)(1,inwr).tag(1,it).k,OSMDATA.(type)(1,inwr).tag(1,it).v));
+			end
+		end
+	end
+	% Tags of ways:
+	for i_iw=1:min(i_inwr_max,i_iw_max)
+		type			= 'way';
+		inwr			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(i_iw,1);
+		item_nwr		= uimenu(item_tags,'Label',sprintf('Way %g/%g: ID %1.0f',...
+			i_iw,i_iw_max,OSMDATA.id.(type)(1,inwr)));
+		if ~ismissing(OSMDATA.(type)(1,inwr).tag(1,1))
+			for it=1:size(OSMDATA.(type)(1,inwr).tag,2)
+				uimenu(item_nwr,'Label',sprintf('%s = %s',...
+					OSMDATA.(type)(1,inwr).tag(1,it).k,OSMDATA.(type)(1,inwr).tag(1,it).v));
+			end
+		end
+	end
+	% Tags of relations:
+	for i_ir=1:min(i_inwr_max,i_ir_max)
+		type			= 'relation';
+		inwr			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.ir(i_ir,1);
+		item_nwr		= uimenu(item_tags,'Label',sprintf('Relation %g/%g: ID %1.0f',...
+			i_ir,i_ir_max,OSMDATA.id.(type)(1,inwr)));
+		if ~ismissing(OSMDATA.(type)(1,inwr).tag(1,1))
+			for it=1:size(OSMDATA.(type)(1,inwr).tag,2)
+				uimenu(item_nwr,'Label',sprintf('%s = %s',...
+					OSMDATA.(type)(1,inwr).tag(1,it).k,OSMDATA.(type)(1,inwr).tag(1,it).v));
+			end
 		end
 	end
 	
@@ -583,6 +650,33 @@ try
 			'MenuSelectedFcn',@(src,event)ax_2dmap_zoom('set',z_dzmin(1),z_dzmin(2),z_dzmin(3),z_dzmin(4)));
 	end
 	
+	% Line length and change line width:
+	if iobj>0
+		separator		= 'on';
+		if    isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'linelength')
+				uimenu(hcmenu,...
+					'Label',sprintf('Line length = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.linelength),...
+					'Separator',separator);
+			separator		= 'off';
+		end
+		if PP.obj(iobj).linestyle==3
+			if    isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'xy_liwimin')&&...
+					isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'xy_liwimax')
+				xy_liwimin		= MAP_OBJECTS(imapobj,1).h(1,1).UserData.xy_liwimin;
+				xy_liwimax		= MAP_OBJECTS(imapobj,1).h(1,1).UserData.xy_liwimax;
+				% Colors see also ButtonDownFcn_ax_2dmap.m (right-click).
+				uimenu(hcmenu,...
+					'Label',sprintf('Minimum line width = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.liwi_min),...
+					'ForegroundColor',[0 1 1]*0.5,'Separator',separator);
+				uimenu(hcmenu,...
+					'Label',sprintf('Maximum line width = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.liwi_max),...
+					'ForegroundColor',[1 0 1]*0.5);
+				uimenu(hcmenu,'Label','Change line width',...
+					'MenuSelectedFcn',@(src,event)plot_modify('change_liwi',imapobj));
+			end
+		end
+	end
+	
 	% Change visibility:
 	checked_show		= 'off';
 	checked_grayout	= 'off';
@@ -629,26 +723,6 @@ try
 		end
 	end
 	
-	% Change line width:
-	if iobj>0
-		if PP.obj(iobj).linestyle==3
-			if    isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'xy_liwimin')&&...
-					isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'xy_liwimax')
-				xy_liwimin		= MAP_OBJECTS(imapobj,1).h(1,1).UserData.xy_liwimin;
-				xy_liwimax		= MAP_OBJECTS(imapobj,1).h(1,1).UserData.xy_liwimax;
-				% Colors see also ButtonDownFcn_ax_2dmap.m (right-click).
-				uimenu(hcmenu,...
-					'Label',sprintf('Minimum line width = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.liwi_min),...
-					'ForegroundColor',[0 1 1]*0.5,'Separator','on');
-				uimenu(hcmenu,...
-					'Label',sprintf('Maximum line width = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.liwi_max),...
-					'ForegroundColor',[1 0 1]*0.5);
-				uimenu(hcmenu,'Label','Change line width',...
-					'MenuSelectedFcn',@(src,event)plot_modify('change_liwi',imapobj));
-			end
-		end
-	end
-	
 	% Change color:
 	if iobj>=0
 		% Color numbers of the selected map object:
@@ -678,8 +752,8 @@ try
 		% colno_pp_fgd or colno_pp_bgd can be empty!
 		if (length(colno_fgd   )<=1)&&(length(colno_bgd   )<=1)&&...		% - There is at most one foreground and
 				(length(colno_pp_fgd)<=1)&&(length(colno_pp_bgd)<=1)&&(...		%   one background color
-				(length(colno_fgd   )==1)||(length(colno_bgd   )==1))&&(...		% - There is at least one foreground or
-				(length(colno_pp_fgd)==1)||(length(colno_pp_bgd)==1))				%   one background color
+				(isscalar(colno_fgd   ))||(isscalar(colno_bgd   )))&&(...		% - There is at least one foreground or
+				(isscalar(colno_pp_fgd))||(isscalar(colno_pp_bgd)))				%   one background color
 			if iobj>0
 				switch MAP_OBJECTS(imapobj,1).disp
 					case 'text'
@@ -713,7 +787,7 @@ try
 				item_Change_color_no_0	= uimenu(hcmenu,'Separator','on',...
 					'Label','Color number: 0 (transparent, color of the object below)',...
 					'MenuSelectedFcn',@(src,event)plot_modify('change_color',imapobj,0,0));
-				if length(color_no_pp_sort)==1
+				if isscalar(color_no_pp_sort)
 					if isempty(PP.color(color_no_pp_sort,1))
 						errormessage(sprintf('Error: Color number %g is not defined.',color_no_pp_sort));
 					end

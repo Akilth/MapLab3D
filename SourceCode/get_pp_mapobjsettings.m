@@ -3,7 +3,7 @@ function [userdata_pp,textpar_pp,errortext]=get_pp_mapobjsettings(iobj,disp,obj_
 % Use this function to create all editable texts on the map.
 % When reloading the project parameters, the settings defined here will be used to change the text character styles
 % and the text userdata (for example dz).
-% 
+%
 % Syntax:
 % [userdata_pp,textpar_pp,errortext]=get_pp_mapobjsettings(iobj,disp,obj_purpose);
 % if ~isempty(errortext)
@@ -61,17 +61,17 @@ function [userdata_pp,textpar_pp,errortext]=get_pp_mapobjsettings(iobj,disp,obj_
 global PP
 
 try
-
+	
 	userdata_pp		= [];
 	textpar_pp		= [];
 	errortext		= '';
 	textpar_pp		= struct;
-
+	
 	switch disp
-
+		
 		%---------------------------------------------------------------------------------------------------------------
 		case 'line'
-
+			
 			switch obj_purpose{1,1}
 				case 'map object'
 					if iobj<1
@@ -116,9 +116,10 @@ try
 					'in the project file is only %g.'],iobj,size(PP.obj,1));
 				return
 			end
-
+			
 			% Because the userdata_pp values ​​depend on PP.obj(iobj,1).linestyle and PP.obj(iobj,1).linepar,
 			% they are assigned in line2poly and not here:
+			% The assignment of in, iw, and ir is not necessary here.
 			[~,~,ud_line,ud_lisy]	= line2poly(...
 				[],...									% x
 				[],...									% y
@@ -126,11 +127,11 @@ try
 				PP.obj(iobj).linestyle,...			% style
 				iobj,...									% iobj
 				obj_purpose);							% obj_purpose
-
+			
 			% Userdata: When texts are changed, these fields of the userdata are not changed.
 			switch obj_purpose{1,1}
 				case 'map object'
-
+					
 					if ~isempty(ud_lisy)
 						userdata_pp.prio_fgd					= ud_lisy.prio;
 						userdata_pp.color_no_fgd			= ud_lisy.color_no;
@@ -146,9 +147,9 @@ try
 					userdata_pp.color_no_bgd				= ud_line.color_no;
 					userdata_pp.surftype_bgd				= ud_line.surftype;
 					userdata_pp.dz_bgd						= ud_line.dz;
-
+					
 				case 'legend element'
-
+					
 					if ~isempty(ud_lisy)
 						userdata_pp.prio_fgd					= [];					% assigned in create_legend_map.m
 						userdata_pp.color_no_fgd			= ud_lisy.color_no;
@@ -164,15 +165,15 @@ try
 					userdata_pp.color_no_bgd				= ud_line.color_no;
 					userdata_pp.surftype_bgd				= ud_line.surftype;
 					userdata_pp.dz_bgd						= ud_line.dz;
-
+					
 				otherwise
 					errormessage;
 			end
-
-
+			
+			
 			%---------------------------------------------------------------------------------------------------------------
 		case 'area'
-
+			
 			switch obj_purpose{1,1}
 				case 'map object'
 					if iobj<1
@@ -219,19 +220,20 @@ try
 					'in the project file is only %g.'],iobj,size(PP.obj,1));
 				return
 			end
-
+			
 			switch obj_purpose{1,1}
 				case 'map object'
-
+					
 					% Because the userdata_pp values ​​depend on PP.obj(iobj,1).areastyle and PP.obj(iobj,1).areapar,
 					% they are assigned in area2poly and not here:
+					% The assignment of in, iw, and ir is not necessary here.
 					[~,~,ud_area,ud_arsy]	= area2poly(...
 						polyshape(),...						% polyin
 						PP.obj(iobj).areapar,...			% par
 						PP.obj(iobj).areastyle,...			% style
 						iobj,...									% iobj
 						obj_purpose);							% obj_purpose
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					if ~isempty(ud_arsy)
 						userdata_pp.prio_fgd					= ud_arsy.prio;
@@ -248,18 +250,19 @@ try
 					userdata_pp.color_no_bgd				= ud_area.color_no;
 					userdata_pp.surftype_bgd				= ud_area.surftype;
 					userdata_pp.dz_bgd						= ud_area.dz;
-
+					
 				case 'legend element'
-
+					
 					% Because the userdata_pp values ​​depend on PP.obj(iobj,1).areastyle and PP.obj(iobj,1).areapar,
 					% they are assigned in area2poly and not here:
+					% The assignment of in, iw, and ir is not necessary here.
 					[~,~,ud_area,ud_arsy]	= area2poly(...
 						polyshape(),...						% polyin
 						PP.obj(iobj).areapar,...			% par
 						PP.obj(iobj).areastyle,...			% style
 						iobj,...									% iobj
 						obj_purpose);							% obj_purpose
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					if ~isempty(ud_arsy)
 						userdata_pp.prio_fgd					= [];					% assigned in create_legend_map.m
@@ -276,9 +279,9 @@ try
 					userdata_pp.color_no_bgd				= ud_area.color_no;
 					userdata_pp.surftype_bgd				= ud_area.surftype;
 					userdata_pp.dz_bgd						= ud_area.dz;
-
+					
 				case 'legend map scale bar'
-
+					
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.color_no_fgd				= PP.legend.mapscalebar_color_no;
@@ -287,9 +290,9 @@ try
 					userdata_pp.surftype_bgd				= 200;
 					userdata_pp.dz_fgd						= PP.legend.mapscalebar_dz_fgd;
 					userdata_pp.dz_bgd						= PP.legend.mapscalebar_dz_bgd;
-
+					
 				case 'legend background'
-
+					
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.color_no_fgd				= PP.legend.color_no_bgd;
@@ -298,9 +301,9 @@ try
 					userdata_pp.surftype_bgd				= 200;
 					userdata_pp.dz_fgd						= 0;
 					userdata_pp.dz_bgd						= 0;
-
+					
 				case 'legend frame'
-
+					
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.color_no_fgd				= PP.legend.color_no_fra;
@@ -309,13 +312,13 @@ try
 					userdata_pp.surftype_bgd				= 200;
 					userdata_pp.dz_fgd						= PP.legend.fh;
 					userdata_pp.dz_bgd						= PP.legend.fh;
-
+					
 			end
-
-
+			
+			
 			%---------------------------------------------------------------------------------------------------------------
 		case 'symbol'
-
+			
 			switch obj_purpose{1,1}
 				case 'map object'
 					if iobj<1
@@ -365,10 +368,10 @@ try
 					'in the project file is only %g.'],iobj,size(PP.obj,1));
 				return
 			end
-
+			
 			switch obj_purpose{1,1}
 				case 'map object'
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					userdata_pp.prio_fgd						= PP.obj(iobj).symbolpar.prio;
 					userdata_pp.prio_bgd						= PP.obj(iobj).symbolpar.prio-0.25;
@@ -378,9 +381,9 @@ try
 					userdata_pp.surftype_bgd				= 400;
 					userdata_pp.dz_fgd						= PP.obj(iobj).symbolpar.dz_symbol;
 					userdata_pp.dz_bgd						= PP.obj(iobj).symbolpar.dz_bgd;
-
+					
 				case 'legend element'
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
@@ -390,9 +393,9 @@ try
 					userdata_pp.surftype_bgd				= 400;
 					userdata_pp.dz_fgd						= PP.obj(iobj).symbolpar.dz_symbol;
 					userdata_pp.dz_bgd						= PP.obj(iobj).symbolpar.dz_bgd;
-
+					
 				case 'legend symbol manual selection'
-
+					
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.color_no_fgd				= PP.legend.element(r,c).legsymb_mansel_color_no_sym;
@@ -401,17 +404,17 @@ try
 					userdata_pp.surftype_bgd				= 400;
 					userdata_pp.dz_fgd						= PP.legend.element(r,c).legsymb_mansel_dz_symbol;
 					userdata_pp.dz_bgd						= PP.legend.element(r,c).legsymb_mansel_dz_bdg;
-
+					
 			end
-
-
+			
+			
 			%---------------------------------------------------------------------------------------------------------------
 		case {'text','connection line'}
-
+			
 			switch obj_purpose{1,1}
-
+				
 				case 'map object'
-
+					
 					% Texts of map objects:
 					if iobj<1
 						% This should not happen:
@@ -424,7 +427,7 @@ try
 							'in the project file is only %g.'],iobj,size(PP.obj,1));
 						return
 					end
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					userdata_pp.prio_fgd						= PP.obj(iobj).textpar.prio;
 					userdata_pp.prio_bgd						= PP.obj(iobj).textpar.prio-0.25;
@@ -434,7 +437,7 @@ try
 					userdata_pp.surftype_bgd				= 300;
 					userdata_pp.dz_fgd						= PP.obj(iobj).textpar.dz_letters;
 					userdata_pp.dz_bgd						= PP.obj(iobj).textpar.dz_bgd;
-
+					
 					% Text formatting, important when changing texts:
 					textpar_pp.charstyle_no					= PP.obj(iobj).textpar.charstyle_no;
 					textpar_pp.rotation						= PP.obj(iobj).textpar.rotation;
@@ -445,9 +448,9 @@ try
 					% Connection line: When texts are changed, there are no changes to the connection line.
 					textpar_pp.line2refpoint_display		= PP.obj(iobj).textpar.line2refpoint_display;
 					textpar_pp.line2refpoint_width		= PP.obj(iobj).textpar.line2refpoint_width;
-
+					
 				case 'legend map scale bar'
-
+					
 					% Tick labels of the legend map scale bar:
 					r												= obj_purpose{2,1};
 					c												= obj_purpose{3,1};
@@ -464,7 +467,7 @@ try
 							'(R2max=%g,C2max=%g).'],r,c,size(PP.legend.element,1),size(PP.legend.element,2));
 						return
 					end
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
@@ -474,7 +477,7 @@ try
 					userdata_pp.surftype_bgd				= 300;
 					userdata_pp.dz_fgd						= PP.legend.element(r,c).text_dz_letters;
 					userdata_pp.dz_bgd						= PP.legend.element(r,c).text_dz_bgd;
-
+					
 					% Text formatting, important when changing texts:
 					textpar_pp.charstyle_no					= PP.legend.element(r,c).text_charstyle_no;
 					textpar_pp.rotation						= 0;
@@ -485,9 +488,9 @@ try
 					% Connection line: When texts are changed, there are no changes to the connection line.
 					textpar_pp.line2refpoint_display		= 0;					% the legend texts do not have reference points
 					textpar_pp.line2refpoint_width		= 0;					% the legend texts do not have reference points
-
+					
 				case 'legend element'
-
+					
 					% Legend texts:
 					r												= obj_purpose{2,1};
 					c												= obj_purpose{3,1};
@@ -504,7 +507,7 @@ try
 							'(R2max=%g,C2max=%g).'],r,c,size(PP.legend.element,1),size(PP.legend.element,2));
 						return
 					end
-
+					
 					% Userdata: When texts are changed, these fields of the userdata are not changed.
 					userdata_pp.prio_fgd						= [];					% assigned in create_legend_map.m
 					userdata_pp.prio_bgd						= [];					% assigned in create_legend_map.m
@@ -514,7 +517,7 @@ try
 					userdata_pp.surftype_bgd				= 300;
 					userdata_pp.dz_fgd						= PP.legend.element(r,c).text_dz_letters;
 					userdata_pp.dz_bgd						= PP.legend.element(r,c).text_dz_bgd;
-
+					
 					% Text formatting, important when changing texts:
 					textpar_pp.charstyle_no					= PP.legend.element(r,c).text_charstyle_no;
 					textpar_pp.rotation						= 0;
@@ -525,15 +528,15 @@ try
 					% Connection line: When texts are changed, there are no changes to the connection line.
 					textpar_pp.line2refpoint_display		= 0;					% the legend texts do not have reference points
 					textpar_pp.line2refpoint_width		= 0;					% the legend texts do not have reference points
-
+					
 				otherwise
 					errormessage;
 			end
-
+			
 		otherwise
 			errormessage;
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

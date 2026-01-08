@@ -1,63 +1,97 @@
-function [poly_line,poly_lisy,ud_line,ud_lisy,linewidth,linewidth_max,dz_fgd,dz_bgd,ip_sampling,extra]=...
-	line2poly(x,y,par,style,iobj,obj_purpose,jointtype,miterlimit)
+function [poly_line,...
+	poly_lisy,...
+	ud_line,...
+	ud_lisy,...
+	linewidth,...
+	linewidth_max,...
+	dz_fgd,...
+	dz_bgd,...
+	ip_sampling,...
+	extra]=...
+	line2poly(...
+	x,...
+	y,...
+	par,...
+	style,...
+	iobj,...
+	obj_purpose,...
+	jointtype,...
+	miterlimit,...
+	in,...
+	iw,...
+	ir)
 % Returns a polygon with a constant linewidth, defined by 2-D vertices x and y.
-% poly_line			1*1 polyshape object with boundaries that buffer the 2-D points (x,y) by a distance linewidth/2.
-% poly_lisy			1*1 polyshape object: line symbols (e. g. dashs): foreground
-% ud_line,			corresponding Userdata:
-% ud_lisy			ud.color_no			color number
-%						ud.color_no_pp		color number project parameters
-%						ud.dz					change in altitude compared to the elevation (>0 higher, <0 lower)
-%						ud.prio				object priority
-%						ud.iobj				index in PP.obj
-%						ud.level				0: background, 1: foreground
-%						ud.surftype			surface type
-%						ud.rotation			rotation angle
-%						ud.obj_purpose		cell array: information about the usage of the object
-%												(see get_pp_mapobjsettings.m)
-%						ud.x_scint			linestyle 4:	xyz data for creating a scatteredInterpolant object:
-%						ud.y_scint								elevation calculation for the given polygon area
-%						ud.z_scint	
-%						ud.x_zmin			linestyle 4:	xyz data of the start or end point with the lower z value 
-%						ud.y_zmin								(outline, 2x1 vector)
-%						ud.z_zmin	
-%						ud.x_zmax			linestyle 4:	xyz data of the start or end point with the higher z value 
-%						ud.y_zmax								(outline, 2x1 vector)
-%						ud.z_zmax	
-%						If there are no symbols, ud_lisy is empty.
-% linewidth			constant line width or minimum line width
-% linewidth_max	maximum line width
-% dz_fgd				dz of the foreground
-% dz_bgd				dz of the background
-% ip_sampling		index of the parameter sampling (number of the edges at the ends of the line) in par
-% extra				Extra data:
-%						1)	jointtype='miter' and style=1:
-%							extra.lb		vertices of the left  border (lb) of the polyshape object
-%							extra.rb		vertices of the right border (rb) of the polyshape object
-%							-	N*2 matrices:	N:				number of vertices
-%											column 1:	x-values
-%											column 2:	y-values
-%							-	There can be extra points: use 'KeepCollinearPoints'=false when creating a polygon object
-%							-	There can be intersections if the polygon overlaps:
-%								better use only the first and last point.
-% x,y					vertices of the line
-%						The line can contain different line segments, separated by nans.
-% par					cell array of parameters
-% style				Line style, see below
-% iobj				index in PP.obj
-% obj_purpose		cell array: information about the usage of the object
-%						(see get_pp_mapobjsettings.m)
-% jointtype:		Joint type for buffer boundaries, specified as one of the following:
-%						'round'		Round out boundary corners. The number of edges of a semicircle is defined by
-%										sampling, the same value as for the semicircles at the ends of the polygon.
-%						'miter'		Results in less vertices than jointtype='round'.
-%										Every corner ist made of 1 or 2 vertices.
-%						'bufferm'	Uses the bufferm function.
-%										This only works with a constant line width.
-%										Was for testing: the execution time was greater than jointtype='miter':
-%										no advantage
-% miterlimit:		Specified as a positive numeric scalar greater than or equal to 1. The miter limit is the ratio
-%						between the distance a joint vertex is moved and the buffer distance.
-%						Setting a miter limit controls the pointiness of boundary joints.
+%
+% Input:
+%  1)	x					x-values of the line. The line can contain different line segments, separated by nans.
+%  2)	y					y-values of the line. The line can contain different line segments, separated by nans.
+%  3) par				cell array of parameters
+%  4) style				Line style, see below
+%  5) iobj				index in PP.obj
+%  6) obj_purpose		cell array: information about the usage of the object
+%							(see get_pp_mapobjsettings.m)
+%  7) jointtype:		Joint type for buffer boundaries, specified as one of the following:
+%							'round'		Round out boundary corners. The number of edges of a semicircle is defined by
+%											sampling, the same value as for the semicircles at the ends of the polygon.
+%							'miter'		Results in less vertices than jointtype='round'.
+%											Every corner ist made of 1 or 2 vertices.
+%							'bufferm'	Uses the bufferm function.
+%											This only works with a constant line width.
+%											Was for testing: the execution time was greater than jointtype='miter':
+%											no advantage
+%  8) miterlimit:		Specified as a positive numeric scalar greater than or equal to 1. The miter limit is the ratio
+%							between the distance a joint vertex is moved and the buffer distance.
+%							Setting a miter limit controls the pointiness of boundary joints.
+%  9) in					Indices in OSMDATA.node(1,in)
+% 10) iw					Indices in OSMDATA.way(1,iw)
+% 11) ir					Indices in OSMDATA.relation(1,ir)
+%							If in, iw or ir is empty: No nodes/ways/relations have been included in the line data.
+%							If in, iw or ir is zero, the value is replaced by an empty matrix.
+%							If in, iw or ir contains the value zero, this element is deleted.
+%
+% Output:
+%  1) poly_line		1*1 polyshape object with boundaries that buffer the 2-D points (x,y) by a distance linewidth/2.
+%  2) poly_lisy		1*1 polyshape object: line symbols (e. g. dashs): foreground
+%  3) ud_line,			corresponding Userdata:
+%  4) ud_lisy			ud.color_no			color number
+%							ud.color_no_pp		color number project parameters
+%							ud.dz					change in altitude compared to the elevation (>0 higher, <0 lower)
+%							ud.prio				object priority
+%							ud.iobj				index in PP.obj
+%							ud.level				0: background, 1: foreground
+%							ud.surftype			surface type
+%							ud.rotation			rotation angle
+%							ud.obj_purpose		cell array: information about the usage of the object
+%													(see get_pp_mapobjsettings.m)
+%							ud.in					Indices in OSMDATA.node(1,in)
+%							ud.iw					Indices in OSMDATA.way(1,iw)
+%							ud.ir					Indices in OSMDATA.relation(1,ir)
+%													Empty: No nodes/ways/relations have been included in the line data.
+%							ud.x_scint			linestyle 4:	xyz data for creating a scatteredInterpolant object:
+%							ud.y_scint								elevation calculation for the given polygon area
+%							ud.z_scint
+%							ud.x_zmin			linestyle 4:	xyz data of the start or end point with the lower z value
+%							ud.y_zmin								(outline, 2x1 vector)
+%							ud.z_zmin
+%							ud.x_zmax			linestyle 4:	xyz data of the start or end point with the higher z value
+%							ud.y_zmax								(outline, 2x1 vector)
+%							ud.z_zmax
+%							If there are no symbols, ud_lisy is empty.
+%  5) linewidth		constant line width or minimum line width
+%  6) linewidth_max	maximum line width
+%  7) dz_fgd			dz of the foreground
+%  8) dz_bgd			dz of the background
+%  9) ip_sampling		index of the parameter sampling (number of the edges at the ends of the line) in par
+% 10) extra				Extra data:
+%							1)	jointtype='miter' and style=1:
+%								extra.lb		vertices of the left  border (lb) of the polyshape object
+%								extra.rb		vertices of the right border (rb) of the polyshape object
+%								-	N*2 matrices:	N:				number of vertices
+%														column 1:	x-values
+%														column 2:	y-values
+%								-	There can be extra points: use 'KeepCollinearPoints'=false when creating a polygon object
+%								-	There can be intersections if the polygon overlaps:
+%									better use only the first and last point.
 %
 % Syntax for creating a polygon:
 %		1)	poly_line = line2poly(x,y,par)
@@ -65,15 +99,14 @@ function [poly_line,poly_lisy,ud_line,ud_lisy,linewidth,linewidth_max,dz_fgd,dz_
 %										style			= 1
 %										sampling		= 1
 %										jointtype	= 'miter'
-%										miterlimit	= 3
+%										miterlimit	= 2
 %			simple polygon with:	par			= {linewidth;sampling}
 %										style			= 1
 %										jointtype	= 'miter'
-%										miterlimit	= 3
+%										miterlimit	= 2
 %		2)	poly_line                             = line2poly(x,y,par,style)
-%			[poly_line,poly_lisy,ud_line,ud_lisy] = line2poly(x,y,par,style,iobj)
-%			poly_line                             = line2poly(x,y,par,style,[]  ,{'map object'},jointtype,miterlimit)
-%			[poly_line,poly_lisy,ud_line,ud_lisy] = line2poly(x,y,par,style,iobj,{'map object'},jointtype,miterlimit)
+%			poly_line                             = line2poly(x,y,par,style,[]  ,[]            ,jointtype,miterlimit)
+%			[poly_line,poly_lisy,ud_line,ud_lisy] = line2poly(x,y,par,style,iobj,{'map object'},jointtype,miterlimit,in,iw,ir)
 %			Do not use 5 output arguments!
 % Syntax for assignment of the userdata, the total line width and ip_sampling without calculating the polygon:
 % (Please note that ud_lisy may be empty!)
@@ -219,10 +252,10 @@ try
 	
 	% Default values:
 	if nargin>0
-		if nargin<=2
+		if nargin<3
 			errormessage('line2poly: number of input arguments must be at least =3');
 		end
-		if nargin<=3
+		if nargin<4
 			if ~iscell(par)
 				linewidth				= par;
 				par						= cell(2,1);
@@ -235,17 +268,26 @@ try
 			end
 			style							= 1;
 		end
-		if nargin<=4
+		if nargin<5
 			iobj							= 0;
 		end
-		if nargin<=5
+		if nargin<6
 			obj_purpose					= {'map object'};
 		end
-		if nargin<=6
+		if nargin<7
 			jointtype					= 'miter';
 		end
-		if nargin<=7
-			miterlimit					= 1;
+		if nargin<8
+			miterlimit					= 2;
+		end
+		if nargin<9
+			in								= [];
+		end
+		if nargin<10
+			iw								= [];
+		end
+		if nargin<11
+			ir								= [];
 		end
 		testplot							= 0;
 	else
@@ -386,13 +428,19 @@ try
 	if GV.warnings_off
 		warning('off','MATLAB:polyshape:repairedBySimplify');
 	end
-	poly_line	= polyshape();
-	poly_lisy	= polyshape();
-	ud_line		= [];
-	ud_lisy		= [];			% If there are no symbols, ud_lisy must be empty!
-	[x,y]			= removeExtraNanSeparators(x,y);
-	x				= x(:);		% column vektors
-	y				= y(:);
+	in						= in(:);
+	in(in==0,:)			= [];
+	iw						= iw(:);
+	iw(iw==0,:)			= [];
+	ir						= ir(:);
+	ir(ir==0,:)			= [];
+	poly_line			= polyshape();
+	poly_lisy			= polyshape();
+	ud_line				= [];
+	ud_lisy				= [];							% If there are no symbols, ud_lisy must be empty!
+	[x,y]					= removeExtraNanSeparators(x,y);
+	x						= x(:);						% column vektors
+	y						= y(:);
 	
 	% Assign project parameters:
 	color_no_fgd	= 1;
@@ -489,6 +537,9 @@ try
 			ud_line.surftype		= 100;
 			ud_line.rotation		= 0;
 			ud_line.obj_purpose	= obj_purpose;
+			ud_line.in				= in;
+			ud_line.iw				= iw;
+			ud_line.ir				= ir;
 			
 			% Assignment of the userdata, the total line width and ip_sampling without calculating the polygon:
 			if isempty(x)&&isempty(y)
@@ -875,6 +926,9 @@ try
 			ud_lisy.surftype		= 100+surftype_dash;
 			ud_lisy.rotation		= 0;
 			ud_lisy.obj_purpose	= obj_purpose;
+			ud_lisy.in				= in;
+			ud_lisy.iw				= iw;
+			ud_lisy.ir				= ir;
 			% Background (poly_line): Line
 			% The object priority of the background MUST:
 			% 1) be smaller the the object priority of the foreground AND
@@ -889,6 +943,9 @@ try
 			ud_line.surftype		= 100;
 			ud_line.rotation		= 0;
 			ud_line.obj_purpose	= obj_purpose;
+			ud_line.in				= in;
+			ud_line.iw				= iw;
+			ud_line.ir				= ir;
 			
 			% Assignment of the userdata, the total line width and ip_sampling without calculating the polygon:
 			if isempty(x)&&isempty(y)

@@ -21,7 +21,7 @@ function plotosmdata_getdata(iobj,msg,get_liar,get_text,get_symb)
 % plotosmdata_getdata(iobj,msg);				Create a field PLOTDATA.obj(iobj,1) and
 %														assign the data in OSMDATA_TABLE.
 
-global PP OSMDATA APP OSMDATA_TABLE OSMDATA_TABLE_INWR PLOTDATA GV
+global PP OSMDATA APP OSMDATA_TABLE OSMDATA_TABLE_INWR PLOTDATA GV GV_H WAITBAR
 
 try
 	
@@ -138,6 +138,7 @@ try
 	
 	%------------------------------------------------------------------------------------------------------------------
 	% Collect the data of all objects:
+	WAITBAR.t1		= clock;
 	filter_by_key	= false;
 	for c=1:size(PP.obj(iobj).filter_by_key.incltagkey,2)
 		if ~isempty(PP.obj(iobj).filter_by_key.incltagkey{1,c})
@@ -184,6 +185,13 @@ try
 			id_rel_way_v		= uint64([]);					% id_obj_way_v  of relations
 			for i_itable=1:length(i_table_plot)
 				itable						= i_table_plot(i_itable);
+				% Waitbar:
+				if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+					WAITBAR.t1	= clock;
+					set(GV_H.text_waitbar,'String',sprintf('%s: relations %g/%g',msg,...
+						i_itable,length(i_table_plot)));
+					drawnow;
+				end
 				% Read the OSM-data:
 				if strcmp(OSMDATA_TABLE.Type(itable),'relation')
 					if GV.get_nodes_ways_repeatedly
@@ -217,6 +225,13 @@ try
 			ways		= [];
 			for i_itable=1:length(i_table_plot)
 				itable						= i_table_plot(i_itable);	% itable: Index in OSMDATA_TABLE_INWR and OSMDATA_TABLE
+				% Waitbar:
+				if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+					WAITBAR.t1	= clock;
+					set(GV_H.text_waitbar,'String',sprintf('%s: nodes, ways %g/%g',msg,...
+						i_itable,length(i_table_plot)));
+					drawnow;
+				end
 				% Read the OSM-data:
 				switch OSMDATA_TABLE.Type(itable)
 					case 'node'
@@ -224,8 +239,27 @@ try
 							x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
 							y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
 							if ~isnan(x)&&~isnan(y)
-								PLOTDATA.obj(iobj,1).connways	= connect_ways(PLOTDATA.obj(iobj,1).connways,[],x,y,...
-									iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
+								PLOTDATA.obj(iobj,1).connways	= ...
+									connect_ways(...							%								Defaultvalues:
+									PLOTDATA.obj(iobj,1).connways,...	% connways					-
+									[],...										% connways_merge			[]
+									x,...											% x							[]
+									y,...											% y							[]
+									iobj,...										% iobj						[]
+									[],...										% lino						[]
+									PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+									OSMDATA_TABLE_INWR(itable),...		% in							0
+									0,...											% iw_v						0
+									0,...											% ir							0
+									1,...											% l2a							1
+									1,...											% s							1
+									1,...											% lino_new_min				1
+									'outer',...									% role						'outer'
+									uint64(0),...								% relid						uint64(0)
+									'',...										% tag							''
+									GV.tol_1,...								% tol							GV.tol_1
+									true,...										% conn_with_rev			true
+									true);										% connect					true
 								if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 									id_obj_node_v(end+1,1)				= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
 								end
@@ -238,11 +272,14 @@ try
 							y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 							[xc,yc]	= polysplit(x,y);
 							for ic=1:size(xc,1)
-								iw							= size(ways,1)+1;
-								ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
-								ways(iw,1).relid		= uint64(0);						% uint64 number: OpenStreetMap dataset ID
-								ways(iw,1).role		= '';									% character array
-								ways(iw,1).tag			= '';									% character array
+								iw								= size(ways,1)+1;
+								ways(iw,1).xy				= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+								ways(iw,1).relid			= uint64(0);						% uint64 number: OpenStreetMap dataset ID
+								ways(iw,1).role			= '';									% character array
+								ways(iw,1).tag				= '';									% character array
+								ways(iw,1).iw_osmdata	= OSMDATA_TABLE_INWR(itable);	% index in OSMDATA.way
+								ways(iw,1).ir_osmdata	= 0;									% index in OSMDATA.relation
+								ways(iw,1).connect		= true;								% connect line (true/false)
 								if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 									if ic==1
 										id_obj_way_v(end+1,1)				= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
@@ -280,6 +317,7 @@ try
 			read_relations						= true;
 			read_nodes_ways					= true;
 			obj_eqtags_ioeqt					= [];
+			msg2									= sprintf('%s: get symbols',msg);
 			[~,~]									= plotosmdata_getdata_symbols(...
 				iobj,...
 				i_table_plot,...
@@ -292,7 +330,8 @@ try
 				id_sym_way_cv,...
 				read_relations,...
 				read_nodes_ways,...
-				obj_eqtags_ioeqt);
+				obj_eqtags_ioeqt,...
+				msg2);
 		end
 		
 		% Collect the data of all texts:
@@ -310,6 +349,7 @@ try
 			end
 			read_nodes_ways					= true;
 			obj_eqtags_ioeqt					= [];
+			msg2									= sprintf('%s: get texts',msg);
 			[~,~]									= plotosmdata_getdata_texts(...
 				iobj,...
 				i_table_plot,...
@@ -320,7 +360,8 @@ try
 				id_txt_way_cv,...
 				read_relations,...
 				read_nodes_ways,...
-				obj_eqtags_ioeqt);
+				obj_eqtags_ioeqt,...
+				msg2);
 		end
 		
 	else
@@ -343,11 +384,11 @@ try
 			GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,PP.obj(iobj,1).filter_by_key.minlength);
 			GV.log.create_map.text	= sprintf('%s%8.3f |      |\n',GV.log.create_map.text,PP.obj(iobj,1).filter_by_key.minarea);
 			GV.log.create_map.text	= sprintf('%sMinimum dimensions, displayed here:                        | ',GV.log.create_map.text);
-			testout_mindimx	= PP.obj(iobj,1).filter_by_key.mindimx/10;
-			testout_mindimy	= PP.obj(iobj,1).filter_by_key.mindimy/10;
-			testout_mindiag	= PP.obj(iobj,1).filter_by_key.mindiag/10;
-			testout_minlength	= PP.obj(iobj,1).filter_by_key.minlength/10;
-			testout_minarea	= PP.obj(iobj,1).filter_by_key.minarea/10;
+			testout_mindimx	= PP.obj(iobj,1).filter_by_key.mindimx/GV.testout_minvalues_divisor;
+			testout_mindimy	= PP.obj(iobj,1).filter_by_key.mindimy/GV.testout_minvalues_divisor;
+			testout_mindiag	= PP.obj(iobj,1).filter_by_key.mindiag/GV.testout_minvalues_divisor;
+			testout_minlength	= PP.obj(iobj,1).filter_by_key.minlength/GV.testout_minvalues_divisor;
+			testout_minarea	= PP.obj(iobj,1).filter_by_key.minarea/GV.testout_minvalues_divisor;
 			GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,testout_mindimx);
 			GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,testout_mindimy);
 			GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,testout_mindiag);
@@ -445,6 +486,16 @@ try
 					if ~isempty(GV.test_readosm)
 						GV.test_readosm.itable		= itable;
 					end
+					
+					% Waitbar:
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s: Tag %g/%g (%s): relations %g/%g',msg,...
+							ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+							i_itable,length(itable_obj_eqtags_ioeqt)));
+						drawnow;
+					end
+					
 					if strcmp(OSMDATA_TABLE.Type(itable),'relation')
 						
 						% Get the data of lines and areas:
@@ -494,6 +545,9 @@ try
 								
 								% Filter small objects out and save the OSM data of relations in PLOTDATA:
 								filter_nla_separatly		= 0;							% Always use the dimension of the whole relation!
+								msg2							= sprintf('%s: Tag %g/%g (%s): relations %g/%g: filtering',msg,...
+									ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+									i_itable,length(itable_obj_eqtags_ioeqt));
 								[PLOTDATA.obj(iobj,1).connways,...
 									dx_all_mm,...
 									dy_all_mm,...
@@ -521,7 +575,8 @@ try
 									PP.obj(iobj,1).filter_by_key.minarea,...
 									filter_nla_separatly,...
 									force_keep_data,...
-									PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+									PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+									msg2);
 								
 								% "Create map" log:
 								if    force_keep_data||(...
@@ -560,11 +615,14 @@ try
 						if    (PP.obj(iobj).symbolpar.display==1)           &&...
 								APP.CreatemapSettingsCreateSymbolsMenu.Checked&&...
 								get_symb
-							filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
-							read_relations							= true;
-							read_nodes_ways						= false;
-							id_sym_node_rel_cv					= id_sym_node_cv_0;		% cell array of empty elements
-							id_sym_way_rel_cv						= id_sym_way_cv_0;		% cell array of empty elements
+							filter_nla_separatly			= 0;				% Always use the dimension of the whole relation!
+							read_relations					= true;
+							read_nodes_ways				= false;
+							id_sym_node_rel_cv			= id_sym_node_cv_0;		% cell array of empty elements
+							id_sym_way_rel_cv				= id_sym_way_cv_0;		% cell array of empty elements
+							msg2								= sprintf('%s: Tag %g/%g (%s): relations %g/%g: get symbols',msg,...
+								ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+								i_itable,length(itable_obj_eqtags_ioeqt));
 							[id_sym_node_rel_cv,id_sym_way_rel_cv]	= plotosmdata_getdata_symbols(...
 								iobj,...
 								itable,...
@@ -577,7 +635,8 @@ try
 								id_sym_way_rel_cv,...
 								read_relations,...
 								read_nodes_ways,...
-								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+								msg2);
 							if ~GV.get_nodes_ways_repeatedly_symbols
 								for iseqt=1:size(id_sym_node_cv,1)
 									id_sym_node_cv{iseqt,1}	= unique([id_sym_node_cv{iseqt,1};id_sym_node_rel_cv{iseqt,1}]);
@@ -590,11 +649,14 @@ try
 						if    (PP.obj(iobj).textpar.display==1)           &&...
 								APP.CreatemapSettingsCreateTextsMenu.Checked&&...
 								get_text
-							filter_nla_separatly					= 0;				% Always use the dimension of the whole relation!
-							read_relations							= true;
-							read_nodes_ways						= false;
-							id_txt_node_rel_cv					= id_txt_node_cv_0;		% cell array of empty elements
-							id_txt_way_rel_cv						= id_txt_way_cv_0;		% cell array of empty elements
+							filter_nla_separatly			= 0;				% Always use the dimension of the whole relation!
+							read_relations					= true;
+							read_nodes_ways				= false;
+							id_txt_node_rel_cv			= id_txt_node_cv_0;		% cell array of empty elements
+							id_txt_way_rel_cv				= id_txt_way_cv_0;		% cell array of empty elements
+							msg2								= sprintf('%s: Tag %g/%g (%s): relations %g/%g: get texts',msg,...
+								ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+								i_itable,length(itable_obj_eqtags_ioeqt));
 							[id_txt_node_rel_cv,id_txt_way_rel_cv]	= plotosmdata_getdata_texts(...
 								iobj,...
 								itable,...
@@ -605,7 +667,8 @@ try
 								id_txt_way_rel_cv,...
 								read_relations,...
 								read_nodes_ways,...
-								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+								PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+								msg2);
 							if ~GV.get_nodes_ways_repeatedly_texts
 								for iteqt=1:length(itable_text_eqtags)
 									id_txt_node_cv{iteqt,1}	= unique([id_txt_node_cv{iteqt,1};id_txt_node_rel_cv{iteqt,1}]);
@@ -657,6 +720,15 @@ try
 							GV.test_readosm.itable		= itable;
 						end
 						
+						% Waitbar:
+						if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+							WAITBAR.t1	= clock;
+							set(GV_H.text_waitbar,'String',sprintf('%s: Tag %g/%g (%s): nodes, ways %g/%g',msg,...
+								ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+								i_itable,length(itable_obj_eqtags_ioeqt)));
+							drawnow;
+						end
+						
 						% Read the OSM-data: nodes and ways:
 						switch OSMDATA_TABLE.Type(itable)
 							case 'node'
@@ -664,8 +736,27 @@ try
 									x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
 									y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
 									if ~isnan(x)&&~isnan(y)
-										connways_eqtags					= connect_ways(connways_eqtags,[],x,y,...
-											iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
+										connways_eqtags	= ...
+											connect_ways(...							%								Defaultvalues:
+											connways_eqtags,...						% connways					-
+											[],...										% connways_merge			[]
+											x,...											% x							[]
+											y,...											% y							[]
+											iobj,...										% iobj						[]
+											[],...										% lino						[]
+											PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+											OSMDATA_TABLE_INWR(itable),...		% in							0
+											0,...											% iw_v						0
+											0,...											% ir							0
+											1,...											% l2a							1
+											1,...											% s							1
+											1,...											% lino_new_min				1
+											'outer',...									% role						'outer'
+											uint64(0),...								% relid						uint64(0)
+											'',...										% tag							''
+											GV.tol_1,...								% tol							GV.tol_1
+											true,...										% conn_with_rev			true
+											true);										% connect					true
 										if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 											id_obj_node_v(end+1,1)				= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
 										end
@@ -689,11 +780,14 @@ try
 									end
 									[xc,yc]	= polysplit(x,y);
 									for ic=1:size(xc,1)
-										iw							= size(ways,1)+1;
-										ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
-										ways(iw,1).relid		= uint64(0);						% uint64 number: OSM dataset ID
-										ways(iw,1).role		= '';									% character array
-										ways(iw,1).tag			= '';									% character array
+										iw								= size(ways,1)+1;
+										ways(iw,1).xy				= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+										ways(iw,1).relid			= uint64(0);						% uint64 number: OSM dataset ID
+										ways(iw,1).role			= '';									% character array
+										ways(iw,1).tag				= '';									% character array
+										ways(iw,1).iw_osmdata	= OSMDATA_TABLE_INWR(itable);	% index in OSMDATA.way
+										ways(iw,1).ir_osmdata	= 0;									% index in OSMDATA.relation
+										ways(iw,1).connect		= true;								% connect line (true/false)
 										if ~GV.get_nodes_ways_repeatedly||(PP.obj(iobj).display_as_area==0)
 											if ic==1
 												id_obj_way_v(end+1,1)				= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
@@ -726,6 +820,8 @@ try
 						% connways_eqtags contains data:
 						
 						% Filter small objects out and save the OSM data of nodes and ways in PLOTDATA:
+						msg2					= sprintf('%s: Tag %g/%g (%s): nodes, ways: filtering',msg,...
+							ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
 						[PLOTDATA.obj(iobj,1).connways,...
 							~,...
 							~,...
@@ -753,7 +849,8 @@ try
 							PP.obj(iobj,1).filter_by_key.minarea,...
 							PP.obj(iobj,1).filter_by_key.filter_nla_separatly,...
 							force_keep_data,...
-							PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+							PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+							msg2);
 						
 						% "Create map" log:
 						obj_eqtags_ioeqt_1	= PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1};
@@ -840,6 +937,8 @@ try
 						get_symb
 					read_relations		= false;
 					read_nodes_ways	= true;
+					msg2					= sprintf('%s: Tag %g/%g (%s): nodes, ways: get symbols',msg,...
+						ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
 					[~,~]					= plotosmdata_getdata_symbols(...
 						iobj,...
 						itable_obj_eqtags_ioeqt,...
@@ -852,7 +951,8 @@ try
 						id_sym_way_cv,...
 						read_relations,...
 						read_nodes_ways,...
-						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+						msg2);
 				end
 				
 				% Collect the data of all texts:
@@ -861,6 +961,8 @@ try
 						get_text
 					read_relations		= false;
 					read_nodes_ways	= true;
+					msg2					= sprintf('%s: Tag %g/%g (%s): nodes, ways: get texts',msg,...
+						ioeqt,length(itable_obj_eqtags),PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
 					[~,~]					= plotosmdata_getdata_texts(...
 						iobj,...
 						itable_obj_eqtags_ioeqt,...
@@ -871,7 +973,8 @@ try
 						id_txt_way_cv,...
 						read_relations,...
 						read_nodes_ways,...
-						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1});
+						PLOTDATA.obj(iobj,1).obj_eqtags{ioeqt,1},...
+						msg2);
 				end
 				
 			end		% end of: "if ~isempty(itable_obj_eqtags_ioeqt)"

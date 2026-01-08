@@ -75,8 +75,6 @@ try
 			ir,size(OSMDATA.relation,2));
 		errormessage(errortext)
 	end
-	inwr				= ir;
-	type				= 'relation';
 	roles_incl		= cell(0,1);
 	roles_excl		= cell(0,1);
 	if iobj>0
@@ -95,14 +93,15 @@ try
 	% number of nodes, ways and relations inside this relation:
 	no_nodes	= 0;				% total number of nodes
 	no_ways	= 0;				% total number of ways
-	relid		= OSMDATA.id.relation(1,inwr);			% relation ID
 	
 	% Searching the relation recursively:
+	inwr				= ir;
+	type				= 'relation';
 	role				= 'outer';		% only for the first call, will be overwritten because type='relation'
 	ways				= [];
-	[no_nodes,no_ways,relid,connways,ways,in_relation_v,id_node_v,id_way_v]=...
+	[no_nodes,no_ways,connways,ways,in_relation_v,id_node_v,id_way_v]=...
 		getdata_relation_local(...
-		inwr,type,no_nodes,no_ways,relid,connways,ways,iobj,lino,liwi,...
+		ir,inwr,type,no_nodes,no_ways,connways,ways,iobj,lino,liwi,...
 		in_relation_v,id_node_v,id_way_v,roles_incl,roles_excl,lino_new_min,role);
 	id_node_v		= unique(id_node_v);
 	id_way_v			= unique(id_way_v);
@@ -192,6 +191,7 @@ try
 		for k=1:size(connways.areas,1)
 			plot(ha,connways.areas(k,1).xy(:,1),connways.areas(k,1).xy(:,2),'.-g')
 		end
+		relid		= OSMDATA.id.relation(1,ir);			% relation ID
 		title_str=sprintf('%s  /  no_nodes=%g  /  no_ways=%g  /  relid=%g',...
 			title_str,no_nodes,no_ways,relid);
 		title(title_str,'Interpreter','none');
@@ -207,13 +207,17 @@ end
 
 
 %------------------------------------------------------------------------------------------------------------------
-function [no_nodes,no_ways,relid,connways,ways,in_relation_v,id_node_v,id_way_v]=...
+function [no_nodes,no_ways,connways,ways,in_relation_v,id_node_v,id_way_v]=...
 	getdata_relation_local(...
-	inwr,type,no_nodes,no_ways,relid,connways,ways,iobj,lino,liwi,...
+	ir,inwr,type,no_nodes,no_ways,connways,ways,iobj,lino,liwi,...
 	in_relation_v,id_node_v,id_way_v,roles_incl,roles_excl,lino_new_min,role)
-% In contrast to no_nodes and no_ways, relid is not incremented, but is the ID of the relation!
 
 global OSMDATA GV
+
+% save_in_iw=true:	Save the indices of nodes, that are part of the relation.
+% save_in_iw=false:	Do not save the indices of nodes, that are part of the relation.
+%							Right-clicking on a map object displays only the tags of the relation.
+save_in_iw		= false;
 
 try
 	
@@ -226,7 +230,23 @@ try
 				if ~isnan(x)&&~isnan(y)
 					no_nodes	= no_nodes+1;
 					% Add the current node to connways:
-					connways	= connect_ways(connways,[],x,y,iobj,lino,liwi,1);
+					if save_in_iw
+						in		= inwr;
+					else
+						in		= 0;
+					end
+					connways	= connect_ways(...	%								Defaultvalues:
+						connways,...					% connways					-
+						[],...							% connways_merge			[]
+						x,...								% x							[]
+						y,...								% y							[]
+						iobj,...							% iobj						[]
+						lino,...							% lino						[]
+						liwi,...							% liwi						[]
+						in,...							% in							0
+						0,...								% iw_v						0
+						ir,...							% ir							0
+						1);								% l2a							1
 					id_node_v(end+1,1)	= OSMDATA.id.node(1,inwr);
 					if ~isempty(in_relation_v)
 						in_relation_v(1,inwr)	= true;
@@ -253,18 +273,25 @@ try
 				end
 				[xc,yc]	= polysplit(x,y);
 				for ic=1:size(xc,1)
-					iw							= size(ways,1)+1;
-					ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
-					ways(iw,1).relid		= relid;								% uint64 number: OpenStreetMap dataset ID
+					iw								= size(ways,1)+1;
+					ways(iw,1).xy				= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+					ways(iw,1).relid			= OSMDATA.id.relation(1,ir);	% uint64 number: OpenStreetMap dataset ID
 					% For rivers, role=main_stream may be missing in small sections, for example at locks (locks can
 					% also be tagged with waterway=canal, even though they belong to the relation waterway=river.)
 					% To ensure that rivers are created as continuous lines, role=main_stream cannot be used here.
 					if strcmp(role,'main_stream')
-						ways(iw,1).role	= '';									% character array
+						ways(iw,1).role		= '';									% character array
 					else
-						ways(iw,1).role	= role;								% character array
+						ways(iw,1).role		= role;								% character array
 					end
-					ways(iw,1).tag			= '';									% character array
+					ways(iw,1).tag				= '';									% character array
+					if save_in_iw
+						ways(iw,1).iw_osmdata	= inwr;							% index in OSMDATA.way
+					else
+						ways(iw,1).iw_osmdata	= 0;								% index in OSMDATA.way
+					end
+					ways(iw,1).ir_osmdata	= ir;									% index in OSMDATA.relation
+					ways(iw,1).connect		= true;								% connect line (true/false)
 					% The repeated use of single ways is always permitted for members with role=inner
 					% because it could be an area within a hole in a relation.
 					% In this case, the ID of the way should therefore not be added to id_way_v:
@@ -274,56 +301,9 @@ try
 				end
 			end
 		case 'relation'
-			relid			= OSMDATA.id.relation(1,inwr);
-			irm_max		= size(OSMDATA.relation(1,inwr).member,2);
-			
-			% % % % Sort the relation members by length in descending order. This way, when connect_ways is called,
-			% % % % all long ways are connected first, increasing the probability of creating the longest possible line.
-			% % % % Only add certain members at the end, otherwise the line may not be continuously connected:
-			% % % % roles see:		https://wiki.openstreetmap.org/wiki/Relation#Roles
-			% % % % - waterway=*		https://wiki.openstreetmap.org/wiki/Relation:waterway
-			% % % % - boundary=*		https://wiki.openstreetmap.org/wiki/Relation:boundary
-			% % % length_member_v	= zeros(irm_max,1);
-			% % % prio_is_low			= false(irm_max,1);
-			% % % for irm=1:irm_max
-			% % % 	ref_next		= OSMDATA.relation(1,inwr).member(1,irm).ref;
-			% % % 	type_next	= OSMDATA.relation(1,inwr).member(1,irm).type;
-			% % % 	role			= OSMDATA.relation(1,inwr).member(1,irm).role;
-			% % % 	inwr_next	= find(OSMDATA.id.(type_next)==ref_next,1);
-			% % % 	switch type_next
-			% % % 		case 'node'
-			% % % 			length_member_v(irm,1)		= 0;
-			% % % 		case 'way'
-			% % % 			% It is possible that not all objects are included in the current map section:
-			% % % 			if isscalar(inwr_next)
-			% % % 				if    strcmp(role,'side_stream')||...		% waterway=*	necessary
-			% % % 						strcmp(role,'anabranch'  )||...		% waterway=*	necessary
-			% % % 						strcmp(role,'inner'      )				% boundary=*	may not be necessary
-			% % % 					prio_is_low(irm,1)		= true;
-			% % % 				end
-			% % % 				length_member_v(irm,1)		= OSMDATA.way(1,inwr_next).length_mm;
-			% % % 			end
-			% % % 		case 'relation'
-			% % % 			% It is possible that not all objects are included in the current map section:
-			% % % 			if isscalar(inwr_next)
-			% % % 				if    strcmp(role,'side_stream')||...		% waterway=*	necessary
-			% % % 						strcmp(role,'anabranch'  )||...		% waterway=*	necessary
-			% % % 						strcmp(role,'inner'      )				% boundary=*	may not be necessary
-			% % % 					prio_is_low(irm,1)		= true;
-			% % % 				end
-			% % % 				length_member_v(irm,1)		= OSMDATA.relation(1,inwr_next).length_mm;
-			% % % 			end
-			% % % 	end
-			% % % end
-			% % % length_member_v(prio_is_low,1)	= length_member_v(prio_is_low,1)*...
-			% % % 	min(length_member_v(~prio_is_low&(length_member_v>0),1))/...
-			% % % 	max(length_member_v( prio_is_low                    ,1))/2;
-			% % % [~,irm_v]				= sort(length_member_v,'descend');
-			% % % % Get the data of the relation members:
-			% % % for i_irm_v=1:irm_max
-			% % % 	irm			= irm_v(i_irm_v,1);
-			
 			% Get the data of the relation members:
+			% ir				= inwr;
+			irm_max		= size(OSMDATA.relation(1,inwr).member,2);
 			for irm=1:irm_max
 				role_next	= OSMDATA.relation(1,inwr).member(1,irm).role;
 				incl_member	= false;
@@ -347,9 +327,9 @@ try
 					inwr_next	= find(OSMDATA.id.(type_next)==ref_next,1);
 					% It is possible that not all objects are included in the current map section:
 					if ~isempty(inwr_next)
-						[no_nodes,no_ways,relid,connways,ways,in_relation_v,id_node_v,id_way_v]=...
+						[no_nodes,no_ways,connways,ways,in_relation_v,id_node_v,id_way_v]=...
 							getdata_relation_local(...
-							inwr_next,type_next,no_nodes,no_ways,relid,connways,ways,iobj,lino,liwi,...
+							ir,inwr_next,type_next,no_nodes,no_ways,connways,ways,iobj,lino,liwi,...
 							in_relation_v,id_node_v,id_way_v,roles_incl,roles_excl,lino_new_min,role_next);
 					end
 				end

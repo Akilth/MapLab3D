@@ -56,7 +56,7 @@ try
 	% 	'ObjNo',...			% MAP_OBJECTS(imapobj,1).iobj
 	% 	'ColNo',...			% Color number
 	% 	'Description',...	% MAP_OBJECTS(imapobj,1).dscr
-	% 	'Text/Tag',...			% MAP_OBJECTS(imapobj,1).text
+	% 	'Text/Tag',...		% MAP_OBJECTS(imapobj,1).text
 	% 	'Mod',...			% MAP_OBJECTS(imapobj,1).mod
 	% 	'Vis',...			% visibility
 	% 	'Group',...			% grouped: number of elements

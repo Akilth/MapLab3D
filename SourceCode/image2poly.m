@@ -413,8 +413,8 @@ try
 						ylim(2)+(frame_distance+frame_width)-frame_radiuscorners ...
 						ylim(2)+(frame_distance+frame_width)-frame_radiuscorners ...
 						ylim(1)-(frame_distance+frame_width)+frame_radiuscorners];
-					poly_i		= rmholes(line2poly(x_i,y_i,{frame_radiuscorners*2;frame_sampling;0},1,[],'round'));
-					poly_o		= rmholes(line2poly(x_o,y_o,{frame_radiuscorners*2;frame_sampling;0},1,[],'round'));
+					poly_i		= rmholes(line2poly(x_i,y_i,{frame_radiuscorners*2;frame_sampling;0},1,[],[],'round'));
+					poly_o		= rmholes(line2poly(x_o,y_o,{frame_radiuscorners*2;frame_sampling;0},1,[],[],'round'));
 					poly_frame	= addboundary(poly_o,poly_i.Vertices);
 				end
 			end
@@ -456,7 +456,7 @@ try
 					ylim(2)+bgd_distance-bgd_radiuscorners ...
 					ylim(2)+bgd_distance-bgd_radiuscorners ...
 					ylim(1)-bgd_distance+bgd_radiuscorners];
-				poly_bgd	= rmholes(line2poly(x,y,{bgd_radiuscorners*2;bgd_sampling;0},1,[],'round'));
+				poly_bgd	= rmholes(line2poly(x,y,{bgd_radiuscorners*2;bgd_sampling;0},1,[],[],'round'));
 			end
 
 		case 3
@@ -481,9 +481,9 @@ try
 					y_baseline	= bottom_ext+height_ext*bgd_pos_baseline_percent/100+bgd_linewidth/2;
 				end
 				[xlim1,~]	= boundingbox(intersect(poly_obj,line2poly(xlim,[1 1]*y_baseline+bgd_linewidth/2,...
-					{1e-3;bgd_sampling;0},1,[],'round')));
+					{1e-3;bgd_sampling;0},1,[],[],'round')));
 				[xlim2,~]	= boundingbox(intersect(poly_obj,line2poly(xlim,[1 1]*y_baseline-bgd_linewidth/2,...
-					{1e-3;bgd_sampling;0},1,[],'round')));
+					{1e-3;bgd_sampling;0},1,[],[],'round')));
 				if isempty(xlim1)||isempty(xlim2)
 					% if the intersection gives no result: use the limits of the boundingbox:
 					xlim1		= xlim;
@@ -501,7 +501,7 @@ try
 				min_xlim12	= min(xlim1(2),xlim2(2));
 				xlim			= [max_xlim12+bgd_linewidth/2 min_xlim12-bgd_linewidth/2];
 				poly_bgd		= union(poly_obj,line2poly(xlim,[1 1]*y_baseline,...
-					{bgd_linewidth;bgd_sampling;0},1,[],'round'));
+					{bgd_linewidth;bgd_sampling;0},1,[],[],'round'));
 			end
 			% Remove holes in the background :
 			if bgd_remove_holes==1
@@ -1150,7 +1150,7 @@ try
 		[~,i_min_distance]	= min(distance);
 		x		= [poly1.Vertices(vertexid(i_min_distance),1) poly2.Vertices(i_min_distance,1)];
 		y		= [poly1.Vertices(vertexid(i_min_distance),2) poly2.Vertices(i_min_distance,2)];
-		conn_line				= line2poly(x,y,{bgd_linewidth;bgd_sampling;0},1,[],'round');
+		conn_line				= line2poly(x,y,{bgd_linewidth;bgd_sampling;0},1,[],[],'round');
 		poly_bgd					= sortregions(poly_bgd,'area','descend');
 		poly_bgd_regions		= regions(poly_bgd);
 		poly_bgd					= union(poly_bgd,conn_line);

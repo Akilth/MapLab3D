@@ -132,7 +132,7 @@ try
 	PP												= [];
 	
 	% Test samples:
-	GV.testsample_no_max							= 30;		% before set_settings('init') !
+	GV.testsample_no_max							= 35;		% before set_settings('init') !
 	
 	% Initialize SETTINGS:
 	set_settings('init');
@@ -312,6 +312,28 @@ try
 	GV.exec_time.plotosmdata_simplify.dt	= 0;
 	GV.exec_time.save_project.dt				= 0;
 	
+	% 2D map figure type
+	% 1	figure
+	% 2	uifigure: faster selection of map objects, probably because there are no figure tools.
+	GV.fig_2dmap_type								= 2;
+	
+	% Handling interactions with the mouse:
+	GV.mouse_interaction_method				= 2;
+	switch GV.mouse_interaction_method
+		case 1
+			% Create a axis ButtonDownFcd callback for every map object and use the rbbox command.
+			GV.ax_2dmap_ButtonDownFcd			= @ButtonDownFcn_ax_2dmap;
+			GV.fig_2dmap_WindowButtonUpFcn	= '';
+			GV.fig_2dmap_WindowButtonDownFcn	= '';
+		case 2
+			% Create a figure WindowButtonDownFcn and WindowButtonUpFcn callback to get the selected area.
+			% Do not create a ButtonDownFcd callback for every map object and do not use the rbbox command.
+			% This is faster.
+			GV.ax_2dmap_ButtonDownFcd			= '';
+			GV.fig_2dmap_WindowButtonUpFcn	= @WindowButtonUpFcn_fig_2dmap;
+			GV.fig_2dmap_WindowButtonDownFcn	= @WindowButtonDownFcn_fig_2dmap;
+	end
+	
 	% Settings for the 2d map context menu (funktion ButtonDownFcn_ax_2dmap):
 	GV.fig_2dmap_cm.lc_xmin						= 1;
 	GV.fig_2dmap_cm.lc_xmax						= -1;
@@ -354,6 +376,11 @@ try
 	GV.pp_obj_inclexcltags_no_row_min		= 5;
 	GV.pp_obj_inclexcltags_no_col_min		= 5;
 	
+	% During "Create map," the dimensions of map objects are displayed in the Command Window (development mode) or 
+	% in the Log (deployed) if they are greater than the minimum dimensions defined in the project parameters 
+	% divided by this value. This value should be greater than 1, for example 10.
+	GV.testout_minvalues_divisor				= 10;
+	
 	% Logical arrays: true if the legend element has a symbol or text specified:
 	GV.pp_legend_element_is_empty_m			= true(0,0);
 	GV.pp_legend_element_row_is_empty_v		= true(0,0);
@@ -383,13 +410,14 @@ try
 	% Select by filter default settings:
 	GV.selbyfilt.def_val.Visible_CheckBox.Value												= true;
 	GV.selbyfilt.def_val.GrayedOut_CheckBox.Value											= true;
-	GV.selbyfilt.def_val.Hidden_CheckBox.Value												= false;
-	GV.selbyfilt.def_val.TempHidden_CheckBox.Value											= false;
+	GV.selbyfilt.def_val.Hidden_CheckBox.Value												= true;
+	GV.selbyfilt.def_val.TempHidden_CheckBox.Value											= true;
 	GV.selbyfilt.def_val.Lines_CheckBox.Value													= true;
 	GV.selbyfilt.def_val.Areas_CheckBox.Value													= true;
 	GV.selbyfilt.def_val.Texts_CheckBox.Value													= true;
 	GV.selbyfilt.def_val.Symbols_CheckBox.Value												= true;
 	GV.selbyfilt.def_val.ConnectionLines_CheckBox.Value									= true;
+	GV.selbyfilt.def_val.PreviewObjects_CheckBox.Value										= true;
 	GV.selbyfilt.def_val.PreviewCuttingLines_CheckBox.Value								= false;
 	GV.selbyfilt.def_val.CuttingLines_CheckBox.Value										= false;
 	GV.selbyfilt.def_val.KeywordSearchDescription_EditField.Value						= '';
@@ -475,6 +503,7 @@ try
 	% -	Nodes are used for text and symbols and have their own parameters:
 	%		If a text or symbol has already been generated for a relation, the same text or symbol does not
 	%		need to be created for individual ways that are part of this relation:
+	
 	GV.get_nodes_ways_repeatedly				= true;
 	GV.get_nodes_ways_repeatedly_texts		= false;
 	GV.get_nodes_ways_repeatedly_symbols	= false;

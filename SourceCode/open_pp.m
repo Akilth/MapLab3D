@@ -681,6 +681,17 @@ try
 		errormessage(errortext);
 	end
 	
+	% Check whether the number of colors has increased:
+	if ~isempty(ELE)
+		if size(PP_temp.color,1)>size(ELE.elecolor,1)
+			errormessage(sprintf([...
+				'The number of colors in the project parameters is greater\n',...
+				'than the number of colors when loading the OSM data.\n',...
+				'The OSM data must be reloaded.\n',...
+				'Loading the project parameters has been canceled.']));
+		end
+	end
+	
 	
 	% -----------------------------------------------------------------------------------------------------------------
 	% If there was no error up to this point:
@@ -1607,6 +1618,7 @@ try
 						pp_used(i,1).typeno		= 1;
 						pp_used(i,1).minscale	= PP.obj(iobj,1).minscale;
 						pp_used(i,1).maxscale	= PP.obj(iobj,1).maxscale;
+						% line2poly: The assignment of in, iw, and ir is not necessary here.
 						[~,~,...
 							ud_line,...									% background
 							ud_lisy,...									% foreground
@@ -1656,6 +1668,7 @@ try
 						pp_used(i,1).maxscale	= PP.obj(iobj,1).maxscale;
 						pp_used(i,1).liwi			= 999999;
 						pp_used(i,1).liwi_max	= 999999;
+						% area2poly: The assignment of in, iw, and ir is not necessary here.
 						[~,~,...
 							ud_area,...									% background
 							ud_arsy...									% foreground

@@ -1250,7 +1250,7 @@ if testplot==1
 	iT_bot			= ((iT_top(end) +1):size(T.Points          ,1))';
 	iCL_bot			= ((iCL_top(end)+1):size(T.ConnectivityList,1))';
 	
-	hf		= figure(10060);
+	hf		= figure(100600);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','triang');

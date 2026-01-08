@@ -80,7 +80,7 @@ for i=1:length(hc_map)
 	end
 end
 if na_map~=1
-	errormessage(sprintf('Error: The map\n%s\nmay only contain one axis.',[map_pathname map_filename]));
+	errormessage(sprintf('Error: The map may only contain one axis.'));
 end
 
 % Alle enthaltenen Polygone auslesen (den Rest ignorieren), Objekte und Kachelgrenzen zunächst getrennt zuweisen
@@ -189,10 +189,10 @@ try
 			'JointType','miter','MiterLimit',2);
 	end
 	if isempty(poly_map_maxdim)
-		fprintf(1,'Error: \n%s\nThe tile number -1 does not exist.\n',[map_pathname map_filename]);
+		fprintf(1,'Error: The tile number -1 does not exist.\n');
 	end
 	if isempty(poly_map)
-		fprintf(1,'Error: \n%s\nThe tile number 0 does not exist.\n',[map_pathname map_filename]);
+		fprintf(1,'Error: The tile number 0 does not exist.\n');
 	end
 	if isempty(poly_map_maxdim)||isempty(poly_map)
 		errormessage(sprintf('Error:\nBefore you create the STL files,\nyou have to create the map.'));
@@ -207,7 +207,7 @@ try
 	% poly_map auf poly_map_maxdim beschneiden:
 	poly_map	= intersect(poly_map_maxdim,poly_map);
 	if numboundaries(poly_map)==0
-		errormessage(sprintf('Error: \n%s\nThe map currently to be printed is empty.',[map_pathname map_filename]));
+		errormessage(sprintf('Error: The map currently to be printed is empty.'));
 	end
 	
 	% Alle Kacheln auf poly_map beschneiden (Achtung: Es könnten auch leere Kacheln entstehen!):
@@ -221,7 +221,7 @@ try
 		end
 	end
 	if mapisempty
-		errormessage(sprintf('Error: \n%s\nThere are no tiles to print.',[map_pathname map_filename]));
+		errormessage(sprintf('Error: There are no tiles to print.'));
 	end
 	
 	% Extend the legend background to the edge of the map:
@@ -539,9 +539,14 @@ try
 			colno_interp_ele	= colno;
 		end
 		if mod(obj_all.srftype(iobj),100)==2
+			% Auflösung erhöhen:
+			poly_incres		= changeresolution_poly(obj_all.poly(iobj),...
+				PP_local.general.dxy_ele_mm/4,...			% dmax
+				[],...												% dmin
+				[]);													% nmin
 			z_margin		= interp_ele(...
-				obj_all.poly(iobj).Vertices(:,1),...		% query points x
-				obj_all.poly(iobj).Vertices(:,2),...		% query points y
+				poly_incres.Vertices(:,1),...					% query points x
+				poly_incres.Vertices(:,2),...					% query points y
 				ELE_local,...										% elevation structure
 				colno_interp_ele,...								% color numbers
 				GV.legend_z_topside_bgd,...					% legend background z-value
@@ -593,7 +598,7 @@ try
 		end
 		m_obj		= ceil(sqrt(imax_obj+1));
 		n_obj		= ceil((imax_obj+1)/m_obj);
-		hf=figure(10001);
+		hf=figure(100010);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','obj_all');
@@ -670,7 +675,7 @@ try
 	%					obj_top.colprio(iobj)
 	%					obj_top.srftype(iobj)
 	[obj_all_top,obj_all] = obj2objtop(obj_all,testout,testplot_obj_all_top,testplot_xylimits,...
-		10011,PP_local,'obj_all_top',PRINTDATA.xmin,PRINTDATA.xmax,PRINTDATA.ymin,PRINTDATA.ymax,msg);
+		100110,PP_local,'obj_all_top',PRINTDATA.xmin,PRINTDATA.xmax,PRINTDATA.ymin,PRINTDATA.ymax,msg);
 	
 	%------------------------------------------------------------------------------------------------------------------
 	% obj
@@ -709,8 +714,8 @@ try
 		if obj_all_top.colprio(iobj)>=0
 			% Leere Polygone werden ausgeschlossen:
 			if numboundaries(obj_all_top.poly(iobj))>0
-				% Wenn eine Region vollständig unsichtbar ist, soll diese auch weggelassen werden:
-				% surfacetype=2:	Objekte nicht mit anderen Objekten zusammengeführen, damit zmax richtig berechnet wird!
+				% Wenn eine Region vollständig unsichtbar ist, soll diese weggelassen werden:
+				% surfacetype=2:	Objekte nicht mit anderen Objekten zusammenführen, damit zmax richtig berechnet wird!
 				poly				= polyshape();
 				poly0				= regions(obj_all.poly(iobj));
 				for i_region=1:length(poly0)
@@ -878,7 +883,7 @@ try
 		end
 		m_obj		= ceil(sqrt(imax_obj+1));
 		n_obj		= ceil((imax_obj+1)/m_obj);
-		hf=figure(10002);
+		hf=figure(100020);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','obj');
@@ -1050,7 +1055,7 @@ try
 		end
 		m_obj		= ceil(sqrt(imax_obj+1));
 		n_obj		= ceil((imax_obj+1)/m_obj);
-		hf=figure(10014);
+		hf=figure(100140);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','obj');
@@ -1136,7 +1141,7 @@ try
 		end
 		m_col		= ceil(sqrt(length(colno_v)+1));
 		n_col		= ceil((length(colno_v)+1)/m_col);
-		hf=figure(10015);
+		hf=figure(100150);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','PRINTDATA.obj_union_equalcolors');
@@ -1303,7 +1308,7 @@ try
 	[  obj_top_reg,...
 		obj_reg...
 		] = obj2objtop(...
-		obj_reg,testout,testplot_obj_top,testplot_xylimits,10013,PP_local,'obj_top_reg',...
+		obj_reg,testout,testplot_obj_top,testplot_xylimits,100130,PP_local,'obj_top_reg',...
 		PRINTDATA.xmin,PRINTDATA.xmax,PRINTDATA.ymin,PRINTDATA.ymax,msg);
 	
 	% Das Objekt 2 wieder zuweisen:
@@ -1314,24 +1319,6 @@ try
 	obj_reg.objprio(2)	= obj_reg.objprio(1);
 	obj_reg.colprio(2)	= obj_reg.colprio(1);
 	obj_reg.srftype(2)	= obj_reg.srftype(1);
-	
-	% Wenn der von oben sichtbare Teil eines Objekts vollständig nicht druckbar ist, kann es gelöscht werden:
-	% Achtung: Ab hier kann sich die Anzahl der Elemente in obj_top_reg und obj_reg unterscheiden!
-	iobj_delete		= false(size(obj_top_reg));
-	for iobj=2:length(obj_top_reg.poly)
-		dbuffer			= PP_local.general.minbottomwidth_obj/2;
-		poly_buff		= polybuffer(obj_top_reg.poly(iobj),-dbuffer,'JointType','miter','MiterLimit',3);
-		if numboundaries(poly_buff)==0
-			% Der von oben sichtbare Teil ist vollständig schmaler als PP_local.general.minbottomwidth_obj: löschen
-			iobj_delete(iobj)	= true;
-		end
-	end
-	if any(iobj_delete)
-		fn		= fieldnames(obj_top_reg);
-		for ifn=1:length(fn)
-			obj_reg.(fn{ifn})(iobj_delete)		= [];
-		end
-	end
 	
 	% -----------------------------------------------------------------------------------------------------------------
 	% Calculation of areas within elevation filter settings different to the tile base settings apply:
@@ -1411,9 +1398,14 @@ try
 			% max. z-Wert auf dem Rand des Teils:
 			% Für den Fall srftype==xx2 wird zmax mit obj_all für das ganze Objekt berechnet.
 			colno			= obj_reg.colno(iobj);
-			z_margin		= interp_ele(...
-				obj_reg.poly(iobj).Vertices(:,1),...		% query points x
-				obj_reg.poly(iobj).Vertices(:,2),...		% query points y
+			% Auflösung erhöhen:
+			poly_incres		= changeresolution_poly(obj_reg.poly(iobj),...
+				PP_local.general.dxy_ele_mm/4,...			% dmax
+				[],...												% dmin
+				[]);													% nmin
+			z_margin			= interp_ele(...
+				poly_incres.Vertices(:,1),...		% query points x
+				poly_incres.Vertices(:,2),...		% query points y
 				ELE_local,...										% elevation structure
 				colno,...											% color numbers
 				GV.legend_z_topside_bgd,...					% legend background z-value
@@ -1486,6 +1478,10 @@ try
 									% Delete regions that are too small:
 									intersection	= polybuffer(intersection0,-dbuffer1,'JointType','miter','MiterLimit',3);
 									intersection	= polybuffer(intersection , dbuffer1,'JointType','miter','MiterLimit',3);
+									% The polygon should not become larger as a result of the previous commands:
+									obj_reg_poly_iobj1_0		= obj_reg.poly(iobj1);
+									intersection				= intersect(obj_reg_poly_iobj1_0,intersection,...
+										'KeepCollinearPoints',true);
 									intersection_reg			= regions(intersection);
 									for i_region=1:length(intersection_reg)
 										obj_reg.poly			= [obj_reg.poly   ;intersection_reg(i_region)];
@@ -1504,6 +1500,9 @@ try
 										'JointType','miter','MiterLimit',2);
 									obj_reg.poly(iobj1)	= polybuffer(obj_reg.poly(iobj1),GV.tol_1,...
 										'JointType','miter','MiterLimit',2);
+									% The polygon should not become larger as a result of the previous commands:
+									obj_reg.poly(iobj1)	= intersect(obj_reg_poly_iobj1_0,obj_reg.poly(iobj1),...
+										'KeepCollinearPoints',true);
 									
 									% Termination condition for color 1:
 									if numboundaries(obj_reg.poly(iobj1))==0
@@ -1593,6 +1592,10 @@ try
 										% Delete regions that are too small:
 										intersection	= polybuffer(intersection0,-dbuffer1,'JointType','miter','MiterLimit',3);
 										intersection	= polybuffer(intersection, dbuffer1,'JointType','miter','MiterLimit',3);
+										% The polygon should not become larger as a result of the previous commands:
+										obj_reg_poly_iobj1_0		= obj_reg.poly(iobj1);
+										intersection				= intersect(obj_reg_poly_iobj1_0,intersection,...
+											'KeepCollinearPoints',true);
 										intersection_reg			= regions(intersection);
 										for i_region=1:length(intersection_reg)
 											obj_reg.poly			= [obj_reg.poly   ;intersection_reg(i_region)];
@@ -1615,6 +1618,9 @@ try
 													'JointType','miter','MiterLimit',2);
 											end
 										end
+										% The polygon should not become larger as a result of the previous commands:
+										obj_reg.poly(iobj1)	= intersect(obj_reg_poly_iobj1_0,obj_reg.poly(iobj1),...
+											'KeepCollinearPoints',true);
 										
 										% Termination condition for color 1:
 										if numboundaries(obj_reg.poly(iobj1))==0
@@ -1631,6 +1637,10 @@ try
 			end
 		end
 		
+		% Ab hier gilt:
+		% obj_reg.poly(1:iobj1_max)			enthält die alten Polygone, non stand-alone Farben sind jetzt leer
+		% obj_reg.poly((iobj1_max+1):end)	enthält die auf unterlagerte Farben aufgeteilten non stand-alone Farben
+		%
 		% Durch das Aufteilen ist der Vordergrund von z. B. Texten nicht mehr innerhalb des Hintergrunds:
 		% Alle neuen Elemente ab dem Index iobj1_max durchsuchen nach überlappendem Vorder- und Hintergrund
 		% und den Vordergrund beschneiden:
@@ -1640,8 +1650,11 @@ try
 			for iobj1=(iobj1_max+1):length(obj_reg.poly)
 				[xlim_m(iobj1,:),ylim_m(iobj1,:)]	= boundingbox(obj_reg.poly(iobj1));
 			end
-			for iobj1=(iobj1_max+1):length(obj_reg.poly)
-				for iobj2=(iobj1+1):length(obj_reg.poly)
+			for iobj1=length(obj_reg.poly):-1:(iobj1_max+1)
+				for iobj2=(iobj1-1):-1:1
+					% iobj1: non stand-alone color
+					% iobj2: stand-alone color
+					
 					% Waitbar:
 					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 						WAITBAR.t1		= clock;
@@ -1651,53 +1664,77 @@ try
 							iobj2-(iobj1+1)+1,length(obj_reg.poly)-(iobj1+1)+1));
 						drawnow;
 					end
-					if    isequal(obj_reg.colprio(iobj1),obj_reg.colprio(iobj2))&&...
-							~isequal(iobj1,iobj2)
-						% Es handelt sich um dieselbe Farbe:
-						obj1_isbgd	= ((round(obj_reg.objprio(iobj1))-obj_reg.objprio(iobj1))>GV.tol_1);
-						obj2_isbgd	= ((round(obj_reg.objprio(iobj2))-obj_reg.objprio(iobj2))>GV.tol_1);
-						if    ( obj1_isbgd&&~obj2_isbgd)||...
-								(~obj1_isbgd&& obj2_isbgd)
-							% Es handelt sich um einen Vorder- und einen Hintergrund:
-							overlap_is_possible	= overlaps_boundingbox(GV.tol_1,...
-								xlim_m(iobj1,1),...		% x1min
-								xlim_m(iobj1,2),...		% x1max
-								ylim_m(iobj1,1),...		% y1min
-								ylim_m(iobj1,2),...		% y1max
-								xlim_m(iobj2,1),...		% x2min
-								xlim_m(iobj2,2),...		% x2max
-								ylim_m(iobj2,1),...		% y2min
-								ylim_m(iobj2,2));			% y2max
-							if overlap_is_possible
-								if overlaps(obj_reg.poly(iobj1),obj_reg.poly(iobj2))
+					
+					% hf=4657484;
+					% figure(hf);
+					% clf(hf,'reset');
+					% ha=axes;
+					% hold(ha,'on');
+					% axis(ha,'equal');
+					% plot(ha,obj_reg.poly(iobj1));
+					% plot(ha,obj_reg.poly(iobj1).Vertices(:,1),...
+					% 	obj_reg.poly(iobj1).Vertices(:,2),'.k');
+					% plot(ha,obj_reg.poly(iobj2));
+					% title(ha,sprintf('iobj1=%g / iobj2=%g',iobj1,iobj2));
+					% if ~isempty(testplot_xylimits)
+					% 	set(ha,'XLim',[testplot_xylimits(1,1) testplot_xylimits(2,1)]);
+					% 	set(ha,'YLim',[testplot_xylimits(3,1) testplot_xylimits(4,1)]);
+					% else
+					% 	set(ha,'XLim',[PRINTDATA.xmin PRINTDATA.xmax]);
+					% 	set(ha,'YLim',[PRINTDATA.ymin PRINTDATA.ymax]);
+					% end
+					
+					obj1_isbgd	= ((round(obj_reg.objprio(iobj1))-obj_reg.objprio(iobj1))>GV.tol_1);
+					obj2_isbgd	= ((round(obj_reg.objprio(iobj2))-obj_reg.objprio(iobj2))>GV.tol_1);
+					if    ( obj1_isbgd&&~obj2_isbgd)||...
+							(~obj1_isbgd&& obj2_isbgd)
+						% Es handelt sich um einen Vorder- und einen Hintergrund:
+						overlap_is_possible	= overlaps_boundingbox(GV.tol_1,...
+							xlim_m(iobj1,1),...		% x1min
+							xlim_m(iobj1,2),...		% x1max
+							ylim_m(iobj1,1),...		% y1min
+							ylim_m(iobj1,2),...		% y1max
+							xlim_m(iobj2,1),...		% x2min
+							xlim_m(iobj2,2),...		% x2max
+							ylim_m(iobj2,1),...		% y2min
+							ylim_m(iobj2,2));			% y2max
+						if overlap_is_possible
+							if overlaps(obj_reg.poly(iobj1),obj_reg.poly(iobj2))
+								if ~obj1_isbgd&&obj2_isbgd
+									% Objekt 1 ist Vordergrund und Objekt 2 ist Hintergrund:
+									poly_fgd					= obj_reg.poly(iobj1);
+									poly_bgd					= obj_reg.poly(iobj2);
+								else
+									% Objekt 1 ist Hintergrund und Objekt 2 ist Vordergrund:
+									poly_bgd					= obj_reg.poly(iobj1);
+									poly_fgd					= obj_reg.poly(iobj2);
+								end
+								area_fgd					= area(poly_fgd);
+								poly_intersect			= intersect(poly_fgd,poly_bgd);
+								area_intersect			= area(poly_intersect);
+								coverage_ratio			= 1-(area_fgd-area_intersect)/area_fgd;		% see also map2stl
+								% The non-stand-alone color should clearly lie completely above a stand-alone color.
+								% However, it may happen that, for example, a text foreground is not completely within
+								% the text background and extends slightly beyond it.
+								% The non-stand-alone part is therefore assigned to the color that has the highest
+								% color priority and is covered by at least half of the part:
+								if coverage_ratio>0.5
+									% The foreground is inside the background:
+									% The foreground must be inside the background with the distance GV.d_forebackgrd_plotobj.
+									% By separating the non-stand-alone colors, the foreground and background are separated
+									% on the same lines and therefore touch each other.
+									poly_bgd_buff	= polybuffer(poly_bgd,...
+										-GV.d_forebackgrd_plotobj,'JointType','miter','MiterLimit',2);
+									poly_fgd			= intersect(poly_fgd,poly_bgd_buff,'KeepCollinearPoints',false);
 									if ~obj1_isbgd&&obj2_isbgd
 										% Objekt 1 ist Vordergrund und Objekt 2 ist Hintergrund:
-										poly_fgd					= obj_reg.poly(iobj1);
-										poly_bgd					= obj_reg.poly(iobj2);
+										obj_reg.poly(iobj1)		= poly_fgd;
 									else
 										% Objekt 1 ist Hintergrund und Objekt 2 ist Vordergrund:
-										poly_bgd					= obj_reg.poly(iobj1);
-										poly_fgd					= obj_reg.poly(iobj2);
+										obj_reg.poly(iobj2)		= poly_fgd;
 									end
-									area_fgd				= area(poly_fgd);
-									poly_intersect		= intersect(poly_fgd,poly_bgd);
-									area_intersect		= area(poly_intersect);
-									if abs((area_fgd-area_intersect)/area_intersect)<GV.tol_1
-										% The foreground is inside the background:
-										% The foreground must be inside the background with the distance GV.d_forebackgrd_plotobj.
-										% By separating the non-stand-alone colors, the foreground and background are separated
-										% on the same lines and therefore touch each other.
-										poly_bgd_buff	= polybuffer(poly_bgd,...
-											-GV.d_forebackgrd_plotobj,'JointType','miter','MiterLimit',2);
-										poly_fgd			= intersect(poly_fgd,poly_bgd_buff,'KeepCollinearPoints',false);
-										if ~obj1_isbgd&&obj2_isbgd
-											% Objekt 1 ist Vordergrund und Objekt 2 ist Hintergrund:
-											obj_reg.poly(iobj1)		= poly_fgd;
-										else
-											% Objekt 1 ist Hintergrund und Objekt 2 ist Vordergrund:
-											obj_reg.poly(iobj2)		= poly_fgd;
-										end
-									end
+									% Mache weiter mit dem nächstkleineren Index iobj1:
+									break
 								end
 							end
 						end
@@ -1747,7 +1784,7 @@ try
 	%					obj_reg.colno(iobj)
 	%					obj_reg.dz(iobj)
 	%					obj_reg.z_bot(iobj)		Absenkung der Löcher für Teile anderer Farben gegenüber der Geländehöhe
-	%													enthält bereits die Wert zmin und dz aller Teile oberhalb
+	%													enthält bereits die Werte zmin und dz aller Teile oberhalb
 	%													z_bot ist der ABSOLUTE z-Wert der Oberseite des unterhalb des
 	%													Objekts iobj liegenden Teils.
 	%													z_bot ist also um d_bottom kleiner als die Unterseite des Objekts iobj.
@@ -1895,13 +1932,14 @@ try
 			% % 				'interp2'));										% interpolation method
 			% % 		end
 			
-			dmax			= PP_local.general.dxy_ele_mm;
-			dmin			= [];
-			nmin			= [];
-			polyout		= changeresolution_poly(obj_reg.poly(iobj),dmax,dmin,nmin);
+			% Auflösung erhöhen:
+			poly_incres		= changeresolution_poly(obj_reg.poly(iobj),...
+				PP_local.general.dxy_ele_mm/4,...			% dmax
+				[],...												% dmin
+				[]);													% nmin
 			z_margin		= interp_ele(...
-				polyout.Vertices(:,1),...		% query points x
-				polyout.Vertices(:,2),...		% query points y
+				poly_incres.Vertices(:,1),...					% query points x
+				poly_incres.Vertices(:,2),...					% query points y
 				ELE_local,...										% elevation structure
 				colno,...											% color numbers
 				GV.legend_z_topside_bgd,...					% legend background z-value
@@ -1936,6 +1974,51 @@ try
 		% Zur Berechnung der Werte zmin und z_bot müssen die sich überlappenden Objekte tatsächlich verbunden werden.
 		% Die Variable obj_reg_union_ovcol wird nur für diesen Zweck benötigt.
 		obj_reg_union_ovcol	= obj_reg;	% obj_reg ist nach Farbpriorität sortiert, außer die ersten beiden Elemente!
+		
+		% % % % zdata zur Berechnung der Absenkung der Unterseiten:
+		% % % for iobj=1:size(obj_reg_union_ovcol.poly,1)
+		% % %
+		% % % 	colno					= obj_reg_union_ovcol.colno(iobj);
+		% % % 	ifs					= 1;											% query points of the tile base
+		% % % 	% Stützstellen xy von obj_reg_union_ovcol.poly auf dem Rand und innerhalb:
+		% % % 	TFin					= inpolygon(...							% faster than isinterior
+		% % % 		ELE_local.elefiltset(ifs,1).xm_mm,...					% query points
+		% % % 		ELE_local.elefiltset(ifs,1).ym_mm,...
+		% % % 		obj_reg_union_ovcol.poly(iobj,1).Vertices(:,1),...	% polygon area
+		% % % 		obj_reg_union_ovcol.poly(iobj,1).Vertices(:,2));
+		% % % 	size_x				= size(ELE_local.elefiltset(ifs,1).xm_mm(TFin));
+		% % % 	size_x_reshape		= [size_x(1)*size_x(2) 1];
+		% % % 	xy						= [obj_reg_union_ovcol.poly(iobj,1).Vertices;[...
+		% % % 		reshape(ELE_local.elefiltset(ifs,1).xm_mm(TFin),size_x_reshape) ...
+		% % % 		reshape(ELE_local.elefiltset(ifs,1).ym_mm(TFin),size_x_reshape)]];
+		% % % 	xy						= unique(xy,'rows');
+		% % % 	[r_delete,~]		= find(isnan(xy));
+		% % % 	r_delete				= unique(r_delete);
+		% % % 	xy(r_delete,:)		= [];
+		% % % 	% Höhen z der Oberseiten von obj_reg_union_ovcol.poly:
+		% % % 	% Bemerkung:
+		% % % 	% Die Unterscheidung nach "Die Oberfläche folgt dem Gelände" oder "Die Oberfläche ist eben" muss
+		% % % 	% hier nicht vorgenommen werden, weil es hier auf die minimale Höhe eines Bereichs ankommt.
+		% % % 	% Grund: Die Oberseite wird benötigt, um evtl. die Unterseite eines überlagerten Teils abzusenken,
+		% % % 	% falls die Oberseite unterhalb der Geländehöhe verläuft.
+		% % % 	% Bei "Die Oberfläche ist eben" wird aber die Höhe in dem gesamten Bereich auf zmax angehoben.
+		% % % 	dz						= obj_reg_union_ovcol.dz(iobj,1);
+		% % % 	xyz	=  [xy ...
+		% % % 		dz+interp_ele(...
+		% % % 		xy(:,1),...														% query points x
+		% % % 		xy(:,2),...														% query points y
+		% % % 		ELE_local,...													% elevation structure
+		% % % 		colno,...														% color numbers
+		% % % 		GV.legend_z_topside_bgd,...								% legend background z-value
+		% % % 		poly_legbgd,...												% legend background polygon
+		% % % 		'interp2')];													% interpolation method
+		% % % 	obj_reg_union_ovcol.poly_top(iobj,1).ScInt			= scatteredInterpolant(xyz(:,1),xyz(:,2),xyz(:,3));
+		% % % 	obj_reg_union_ovcol.poly_top(iobj,1).ScInt.Method					= 'linear';
+		% % % 	obj_reg_union_ovcol.poly_top(iobj,1).ScInt.ExtrapolationMethod	= 'linear';
+		% % %
+		% % % end
+		
+		% Bounding box limits:
 		xlim						= cell(size(obj_reg_union_ovcol.poly,1),1);
 		ylim						= cell(size(obj_reg_union_ovcol.poly,1),1);
 		for iobj1=1:size(obj_reg_union_ovcol.poly,1)
@@ -1962,9 +2045,11 @@ try
 							iobj2-(iobj1+1)+1,length(obj_reg_union_ovcol.poly)-(iobj1+1)+1));
 						drawnow;
 					end
-					if    isequal(obj_reg_union_ovcol.colprio(iobj1),obj_reg_union_ovcol.colprio(iobj2))   && ...
-							(abs(obj_reg_union_ovcol.zmin(iobj1,1)-obj_reg_union_ovcol.zmin(iobj2,1))>tol_1)
-						% Die Polygone haben gleiche Farbe und unterschiedliche Werte zmin:
+					% % % if    isequal(obj_reg_union_ovcol.colprio(iobj1),obj_reg_union_ovcol.colprio(iobj2))   && ...
+					% % % 		(abs(obj_reg_union_ovcol.zmin(iobj1,1)-obj_reg_union_ovcol.zmin(iobj2,1))>tol_1)
+					% % % 	% Die Polygone haben gleiche Farben und unterschiedliche Werte zmin:
+					if    isequal(obj_reg_union_ovcol.colprio(iobj1),obj_reg_union_ovcol.colprio(iobj2))
+						% Die Polygone haben gleiche Farben:
 						if size(xlim{iobj2,1},1)>0
 							x2min				= xlim{iobj2,1}(1);
 							x2max				= xlim{iobj2,1}(2);
@@ -1987,17 +2072,28 @@ try
 								% The polygons may overlap or touch:
 								if overlaps(obj_reg_union_ovcol.poly(iobj1),obj_reg_union_ovcol.poly(iobj2))
 									% The polygons overlap or touch:
+									% dz zuweisen:
+									% dz wird zur Berechnung von poly_top benötigt. Der Einfachheit halber wird hier nicht
+									% unterschieden, in welchem Bereich dz am negativsten ist
+									obj_reg_union_ovcol.dz(iobj2,1)		= ...
+										min(obj_reg_union_ovcol.dz(iobj1,1),obj_reg_union_ovcol.dz(iobj2,1));
 									% zmin zuweisen:
-									obj_reg_union_ovcol.zmin(iobj2,1)	= ...
+									obj_reg_union_ovcol.zmin(iobj2,1)		= ...
 										min(obj_reg_union_ovcol.zmin(iobj1,1),obj_reg_union_ovcol.zmin(iobj2,1));
+									% zmax zuweisen:
+									obj_reg_union_ovcol.zmax(iobj2,1)		= ...
+										max(obj_reg_union_ovcol.zmax(iobj1,1),obj_reg_union_ovcol.zmax(iobj2,1));
+									% Die folgenden Felder enthalten keine sinnvollen Informationen mehr:
+									obj_reg_union_ovcol.objprio(iobj2,1)	= -1;
+									obj_reg_union_ovcol.srftype(iobj2,1)	= -1;
 									% Objekte verbinden und Objekt 1 löschen:
-									obj_reg_union_ovcol.poly(iobj2,1)	= ...
+									obj_reg_union_ovcol.poly(iobj2,1)		= ...
 										union(obj_reg_union_ovcol.poly(iobj1,1),obj_reg_union_ovcol.poly(iobj2,1));
-									obj_reg_union_ovcol.poly(iobj1,1)	= polyshape();
-									iobj2_v(iobj1)								= iobj2;
+									obj_reg_union_ovcol.poly(iobj1,1)		= polyshape();
+									iobj2_v(iobj1)									= iobj2;
 									% xlim und xlim aktualisieren:
-									[xlim{iobj1,1},ylim{iobj1,1}]			= boundingbox(obj_reg_union_ovcol.poly(iobj1));
-									[xlim{iobj2,1},ylim{iobj2,1}]			= boundingbox(obj_reg_union_ovcol.poly(iobj2));
+									[xlim{iobj1,1},ylim{iobj1,1}]				= boundingbox(obj_reg_union_ovcol.poly(iobj1));
+									[xlim{iobj2,1},ylim{iobj2,1}]				= boundingbox(obj_reg_union_ovcol.poly(iobj2));
 									% obj1 wurde gelöscht: weiter zur nächsten Nummer iobj1:
 									break
 								end
@@ -2008,297 +2104,48 @@ try
 			end
 		end
 		
-		% z_bot hinzufügen:
-		% Die Höhe z der Unterseite der Druckteile ergibt sich aus
-		% - der min. Objekthöhe obj_dz_min=min(obj_col.dz) und
-		% - der max. Anzahl von Farben, die über genau diesem Objekt gestapelt werden und
-		% - dem Abstand zwischen Druckteilen unterschiedlicher Farben (PP_local.colorspec(icolspec).d_bottom)
-		% - der min. verbleibenden Stärke eines Druckteils (PP_local.colorspec(icolspec).min_thickness)
-		% - entweder als
-		%   einheitliche Höhe des Bodens abh. von der minimalen Höhe der Topographie oder
-		%   die Bodenhöhe folgt der Topographie
-		% Zur Überprüfung ob sich Objekte überlappen:
-		% obj_reg_union_ovcol.poly(iobj) um PP_local.colorspec(icolspec).d_side vergrößern:
-		for iobj=1:length(obj_reg_union_ovcol.poly)
-			% Waitbar:
-			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-				WAITBAR.t1		= clock;
-				set(GV_H.text_waitbar,'String',sprintf(...
-					'%s: Object bottom height (2): %g/%g',msg,iobj,length(obj_reg_union_ovcol.poly)));
-				drawnow;
-			end
-			for icolspec=1:length(PP_local.colorspec)
-				d_side	= PP_local.colorspec(icolspec).d_side;
-				if strcmp(GV.jointtype_bh,'miter')
-					obj_reg_union_ovcol.polybuffer(iobj,icolspec)	= ...
-						polybuffer(obj_reg_union_ovcol.poly(iobj),d_side,'JointType',GV.jointtype_bh,...
-						'MiterLimit',GV.miterlimit_bh);
-				else
-					obj_reg_union_ovcol.polybuffer(iobj,icolspec)	= ...
-						polybuffer(obj_reg_union_ovcol.poly(iobj),d_side,'JointType',GV.jointtype_bh);
+		% Save testdata for testing the function map2stl_preparation_zbot.m:
+		save_testdata	= true;
+		stop_here		= false;
+		if ~isdeployed&&save_testdata
+			C=who;
+			save_command=sprintf('save(''%s''','C:\Daten\Projekte\MapLab3D_Ablage\temp1.mat');
+			for iC=1:size(C,1)
+				if    ~strcmp(C{iC,1},'GV_H')&&...
+						~isequal(strfind(C{iC,1},'ha'),1)&&...
+						~isequal(strfind(C{iC,1},'hc'),1)&&...
+						~isequal(strfind(C{iC,1},'hf'),1)
+					save_command=sprintf('%s,''%s''',save_command,C{iC,1});
 				end
 			end
-		end
-		for iobj=length(obj_reg_union_ovcol.poly):-1:1
-			dz_bot_legobj	= 1e10;
-			
-			% obj_reg_union_ovcol ist nach Farbpriorität sortiert, außer die ersten beiden Elemente!
-			if numboundaries(obj_reg_union_ovcol.poly(iobj))>0
-				% colorprio_above_v:	Vektor aller Farbprioritäten derselben Region und DARÜBERlieg. Objekte anderer Farbe
-				% dzmin_above_v:		Vektor aller Werte dz der Region und DARÜBERlieg. Objekte anderer Farbe (min(dz))
-				% zmin_above_v:		Vektor aller Werte zmin der Region und DARÜBERlieg. Objekte anderer Farbe (min(zmin))
-				% min_thnss_above_v	Vektor aller Werte min_thickness der Region und DARÜBERlieg. Objekte anderer Farbe
-				% d_bottom_above_v	Vektor aller Werte d_bottom der Region und DARÜBERlieg. Objekte anderer Farbe
-				colno					= obj_reg_union_ovcol.colno(iobj);
-				icolspec				= PP_local.color(colno).spec;
-				colorprio_above_v	= obj_reg_union_ovcol.colprio(iobj);
-				zmin_above_v		= obj_reg_union_ovcol.zmin(iobj);
-				min_thnss_above_v	= PP_local.colorspec(icolspec).min_thickness;
-				d_bottom_above_v	= PP_local.colorspec(icolspec).d_bottom;
-				% minimaler Wert z_bot der oberhalb liegenden Teile:
-				z_bot_above_min			= 1e10;
-				% minimaler Wert z_bot der oberhalb liegenden Teile, nur bottom_version=1 (Unterseite ist flach):
-				z_bot_above_min_bv1	= 1e10;
-				% Wenn es nur pos. Werte dz gibt, wird hier als min. Absenkung dz=0 angenommen:
-				dzmin_above_v		= min([0 obj_reg_union_ovcol.dz(iobj)]);
-				% alle über obj_reg_union_ovcol.poly(iobj)) legende Objekte, vereint, zur Kontrolle auf Überlappung:
-				allpoly_above		= polyshape();
-				for iobj_above=1:length(obj_reg_union_ovcol.poly)
-					% Waitbar:
-					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-						WAITBAR.t1		= clock;
-						set(GV_H.text_waitbar,'String',sprintf(...
-							'%s: Object bottom height (3): %g/%g %g/%g',msg,...
-							length(obj_reg_union_ovcol.poly)-iobj+1,length(obj_reg_union_ovcol.poly),...
-							iobj_above,length(obj_reg_union_ovcol.poly)));
-						drawnow;
-					end
-					if obj_reg_union_ovcol.colprio(iobj_above)>obj_reg_union_ovcol.colprio(iobj)
-						if numboundaries(obj_reg_union_ovcol.poly(iobj_above))>0
-							% Die Farbpriorität von iobj_above ist größer als von iobj:
-							% iobj wird zuerst eingesetzt!
-							% Damit ist bei der Prüfung auf Überlappung d_side von iobj_above zu verwenden.
-							colno_above			= obj_reg_union_ovcol.colno(iobj_above);
-							icolspec_above		= PP_local.color(colno_above).spec;
-							ifs_above			= ELE_local.ifs_v(icolspec_above,1);
-							min_thnss_above	= PP_local.colorspec(icolspec_above).min_thickness;
-							d_bottom_above		= PP_local.colorspec(icolspec_above).d_bottom;
-							if    (obj_reg_union_ovcol.objprio(iobj)      ==prio_legbgd)&&...
-									(obj_reg_union_ovcol.objprio(iobj_above) >prio_legbgd)
-								% Legend objects:
-								% The objects inside the legend background do not overlap, so the colors do not stack.
-								% Use the minimum values zmin, ...:
-								dz_bot_legobj_test		= obj_reg_union_ovcol.zmin(iobj_above);
-								for k=2:length(colorprio_above_v)
-									dz_bot_legobj_test	= dz_bot_legobj_test+min([0 obj_reg_union_ovcol.dz(iobj_above)]);
-									dz_bot_legobj_test	= dz_bot_legobj_test-min_thnss_above;
-									dz_bot_legobj_test	= dz_bot_legobj_test-d_bottom_above;
-								end
-								if dz_bot_legobj_test<dz_bot_legobj
-									% The current object above leads to a smaller values z_bot:
-									colorprio_above_v(2,1)	= obj_reg_union_ovcol.colprio(iobj_above);
-								end
-								if size(dzmin_above_v,1)==1
-									dzmin_above_v(2,1)		= min([0                  obj_reg_union_ovcol.dz(iobj_above)]);
-								else
-									dzmin_above_v(2,1)		= min([dzmin_above_v(2,1) obj_reg_union_ovcol.dz(iobj_above)]);
-								end
-								if size(zmin_above_v,1)==1
-									zmin_above_v(2,1)			= obj_reg_union_ovcol.zmin(iobj_above);
-								else
-									zmin_above_v(2,1)			= min([zmin_above_v(2,1)  obj_reg_union_ovcol.zmin(iobj_above)]);
-								end
-								if size(min_thnss_above_v,1)==1
-									min_thnss_above_v(2,1)	= min_thnss_above;
-								else
-									min_thnss_above_v(2,1)	= max([min_thnss_above_v(2,1) min_thnss_above]);
-								end
-								if size(d_bottom_above_v,1)==1
-									d_bottom_above_v(2,1)	= d_bottom_above;
-								else
-									d_bottom_above_v(2,1)	= max([d_bottom_above_v(2,1)  d_bottom_above]);
-								end
-							else
-								if overlaps(obj_reg_union_ovcol.polybuffer(iobj,icolspec_above),obj_reg_union_ovcol.poly(iobj_above))
-									% Das Objekt iobj_above liegt oberhalb von iobj bzw:
-									% obj_reg_union_ovcol.poly(iobj_above) liegt oberhalb von
-									% obj_reg_union_ovcol.polybuffer(iobj,icolspec_above)
-									% minimaler z-Wert des Polygons oberhalb: bestimmt die Absenkung der Unterseite:
-									if PP_local.colorspec(icolspec_above).bottom_version==1
-										% Unterseite ist flach:
-										% z_bot_above_min nur für bottom_version=1:
-										z_bot_above_min_bv1	= min([z_bot_above_min_bv1;obj_reg_union_ovcol.z_bot(iobj_above,1)]);
-										% Das ganze Polygon oberhalb berücksichtigen: der minimale Punkt kann auch außerhalb liegen:
-										zmin_iobj_above		= obj_reg_union_ovcol.zmin(iobj_above);
-										% minimaler z-Wert der Unterseiten von oberhalb liegenden Objekten:
-										z_bot_above_min		= min([z_bot_above_min;obj_reg_union_ovcol.z_bot(iobj_above,1)]);
-									else
-										% Unterseite folgt dem Gelände:
-										% Nur den Teil des Polygons oberhalb berücksichtigen, der das Objekt iobj unterhalb bedeckt:
-										poly_iobj_above_overlap	= intersect(...
-											obj_reg_union_ovcol.polybuffer(iobj,icolspec_above),...
-											obj_reg_union_ovcol.poly(iobj_above),...
-											'KeepCollinearPoints',true);
-										zmin_area	= 1e10;
-										inpoly		= inpolygon(...
-											ELE_local.elefiltset(ifs_above,1).xm_mm,...					% query points
-											ELE_local.elefiltset(ifs_above,1).ym_mm,...					% query points
-											poly_iobj_above_overlap.Vertices(:,1),...		% edges of the polygon area
-											poly_iobj_above_overlap.Vertices(:,2));		% edges of the polygon area
-										if any(inpoly,'all')
-											zmin_area	= min(interp_ele(...
-												ELE_local.elefiltset(ifs_above,1).xm_mm(inpoly),...	% query points x
-												ELE_local.elefiltset(ifs_above,1).ym_mm(inpoly),...	% query points y
-												ELE_local,...									% elevation structure
-												colno_above,...								% color numbers
-												GV.legend_z_topside_bgd,...				% legend background z-value
-												poly_legbgd,...								% legend background polygon
-												'interp2'));									% interpolation method
-										end
-										z_margin		= interp_ele(...
-											poly_iobj_above_overlap.Vertices(:,1),...		% query points x
-											poly_iobj_above_overlap.Vertices(:,2),...		% query points y
-											ELE_local,...									% elevation structure
-											colno_above,...								% color numbers
-											GV.legend_z_topside_bgd,...				% legend background z-value
-											poly_legbgd,...								% legend background polygon
-											'interp2');										% interpolation method
-										zmin_margin			= min(z_margin);
-										zmin_iobj_above	= min(zmin_area,zmin_margin);
-										% minimaler z-Wert der Unterseiten von oberhalb liegenden Objekten:
-										dz_bot_iobj_above	= obj_reg_union_ovcol.zmin(iobj_above,1)-obj_reg_union_ovcol.z_bot(iobj_above,1);
-										z_bot_above_min	= min([z_bot_above_min;zmin_iobj_above-dz_bot_iobj_above]);
-									end
-									
-									if numboundaries(allpoly_above)==0
-										% erste neue Farbe hinzufügen:
-										allpoly_above		= obj_reg_union_ovcol.poly(iobj_above);
-										colorprio_above_v	= [colorprio_above_v;obj_reg_union_ovcol.colprio(iobj_above)    ];
-										dzmin_above_v		= [dzmin_above_v    ;min([0 obj_reg_union_ovcol.dz(iobj_above)])];
-										zmin_above_v		= [zmin_above_v     ;zmin_iobj_above       ];
-										min_thnss_above_v	= [min_thnss_above_v;min_thnss_above                            ];
-										d_bottom_above_v	= [d_bottom_above_v ;d_bottom_above                             ];
-									else
-										if overlaps(allpoly_above,obj_reg_union_ovcol.poly(iobj_above))
-											% Überlappung mit anderen Objekten oberhalb von iobj erkannt:
-											% Die Teile mit den verschiedenen Farben werden übereinander gestapelt und
-											% die Werte min_thnss_above und d_bottom_above zu den anderen dazu addiert.
-											k	= (colorprio_above_v==obj_reg_union_ovcol.colprio(iobj_above));
-											if isempty(find(k,1))
-												% neue Farbe hinzufügen:
-												colorprio_above_v	= [colorprio_above_v;obj_reg_union_ovcol.colprio(iobj_above)    ];
-												dzmin_above_v		= [dzmin_above_v    ;min([0 obj_reg_union_ovcol.dz(iobj_above)])];
-												zmin_above_v		= [zmin_above_v     ;zmin_iobj_above       ];
-												min_thnss_above_v	= [min_thnss_above_v;min_thnss_above                            ];
-												d_bottom_above_v	= [d_bottom_above_v ;d_bottom_above                             ];
-											else
-												dzmin_above_v(k)	= min([dzmin_above_v(k);min([0 obj_reg_union_ovcol.dz(iobj_above)])]);
-												zmin_above_v(k)	= min([zmin_above_v(k) ;zmin_iobj_above       ]);
-											end
-										else
-											% Keine Überlappung mit anderen Objekten oberhalb von iobj:
-											% Die z-Werte des akt. Objekts könnten niedriger oder die Abstände könnten höher sein
-											% Werte ersetzen:
-											% die positivsten Werte dzmin_above_v, zmin_above_v ersetzen und
-											% die negativsten Werte min_thnss_above_v, d_bottom_above_versetzen
-											[~,I] = max(dzmin_above_v(2:end));
-											dzmin_above_v(I+1)		= ...
-												min([min(dzmin_above_v(2:end)) obj_reg_union_ovcol.dz(iobj_above)]);
-											[~,I] = max(zmin_above_v(2:end));
-											zmin_above_v(I+1)			= ...
-												min([min(zmin_above_v(2:end)) zmin_iobj_above]);
-											[~,I] = min(min_thnss_above_v(2:end));
-											min_thnss_above_v(I+1)	= ...
-												max([max(min_thnss_above_v(2:end)) min_thnss_above]);
-											[~,I] = min(d_bottom_above_v(2:end));
-											d_bottom_above_v(I+1)	= ...
-												max([max(d_bottom_above_v(2:end)) d_bottom_above]);
-										end
-									end
-									% Alle Objekte oberhalb von iobj vereinen zur Prüfung auf gegenseitige Überlappung:
-									allpoly_above	= union(allpoly_above,obj_reg_union_ovcol.poly(iobj_above),...
-										'KeepCollinearPoints',false);
-								end
-							end
-						end
-					end
-				end
-				
-				% Absenkung der "Löcher" für die aktuelle Grundfarbe berechnen:
-				% Für alle Farbprioritäten außer der Grundfarbe: Werte z_bot zuweisen:
-				% relevante Vorgaben:
-				% PP_local.color(colno).prio								Druckfarbe Priorität
-				% icolspec	= PP_local.color(colno).spec				Nr. von weiteren Einstellungen
-				% PP_local.colorspec(icolspec).bottom_version		Nr. der Unterseite der Teile dieser Farbe
-				% PP_local.colorspec(icolspec).d_side					horizontaler Abstand der Seitenwände zu benachbarten Teilen
-				% PP_local.colorspec(icolspec).d_bottom				vertikaler Abstand der Unterseite zu unterlagerten Teilen
-				% PP_local.colorspec(icolspec).min_thickness			minimale verbleibende Materialstärke in vertikaler Richtung
-				% Für die Berechnung der absoluten z-Werte muss noch die Geländehöhe berücksichtigt werden.
-				% Stärken der oberhalb liegenden Schichten addieren:
-				obj_reg_union_ovcol.z_bot(iobj,1)		= min(zmin_above_v);
-				for k=2:length(colorprio_above_v)
-					obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)+dzmin_above_v(k);
-					obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)-min_thnss_above_v(k);
-					obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)-d_bottom_above_v(k);
-				end
-				
-				% Wenn ein oberhalb liegendes Objekt noch tiefer liegt, wird dieser Wert verwendet:
-				% Das kann passieren, wenn Objekte, die z. T. weiter weg liegen, aufgrund z. B. des Geländes abgesenkt werden.
-				obj_reg_union_ovcol.z_bot(iobj,1)	= min([obj_reg_union_ovcol.z_bot(iobj,1);z_bot_above_min]);
-				% Stärken der aktuellen Schicht iobj addieren:
-				k			= 1;
-				colprio	= colorprio_above_v(k);
-				colno		= find([PP_local.color.prio]==colprio,1);
-				icolspec	= PP_local.color(colno).spec;
-				obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)+dzmin_above_v(k);
-				obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)-PP_local.colorspec(icolspec).min_thickness;
-				obj_reg_union_ovcol.z_bot(iobj,1)	= obj_reg_union_ovcol.z_bot(iobj,1)-PP_local.colorspec(icolspec).d_bottom;
-				
-				% Wenn die Unterseite des Objekts dem Gelände folgt, muss der z-Wert der Unterseite auf einen max. Wert
-				% begrenzt werden, der z_bot_above_min entspricht.
-				% Oberhalb verlaufende Objekte, die auch dem Gelände folgen, müssen hier nicht berücksichtigt werden,
-				% da die Absenkung schon berücksichtigt wurde.
-				obj_reg_union_ovcol.zbotmax(iobj,1)	= z_bot_above_min_bv1;
-				obj_reg_union_ovcol.zbotmax(iobj,1)	= obj_reg_union_ovcol.zbotmax(iobj,1)+dzmin_above_v(k);
-				obj_reg_union_ovcol.zbotmax(iobj,1)	= obj_reg_union_ovcol.zbotmax(iobj,1)-PP_local.colorspec(icolspec).min_thickness;
-				obj_reg_union_ovcol.zbotmax(iobj,1)	= obj_reg_union_ovcol.zbotmax(iobj,1)-PP_local.colorspec(icolspec).d_bottom;
-				
-				% Testausgaben:
-				if testout_dzbot~=0
-					fprintf(1,[...
-						'iobj = %5.0f ,  colorprio_above_v                 = [%s]\n',...
-						'                zmin_above_v                      = [%s]\n',...
-						'                dzmin_above_v                     = [%s]\n',...
-						'                min_thnss_above_v                 = [%s]\n',...
-						'                d_bottom_above_v                  = [%s]\n',...
-						'                obj_reg_union_ovcol.z_bot(iobj)   = %g\n',...
-						'                obj_reg_union_ovcol.zbotmax(iobj) = %g\n'],...
-						iobj,num2str(colorprio_above_v'),...
-						num2str(zmin_above_v'),...
-						num2str(dzmin_above_v'),...
-						num2str(min_thnss_above_v'),...
-						num2str(d_bottom_above_v'),...
-						obj_reg_union_ovcol.z_bot(iobj),...
-						obj_reg_union_ovcol.zbotmax(iobj,1));
-				end
+			save_command=sprintf('%s);',save_command);
+			eval(save_command);
+			if stop_here
+				display_on_gui('state','','notbusy');
+				setbreakpoint=1;
 			end
 		end
 		
-		% obj_reg die Werte zmin, z_bot und zbotmax zuweisen:
-		for iobj1=length(obj_reg_union_ovcol.poly):-1:1
-			if iobj2_v(iobj1)~=-9999
-				obj_reg_union_ovcol.zmin(iobj1,1)		= obj_reg_union_ovcol.zmin(iobj2_v(iobj1),1);
-				obj_reg_union_ovcol.z_bot(iobj1,1)		= obj_reg_union_ovcol.z_bot(iobj2_v(iobj1),1);
-				obj_reg_union_ovcol.zbotmax(iobj1,1)	= obj_reg_union_ovcol.zbotmax(iobj2_v(iobj1),1);
-				obj_reg.zmin(iobj1,1)						= obj_reg_union_ovcol.zmin(iobj2_v(iobj1),1);
-				obj_reg.z_bot(iobj1,1)						= obj_reg_union_ovcol.z_bot(iobj2_v(iobj1),1);
-				obj_reg.zbotmax(iobj1,1)					= obj_reg_union_ovcol.zbotmax(iobj2_v(iobj1),1);
-			else
-				obj_reg.zmin(iobj1,1)						= obj_reg_union_ovcol.zmin(iobj1,1);
-				obj_reg.z_bot(iobj1,1)						= obj_reg_union_ovcol.z_bot(iobj1,1);
-				obj_reg.zbotmax(iobj1,1)					= obj_reg_union_ovcol.zbotmax(iobj1,1);
-			end
-		end
+		% Felder z_bot und zbotmax hinzufügen:
+		% Die Höhe z der Unterseite der Druckteile ergibt sich aus
+		% - der min. Objekthöhe obj_reg(iobj).dz und
+		% - der max. Anzahl von Farben, die über genau diesem Objekt gestapelt werden und
+		% - dem Abstand zwischen Druckteilen unterschiedlicher Farben (PP_local.colorspec(icolspec).d_bottom)
+		% - der min. verbleibenden Stärke eines Druckteils (PP_local.colorspec(icolspec).min_thickness)
+		obj_reg		= map2stl_preparation_zbot(...
+			obj_reg,...
+			obj_reg_union_ovcol,...
+			ELE_local,...
+			PP_local,...
+			iobj2_v,...
+			msg,...
+			poly_legbgd,...
+			prio_legbgd,...
+			tol_1,...
+			testout_dzbot,...
+			testplot_obj_reg,...
+			testplot_obj_reg_1plot,...
+			testplot_xylimits);
 		
 	end
 	
@@ -2306,7 +2153,7 @@ try
 	obj.poly				= poly_contour_ordering(obj.poly);
 	
 	% Polygon contour ordering: obj_all_top:
-	obj_all_top.poly		= poly_contour_ordering(obj_all_top.poly);
+	obj_all_top.poly	= poly_contour_ordering(obj_all_top.poly);
 	
 	% Polygon contour ordering: obj_top_reg:
 	obj_top_reg.poly	= poly_contour_ordering(obj_top_reg.poly);
@@ -2335,7 +2182,7 @@ try
 		end
 		m_obj		= ceil(sqrt(imax_obj+1));
 		n_obj		= ceil((imax_obj+1)/m_obj);
-		hf			= figure(10016);
+		hf			= figure(100160);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','obj_reg');
@@ -2385,7 +2232,7 @@ try
 	
 	if testplot_obj_reg_1plot==1
 		imax_obj=length(obj_reg.poly);
-		hf=figure(10017);
+		hf=figure(100170);
 		clf(hf,'reset');
 		set(hf,'Tag','maplab3d_figure');
 		set(hf,'Name','obj_reg');
@@ -2452,23 +2299,25 @@ try
 	area_union_obj			= area(union_obj);
 	area_union_obj_all_top	= area(union_obj_all_top);
 	area_union_obj_top_reg	= area(union_obj_top_reg);
-	if    (abs(area_obj_all_poly1-area_union_obj        )>tol_2) || ...
-			(abs(area_obj_all_poly1-area_union_obj_all_top    )>tol_2) || ...
-			(abs(area_obj_all_poly1-area_union_obj_top_reg)>tol_2) || ...
-			(testout~=0)
-		fprintf(1,'\n');
-		fprintf(1,'area_obj_all_poly1	     = %g\n',area_obj_all_poly1);
-		fprintf(1,'area_union_obj          = %g\n',area_union_obj);
-		fprintf(1,'area_union_obj_all_top  = %g\n',area_union_obj_all_top);
-		fprintf(1,'area_union_obj_top_reg  = %g\n',area_union_obj_top_reg);
-		fprintf(1,'area_obj_all_poly1-area_union_obj         = %g\n',...
-			area_obj_all_poly1-area_union_obj);
-		fprintf(1,'area_obj_all_poly1-area_union_obj_all_top = %g\n',...
-			area_obj_all_poly1-area_union_obj_all_top);
-		fprintf(1,'area_obj_all_poly1-area_union_obj_top_reg = %g\n',...
-			area_obj_all_poly1-area_union_obj_top_reg);
-		if testout==0
-			errormessage;
+	if ~isdeployed
+		if    (abs(area_obj_all_poly1-area_union_obj        )>tol_2) || ...
+				(abs(area_obj_all_poly1-area_union_obj_all_top)>tol_2) || ...
+				(abs(area_obj_all_poly1-area_union_obj_top_reg)>tol_2) || ...
+				(testout~=0)
+			fprintf(1,'\n');
+			fprintf(1,'area_obj_all_poly1	     = %g\n',area_obj_all_poly1);
+			fprintf(1,'area_union_obj          = %g\n',area_union_obj);
+			fprintf(1,'area_union_obj_all_top  = %g\n',area_union_obj_all_top);
+			fprintf(1,'area_union_obj_top_reg  = %g\n',area_union_obj_top_reg);
+			fprintf(1,'area_obj_all_poly1-area_union_obj         = %g\n',...
+				area_obj_all_poly1-area_union_obj);
+			fprintf(1,'area_obj_all_poly1-area_union_obj_all_top = %g\n',...
+				area_obj_all_poly1-area_union_obj_all_top);
+			fprintf(1,'area_obj_all_poly1-area_union_obj_top_reg = %g\n',...
+				area_obj_all_poly1-area_union_obj_top_reg);
+			if (testout==0)&&~isdeployed
+				errormessage;
+			end
 		end
 	end
 	
@@ -2482,7 +2331,7 @@ end
 % obj2objtop
 %---------------------------------------------------------------------------------------------------------------------
 %---------------------------------------------------------------------------------------------------------------------
-function [obj_top,obj] = obj2objtop(obj,testout,testplot,testplot_xylimits,hf,...
+function [obj_top,obj] = obj2objtop(obj,testout,testplot,testplot_xylimits,hf_num,...
 	PP_local,outputname,xmin_mm,xmax_mm,ymin_mm,ymax_mm,msg)
 % Berechnet von den Objekten/Polynomen obj nur den von oben sichtbaren Teil
 % Vollständig leere Objekte/Polygone brauchen dann nicht mehr betrachtet und werden auch in obj gelöscht,
@@ -2501,9 +2350,11 @@ global GV GV_H WAITBAR
 % Tolerance for plausibility questions
 tol_2		= GV.tol_2;
 
-obj_top					= obj;
-poly_iobj_gr_iobj1	= polyshape();		% all polygons iobj>iobj1 united
-iobjmax					= length(obj.poly);
+obj_top						= obj;
+obj_top_wnsc				= obj;
+poly_iobj_gr_iobj1		= polyshape();		% all polygons iobj>iobj1 united
+poly_iobj_gr_iobj1_wnsc	= polyshape();		% all polygons iobj>iobj1 united, without non stand-alone colors
+iobjmax						= length(obj.poly);
 for iobj1=(iobjmax-1):-1:1
 	% Waitbar:
 	if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
@@ -2514,22 +2365,36 @@ for iobj1=(iobjmax-1):-1:1
 	end
 	poly_iobj_gr_iobj1	= union(poly_iobj_gr_iobj1,obj_top.poly(iobj1+1));
 	obj_top.poly(iobj1)	= subtract(obj_top.poly(iobj1),poly_iobj_gr_iobj1);
+	colno_iobj_gr_iobj1	= obj.colno(iobj1+1,1);
+	if colno_iobj_gr_iobj1>0
+		if PP_local.color(colno_iobj_gr_iobj1).standalone_color~=0
+			% the object with the higher priority iobj1+1 is printed stand-alone:
+			poly_iobj_gr_iobj1_wnsc		= union(poly_iobj_gr_iobj1_wnsc,obj_top_wnsc.poly(iobj1+1));
+			obj_top_wnsc.poly(iobj1)	= subtract(obj_top_wnsc.poly(iobj1),poly_iobj_gr_iobj1_wnsc);
+		end
+	end
 end
 
-% Wenn ein Objekt vollständig verdeckt bzw. unsichtbar ist, kann es gelöscht werden (außer es ist das erste Objekt):
-% Delete empty objects in obj_top:
-iobj_delete		= false(size(obj_top));
-for iobj=2:length(obj_top.poly)
-	if numboundaries(obj_top.poly(iobj))==0
-		% Das Objekt ist von oben vollständig verdeckt: löschen
+% Wenn ein Objekt vollständig verdeckt bzw. unsichtbar ist, kann es gelöscht werden.
+% Ausnahmen:
+% - Objekte, die als Träger von non-stand-alone-Farben dienen, sollen nicht gelöscht werden.
+% - Objekte, die die Farbe der Kachelbasis haben, sollen nicht gelöscht werden.
+%   Das soll verhindern, dass das erste oder die ersten beiden Elemente gelöscht werden.
+% Delete empty objects in obj_top_wnsc:
+iobj_delete		= false(size(obj_top_wnsc.poly,1),1);
+for iobj=1:length(obj_top_wnsc.poly)
+	if (numboundaries(obj_top_wnsc.poly(iobj))==0)&&(obj_top_wnsc.colprio(iobj)~=0)
+		% Das Objekt ist von oben vollständig von stand-alone-Farben verdeckt
+		% und hat nicht die Farbe der Kachelbasis: löschen
 		iobj_delete(iobj)	= true;
 	end
 end
 if any(iobj_delete)
 	fn		= fieldnames(obj_top);
 	for ifn=1:length(fn)
-		obj.(fn{ifn})(iobj_delete)			= [];
-		obj_top.(fn{ifn})(iobj_delete)	= [];
+		obj.(fn{ifn})(iobj_delete)				= [];
+		obj_top.(fn{ifn})(iobj_delete)		= [];
+		obj_top_wnsc.(fn{ifn})(iobj_delete)	= [];
 	end
 end
 
@@ -2612,82 +2477,93 @@ if testout~=0
 end
 if testplot==1
 	
-	if ~isempty(testplot_xylimits)
-		iobj_v			= 1;
-		poly_xylimits	= polyshape(...
-			[testplot_xylimits(1,1) testplot_xylimits(2,1) testplot_xylimits(2,1) testplot_xylimits(1,1)],...
-			[testplot_xylimits(3,1) testplot_xylimits(3,1) testplot_xylimits(4,1) testplot_xylimits(4,1)]);
-		[xb_poly_xylimits,yb_poly_xylimits]		= boundary(poly_xylimits);
-		for iobj=1:length(obj_top.poly)
-			if overlaps(obj_top.poly(iobj),poly_xylimits)
-				iobj_v	= [iobj_v;iobj];
-			end
+	for i_fig=0:1
+		if i_fig==0
+			obj_top_plot		= obj_top;
+			outputname_ext		= '';
+		else
+			obj_top_plot		= obj_top_wnsc;
+			outputname_ext		= '_wnsc';
 		end
-		iobj_v	= unique(iobj_v);
-		imax_obj	= length(iobj_v);
-	else
-		imax_obj	= length(obj_top.poly);
-		iobj_v	= (1:imax_obj)';
-	end
-	m_obj		= ceil(sqrt(imax_obj+1));
-	n_obj		= ceil((imax_obj+1)/m_obj);
-	hf=figure(hf);
-	clf(hf,'reset');
-	set(hf,'Tag','maplab3d_figure');
-	set(hf,'Name',outputname);
-	set(hf,'NumberTitle','off');
-	
-	for k=1:length(iobj_v)
-		iobj	= iobj_v(k);
-		ha=subplot(m_obj,n_obj,k);
+		
+		if ~isempty(testplot_xylimits)
+			iobj_v			= 1;
+			poly_xylimits	= polyshape(...
+				[testplot_xylimits(1,1) testplot_xylimits(2,1) testplot_xylimits(2,1) testplot_xylimits(1,1)],...
+				[testplot_xylimits(3,1) testplot_xylimits(3,1) testplot_xylimits(4,1) testplot_xylimits(4,1)]);
+			[xb_poly_xylimits,yb_poly_xylimits]		= boundary(poly_xylimits);
+			for iobj=1:length(obj_top_plot.poly)
+				if overlaps(obj_top_plot.poly(iobj),poly_xylimits)
+					iobj_v	= [iobj_v;iobj];
+				end
+			end
+			iobj_v	= unique(iobj_v);
+			imax_obj	= length(iobj_v);
+		else
+			imax_obj	= length(obj_top_plot.poly);
+			iobj_v	= (1:imax_obj)';
+		end
+		m_obj		= ceil(sqrt(imax_obj+1));
+		n_obj		= ceil((imax_obj+1)/m_obj);
+		hf=figure(hf_num+i_fig);
+		clf(hf,'reset');
+		set(hf,'Tag','maplab3d_figure');
+		set(hf,'Name',[outputname outputname_ext]);
+		set(hf,'NumberTitle','off');
+		
+		for k=1:length(iobj_v)
+			iobj	= iobj_v(k);
+			ha=subplot(m_obj,n_obj,k);
+			hold(ha,'on');
+			axis(ha,'equal');
+			if obj_top_plot.colno(iobj)==0
+				plot(ha,obj_top_plot.poly(iobj),...
+					'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceAlpha',0)
+				plot(ha,obj_top_plot.poly(iobj).Vertices(:,1),obj_top_plot.poly(iobj).Vertices(:,2),...
+					'LineWidth',0.5,'LineStyle','none','Marker','.','MarkerSize',5,...
+					'Color','k');
+			else
+				plot(ha,obj_top_plot.poly(iobj),...
+					'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',PP_local.color(obj_top_plot.colno(iobj)).rgb/255)
+				plot(ha,obj_top_plot.poly(iobj).Vertices(:,1),obj_top_plot.poly(iobj).Vertices(:,2),...
+					'LineWidth',0.5,'LineStyle','none','Marker','.','MarkerSize',5,...
+					'Color','k');
+			end
+			if ~isempty(testplot_xylimits)
+				plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
+				set(ha,'XLim',[testplot_xylimits(1,1) testplot_xylimits(2,1)]);
+				set(ha,'YLim',[testplot_xylimits(3,1) testplot_xylimits(4,1)]);
+			else
+				set(ha,'XLim',[xmin_mm xmax_mm]);
+				set(ha,'YLim',[ymin_mm ymax_mm]);
+			end
+			title(sprintf('i=%g, dz=%g, zmax=%g\ncp=%g, op=%g, st=%g',...
+				iobj,obj_top_plot.dz(iobj),obj_top_plot.zmax(iobj),...
+				obj_top_plot.colprio(iobj),obj_top_plot.objprio(iobj),obj_top_plot.srftype(iobj)),...
+				'Interpreter','none')
+		end
+		
+		ha			= subplot(m_obj,n_obj,imax_obj+1);
 		hold(ha,'on');
 		axis(ha,'equal');
-		if obj_top.colno(iobj)==0
-			plot(ha,obj_top.poly(iobj),...
-				'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceAlpha',0)
-			plot(ha,obj_top.poly(iobj).Vertices(:,1),obj_top.poly(iobj).Vertices(:,2),...
-				'LineWidth',0.5,'LineStyle','none','Marker','.','MarkerSize',5,...
-				'Color','k');
-		else
-			plot(ha,obj_top.poly(iobj),...
-				'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',PP_local.color(obj_top.colno(iobj)).rgb/255)
-			plot(ha,obj_top.poly(iobj).Vertices(:,1),obj_top.poly(iobj).Vertices(:,2),...
-				'LineWidth',0.5,'LineStyle','none','Marker','.','MarkerSize',5,...
-				'Color','k');
+		imax_obj	= length(obj_top.poly);
+		for iobj=1:imax_obj
+			if obj_top.colno(iobj)==0
+				plot(ha,obj_top.poly(iobj),...
+					'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceAlpha',0)
+			else
+				plot(ha,obj_top.poly(iobj),...
+					'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',PP_local.color(obj_top.colno(iobj)).rgb/255)
+			end
 		end
 		if ~isempty(testplot_xylimits)
 			plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
-			set(ha,'XLim',[testplot_xylimits(1,1) testplot_xylimits(2,1)]);
-			set(ha,'YLim',[testplot_xylimits(3,1) testplot_xylimits(4,1)]);
-		else
-			set(ha,'XLim',[xmin_mm xmax_mm]);
-			set(ha,'YLim',[ymin_mm ymax_mm]);
 		end
-		title(sprintf('i=%g, dz=%g, zmax=%g\ncp=%g, op=%g, st=%g',...
-			iobj,obj_top.dz(iobj),obj_top.zmax(iobj),...
-			obj_top.colprio(iobj),obj_top.objprio(iobj),obj_top.srftype(iobj)),...
-			'Interpreter','none')
+		set(ha,'XLim',[xmin_mm xmax_mm]);
+		set(ha,'YLim',[ymin_mm ymax_mm]);
+		title(sprintf('i=1...%g',imax_obj),'Interpreter','none')
+		
 	end
-	
-	ha			= subplot(m_obj,n_obj,imax_obj+1);
-	hold(ha,'on');
-	axis(ha,'equal');
-	imax_obj	= length(obj_top.poly);
-	for iobj=1:imax_obj
-		if obj_top.colno(iobj)==0
-			plot(ha,obj_top.poly(iobj),...
-				'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceAlpha',0)
-		else
-			plot(ha,obj_top.poly(iobj),...
-				'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',PP_local.color(obj_top.colno(iobj)).rgb/255)
-		end
-	end
-	if ~isempty(testplot_xylimits)
-		plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
-	end
-	set(ha,'XLim',[xmin_mm xmax_mm]);
-	set(ha,'YLim',[ymin_mm ymax_mm]);
-	title(sprintf('i=1...%g',imax_obj),'Interpreter','none')
 	
 end
 

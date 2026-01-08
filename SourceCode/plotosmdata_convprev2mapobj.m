@@ -3,7 +3,7 @@ function plotosmdata_convprev2mapobj(iobj)
 % One preview object (one row) in MAP_OBJECTS_TABLE must be selected.
 % The line or polygon will be converted into a map object using the parameters of object number iobj.
 
-global PP GV GV_H APP MAP_OBJECTS PLOTDATA WAITBAR
+global PP GV GV_H APP MAP_OBJECTS PLOTDATA WAITBAR OSMDATA
 
 try
 	
@@ -67,9 +67,21 @@ try
 				imapobj,dscr_str));
 		end
 		if (MAP_OBJECTS(imapobj,1).iobj>=0)&&~isequal(MAP_OBJECTS(imapobj,1).iobj,iobj)
-			errormessage(sprintf(['Error:\n',...
-				'To convert the selected object PlotNo=%g\n',...
-				'you have to enter ObjNo=%g.'],imapobj,MAP_OBJECTS(imapobj,1).iobj));
+			% errormessage(sprintf(['Error:\n',...
+			% 	'To convert the selected object PlotNo=%g\n',...
+			% 	'you have to enter ObjNo=%g.'],imapobj,MAP_OBJECTS(imapobj,1).iobj));
+			question	= sprintf([...
+				'The object with PlotNo=%g has the object number\n',...
+				'ObjNo=%g (%s).\n',...
+				'Are you sure you want to convert it \n',...
+				'to an object with the object number\n',...
+				'ObjNo=%g (%s)?'],imapobj,...
+				MAP_OBJECTS(imapobj,1).iobj,PP.obj(MAP_OBJECTS(imapobj,1).iobj,1).description,...
+				iobj,PP.obj(iobj,1).description);
+			answer	= questdlg_local(question,'Preview to map object','Yes','No','No');
+			if strcmp(answer,'No')
+				return
+			end
 		end
 		if strcmp(MAP_OBJECTS(imapobj,1).disp,'area - not closed')
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -166,7 +178,7 @@ try
 		k_line_delete		= [];
 		for i_imapobj=1:length(imapobj_v)
 			imapobj	= imapobj_v(i_imapobj);
-			tag	= MAP_OBJECTS(imapobj,1).text{1,1};
+			tag		= MAP_OBJECTS(imapobj,1).text{1,1};
 			
 			% Add the preview data to PLOTDATA:
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -174,8 +186,10 @@ try
 				% Relation number of the preview:
 				if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
 					relid		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid;
+					ir			= find(OSMDATA.id.relation==relid,1);
 				else
 					relid		= uint64(0);
+					ir			= 0;
 				end
 				
 				% Add the data to connways_preview:
@@ -183,17 +197,84 @@ try
 					case 'polygon'
 						% x		= MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1);
 						% y		= MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2);
+						% Additional userdata:
+						in		= 0;
+						iw_v	= 0;
+						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'iw')
+							if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw)
+								iw_v	= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:);
+							end
+						end
 						for ib=1:numboundaries(MAP_OBJECTS(imapobj,1).h(i,1).Shape)
 							[x,y] = boundary(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib);
+							x		= x(:);
+							y		= y(:);
+							connways_preview		= ...
+								connect_ways(...							%								Defaultvalues:
+								connways_preview,...						% connways					-
+								[],...										% connways_merge			[]
+								x,...											% x							[]
+								y,...											% y							[]
+								iobj,...										% iobj						[]
+								[],...										% lino						[]
+								PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+								in,...										% in							0
+								iw_v,...										% iw_v						0
+								ir,...										% ir							0
+								1,...											% l2a							1
+								1,...											% s							1
+								lino_new_min,...							% lino_new_min				1
+								[],...										% role						'outer'
+								relid,...									% relid						uint64(0)
+								tag,...										% tag							''
+								GV.tol_1,...								% tol							GV.tol_1
+								true,...										% conn_with_rev			true
+								true);										% connect					true
 						end
 					case 'line'
 						x		= MAP_OBJECTS(imapobj,1).h(i,1).XData;
 						y		= MAP_OBJECTS(imapobj,1).h(i,1).YData;
+						x		= x(:);
+						y		= y(:);
+						% Additional userdata:
+						in		= 0;
+						iw_v	= 0;
+						if size(x,1)==1
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'in')
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.in)
+									% "in" must be scalar: use only the first element:
+									in		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.in(1,1);
+								end
+							end
+						else
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'iw')
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw)
+									iw_v	= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:);
+								end
+							end
+						end
+						connways_preview		= ...
+							connect_ways(...							%								Defaultvalues:
+							connways_preview,...						% connways					-
+							[],...										% connways_merge			[]
+							x,...											% x							[]
+							y,...											% y							[]
+							iobj,...										% iobj						[]
+							[],...										% lino						[]
+							PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+							in,...										% in							0
+							iw_v,...										% iw_v						0
+							ir,...										% ir							0
+							1,...											% l2a							1
+							1,...											% s							1
+							lino_new_min,...							% lino_new_min				1
+							[],...										% role						'outer'
+							relid,...									% relid						uint64(0)
+							tag,...										% tag							''
+							GV.tol_1,...								% tol							GV.tol_1
+							true,...										% conn_with_rev			true
+							true);										% connect					true
 				end
-				x		= x(:);
-				y		= y(:);
-				connways_preview		= connect_ways(connways_preview,[],x,y,...
-					iobj,[],PLOTDATA.obj(iobj,1).linewidth,1,1,lino_new_min,[],relid,tag);
 				
 				% Delete the open lines 'area - not closed':
 				% Disabled: the open lines should be retained to control the manual correction.
@@ -263,10 +344,27 @@ try
 				
 			end
 		end
+		
+		% Try to connect the remaining open lines with increased tolerance:
+		if PP.obj(iobj,1).connect_ways_with_rev~=0
+			conn_with_rev		= true;
+		else
+			conn_with_rev		= false;
+		end
+		connect_ways_tol	= PP.obj(iobj,1).connect_ways_tol;
+		if connect_ways_tol>GV.tol_1
+			connways_preview		= connect_ways_apply_tol(...
+				connways_preview,...				% connways
+				connect_ways_tol,...				% tol
+				conn_with_rev);					% conn_with_rev
+		end
+		
+		% Add connways_preview to PLOTDATA.obj(iobj,1).connways:
 		if ~isempty(k_line_delete)
 			k_line_delete																	= unique(k_line_delete);
 			PLOTDATA.obj(iobj,1).connways.lines(k_line_delete,:)				= [];
 			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_line_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isinner(k_line_delete,:)	= [];
 			PLOTDATA.obj(iobj,1).connways.lines_relid(k_line_delete,:)		= [];
 			PLOTDATA.obj(iobj,1).connways.xy_start(k_line_delete,:)			= [];
 			PLOTDATA.obj(iobj,1).connways.xy_end(k_line_delete,:)				= [];
@@ -307,25 +405,118 @@ try
 		
 		for i_imapobj=1:length(imapobj_v)
 			imapobj	= imapobj_v(i_imapobj);
+			tag		= MAP_OBJECTS(imapobj,1).text{1,1};
 			
 			% Create the structure connways_preview:
 			connways_preview			= connect_ways([]);
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+				
+				% Relation number of the preview:
+				if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'relid')
+					relid		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.relid;
+					ir			= find(OSMDATA.id.relation==relid,1);
+				else
+					relid		= uint64(0);
+					ir			= 0;
+				end
+				
+				% Add the data to connways_preview:
 				switch MAP_OBJECTS(imapobj,1).h(i,1).Type
 					case 'polygon'
 						% x		= MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1);
 						% y		= MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2);
+						% Additional userdata:
+						in		= 0;
+						iw_v	= 0;
+						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'iw')
+							if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw)
+								iw_v	= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:);
+							end
+						end
 						for ib=1:numboundaries(MAP_OBJECTS(imapobj,1).h(i,1).Shape)
 							[x,y] = boundary(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib);
-							connways_preview		= connect_ways(connways_preview,[],x,y,...
-								iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
+							x		= x(:);
+							y		= y(:);
+							connways_preview		= ...
+								connect_ways(...							%								Defaultvalues:
+								connways_preview,...						% connways					-
+								[],...										% connways_merge			[]
+								x,...											% x							[]
+								y,...											% y							[]
+								iobj,...										% iobj						[]
+								[],...										% lino						[]
+								PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+								in,...										% in							0
+								iw_v,...										% iw_v						0
+								ir,...										% ir							0
+								1,...											% l2a							1
+								1,...											% s							1
+								1,...											% lino_new_min				1
+								'outer',...									% role						'outer'
+								relid,...									% relid						uint64(0)
+								tag,...										% tag							''
+								GV.tol_1,...								% tol							GV.tol_1
+								true,...										% conn_with_rev			true
+								true);										% connect					true
 						end
 					case 'line'
 						x		= MAP_OBJECTS(imapobj,1).h(i,1).XData;
 						y		= MAP_OBJECTS(imapobj,1).h(i,1).YData;
-						connways_preview		= connect_ways(connways_preview,[],x,y,...
-							iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
+						x		= x(:);
+						y		= y(:);
+						% Additional userdata:
+						in		= 0;
+						iw_v	= 0;
+						if size(x,1)==1
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'in')
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.in)
+									% "in" must be scalar: use only the first element:
+									in		= MAP_OBJECTS(imapobj,1).h(i,1).UserData.in(1,1);
+								end
+							end
+						else
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'iw')
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw)
+									iw_v	= MAP_OBJECTS(imapobj,1).h(i,1).UserData.iw(:);
+								end
+							end
+						end
+						connways_preview		= ...
+							connect_ways(...							%								Defaultvalues:
+							connways_preview,...						% connways					-
+							[],...										% connways_merge			[]
+							x,...											% x							[]
+							y,...											% y							[]
+							iobj,...										% iobj						[]
+							[],...										% lino						[]
+							PLOTDATA.obj(iobj,1).linewidth,...	% liwi						[]
+							in,...										% in							0
+							iw_v,...										% iw_v						0
+							ir,...										% ir							0
+							1,...											% l2a							1
+							1,...											% s							1
+							1,...											% lino_new_min				1
+							'outer',...									% role						'outer'
+							relid,...									% relid						uint64(0)
+							tag,...										% tag							''
+							GV.tol_1,...								% tol							GV.tol_1
+							true,...										% conn_with_rev			true
+							true);										% connect					true
 				end
+			end
+			
+			% Try to connect the remaining open lines with increased tolerance:
+			if PP.obj(iobj,1).connect_ways_with_rev~=0
+				conn_with_rev		= true;
+			else
+				conn_with_rev		= false;
+			end
+			connect_ways_tol	= PP.obj(iobj,1).connect_ways_tol;
+			if connect_ways_tol>GV.tol_1
+				connways_preview		= connect_ways_apply_tol(...
+					connways_preview,...				% connways
+					connect_ways_tol,...				% tol
+					conn_with_rev);					% conn_with_rev
 			end
 			
 			% Simplify and plot lines and areas:
@@ -349,7 +540,7 @@ try
 		end
 		
 		% Create/modify legend:
-		if length(imapobj_v)==1
+		if isscalar(imapobj_v)
 			create_legend_mapfigure;
 		end
 		

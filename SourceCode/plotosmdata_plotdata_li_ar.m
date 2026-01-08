@@ -1,21 +1,28 @@
-function plotosmdata_plotdata_li_ar(iobj,connways_obj_all,ud_in_v,ud_iw_v,ud_ir_v,msg,simplify_moveoutline)
+function plotosmdata_plotdata_li_ar(...
+	iobj,...
+	connways_obj_all,...
+	ud_in_v,...
+	ud_iw_v,...
+	ud_ir_v,...
+	msg,...
+	simplify_moveoutline)
 % This function plots lines and areas in the map.
 % It is called by plotosmdata_plotdata.m and plotosmdata_convprev2mapobj.
 
 global MAP_OBJECTS PP GV GV_H OSMDATA WAITBAR PLOTDATA
 
 try
-
+	
 	% Parameters for line plots (see also plot_modify('change_liwi',imapobj)):
 	jointtype		= 'miter';
 	miterlimit		= 1;
-
+	
 	% Downsampling (see also plot_modify('change_liwi',imapobj)):
 	dmax				= [];
 	nmin				= [];
 	dmin_lines		= PP.obj(iobj).reduce_lines.dmin;			% minimum distance between vertices
 	dmin_areas		= PP.obj(iobj).reduce_areas.dmin;
-
+	
 	% Downsampling of areas and lines:
 	if dmin_areas>0
 		for k=1:size(connways_obj_all.areas,1)
@@ -33,7 +40,7 @@ try
 			connways_obj_all.lines(k,1).xy		= [x y];
 		end
 	end
-
+	
 	% Objects with equal tags: Collect all tags:
 	% oeqt(ioeqt,1).tag:
 	oeqt		= struct([]);
@@ -42,7 +49,7 @@ try
 		oeqt(1,1).tag				= '';
 	else
 		% The objects are intended to be plotted separatly:
-
+		
 		if isempty(PLOTDATA.obj(iobj,1).obj_eqtags)
 			% There are no tags:
 			oeqt(1,1).tag				= '';
@@ -92,7 +99,7 @@ try
 				end
 			end
 		end
-
+		
 		% Objects with equal tags: Get indices k_lines, k_areas:
 		% oeqt(ioeqt,1).k_lines
 		% oeqt(ioeqt,1).k_areas
@@ -116,33 +123,35 @@ try
 				end
 			end
 		end
-
+		
 	end
-
+	
 	replaceplots_area				= 1;
 	replaceplots_line_symbols	= 1;
 	for ioeqt=1:size(oeqt,1)
-
+		
 		if PP.obj(iobj,1).filter_by_key.plot_mapobj_separatly==0
 			% The objects are not intended to be plotted separatly:
 			connways_obj						= connways_obj_all;
 		else
 			% The objects are intended to be plotted separatly:
 			% connways_obj is a part of connways_obj_all:
-			% The fields nodes, xy_start, xy_end, lino_max, areas_isouter are not necessary here.
+			% The fields nodes, xy_start, xy_end, lino_max are not necessary here.
 			connways_obj						= connect_ways([]);
 			if ~isempty(oeqt(ioeqt,1).k_lines)
 				connways_obj.lines				= connways_obj_all.lines(oeqt(ioeqt,1).k_lines,1);
 				connways_obj.lines_isouter		= connways_obj_all.lines_isouter(oeqt(ioeqt,1).k_lines,1);
+				connways_obj.lines_isinner		= connways_obj_all.lines_isinner(oeqt(ioeqt,1).k_lines,1);
 				connways_obj.lines_relid		= connways_obj_all.lines_relid(oeqt(ioeqt,1).k_lines,1);
 			end
 			if ~isempty(oeqt(ioeqt,1).k_areas)
 				connways_obj.areas				= connways_obj_all.areas(oeqt(ioeqt,1).k_areas,1);
 				connways_obj.areas_isouter		= connways_obj_all.areas_isouter(oeqt(ioeqt,1).k_areas,1);
+				connways_obj.areas_isinner		= connways_obj_all.areas_isinner(oeqt(ioeqt,1).k_areas,1);
 				connways_obj.areas_relid		= connways_obj_all.areas_relid(oeqt(ioeqt,1).k_areas,1);
 			end
 		end
-
+		
 		% Create polygons from connways_obj and further downsampling:
 		ud_area				= [];
 		ud_arsy				= [];
@@ -159,14 +168,14 @@ try
 		poly_lisy_v			= polyshape();
 		length_line_v		= [];
 		if PP.obj(iobj).display==1
-
+			
 			% --------------------------------------------------------------------------------------------------------------
 			% Areas:
 			if PP.obj(iobj).display_as_area~=0
 				if ~isequal(size(connways_obj.areas_relid),size(connways_obj.areas))
 					errormessage;
 				end
-
+				
 				% Convert the area vectors in connways to formattad area polygons:
 				[poly_area,poly_arsy,ud_area,ud_arsy,replaceplots_area,connways_obj]	= connwaysarea2polyarea(...
 					iobj,...
@@ -177,9 +186,10 @@ try
 					replaceplots_area,...
 					oeqt,...
 					ioeqt);
-
+				
 				% Plot areas that are not closed:
 				for k=1:size(connways_obj.lines,1)
+
 					% Waitbar:
 					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 						if ~isempty(msg)
@@ -193,14 +203,16 @@ try
 					x	= connways_obj.lines(k,1).xy(:,1);
 					y	= connways_obj.lines(k,1).xy(:,2);
 					% Plot the way as preview:
-					imapobj			= size(MAP_OBJECTS,1)+1;
-					ud					= [];
-					ud.in				= ud_in_v;
-					ud.iw				= ud_iw_v;
-					ud.ir				= ud_ir_v;
-					ud.rotation		= 0;
-					ud.xy0			= [x(:) y(:)];
-					ud.relid			= connways_obj.lines_relid(k,1);
+					imapobj				= size(MAP_OBJECTS,1)+1;
+					ud						= [];
+					ud.in					= [];
+					ud.iw					= connways_obj.lines(k,1).iw_v(:);
+					ud.ir					= connways_obj.lines(k,1).ir(:);
+					ud.iw(ud.iw==0,:)	= [];
+					ud.ir(ud.ir==0,:)	= [];
+					ud.rotation			= 0;
+					ud.xy0				= [x(:) y(:)];
+					ud.relid				= connways_obj.lines_relid(k,1);
 					if ~ishandle(GV_H.ax_2dmap)
 						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 					end
@@ -209,7 +221,7 @@ try
 						'LineStyle'    ,GV.preview.LineStyle,...
 						'LineWidth'    ,GV.preview.LineWidth,...
 						'UserData'     ,ud,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					% Save relevant data in the structure MAP_OBJECTS:
 					MAP_OBJECTS(imapobj,1).disp	= 'area - not closed';
 					MAP_OBJECTS(imapobj,1).h		= h_preview;
@@ -228,9 +240,9 @@ try
 						GV.areas_not_closed_iobj_v		= [GV.areas_not_closed_iobj_v;iobj];
 					end
 				end
-
+				
 			end
-
+			
 			% --------------------------------------------------------------------------------------------------------------
 			% Lines:
 			if PP.obj(iobj).display_as_line~=0
@@ -256,14 +268,17 @@ try
 						poly_lisy_v(i_poly_line,1),...
 						ud_line{i_poly_line,1},...
 						ud_lisy{i_poly_line,1}]		= line2poly(...
-						x,...										% x
-						y,...										% y
-						PP.obj(iobj).linepar,...			% par
-						PP.obj(iobj).linestyle,...			% style
-						iobj,...									% iobj
-						obj_purpose,...						% obj_purpose
-						jointtype,...							% jointtype
-						miterlimit);							% miterlimit
+						x,...											% x
+						y,...											% y
+						PP.obj(iobj).linepar,...				% par
+						PP.obj(iobj).linestyle,...				% style
+						iobj,...										% iobj
+						obj_purpose,...							% obj_purpose
+						jointtype,...								% jointtype
+						miterlimit,...								% miterlimit
+						[],...										% in
+						connways_obj.lines(k,1).iw_v,...		% iw
+						connways_obj.lines(k,1).ir);			% ir
 					poly_line_v(i_poly_line,1)		= changeresolution_poly(poly_line_v(i_poly_line,1),dmax,dmin_lines,nmin);
 					poly_lisy_v(i_poly_line,1)		= changeresolution_poly(poly_lisy_v(i_poly_line,1),dmax,dmin_lines,nmin);
 					% Line length:
@@ -297,14 +312,17 @@ try
 						poly_lisy_v(i_poly_line,1),...
 						ud_line{i_poly_line,1},...
 						ud_lisy{i_poly_line,1}]		= line2poly(...
-						x,...										% x
-						y,...										% y
-						PP.obj(iobj).linepar,...			% par
-						PP.obj(iobj).linestyle,...			% style
-						iobj,...									% iobj
-						obj_purpose,...						% obj_purpose
-						jointtype,...							% jointtype
-						miterlimit);							% miterlimit
+						x,...											% x
+						y,...											% y
+						PP.obj(iobj).linepar,...				% par
+						PP.obj(iobj).linestyle,...				% style
+						iobj,...										% iobj
+						obj_purpose,...							% obj_purpose
+						jointtype,...								% jointtype
+						miterlimit,...								% miterlimit
+						[],...										% in
+						connways_obj.areas(k,1).iw_v,...		% iw
+						connways_obj.areas(k,1).ir);			% ir
 					poly_line_v(i_poly_line,1)		= changeresolution_poly(poly_line_v(i_poly_line,1),dmax,dmin_lines,nmin);
 					poly_lisy_v(i_poly_line,1)		= changeresolution_poly(poly_lisy_v(i_poly_line,1),dmax,dmin_lines,nmin);
 					% Line length:
@@ -320,12 +338,12 @@ try
 				end
 			end
 		end
-
+		
 		% Scale-up:
 		if    (PP.obj(iobj).scaleup.factor   ~=1)||...
 				(PP.obj(iobj).scaleup.mindiag  ~=0)||...
 				(PP.obj(iobj).scaleup.minarea  ~=0)
-
+			
 			% Scale-up of lines (this normally does not make any sense):
 			for i_poly_line=1:size(poly_line_v,1)
 				poly_line_reg					= regions(poly_line_v(i_poly_line,1));
@@ -404,7 +422,7 @@ try
 					poly_lisy_v(i_poly_line,1)	= poly_lisy_reg;
 				end
 			end
-
+			
 			% Scale-up of areas (e. g. castles, churches):
 			poly_area_reg	= regions(poly_area);
 			for ir=1:length(poly_area_reg)
@@ -453,9 +471,9 @@ try
 				end
 				poly_area	= union(poly_area,poly_area_reg(ir));
 			end
-
+			
 		end
-
+		
 		% Simplify objects and delete or connect small objects by moving the outlines of areas:
 		if (PP.obj(iobj).display==1)&&(PP.obj(iobj).display_as_area~=0)&&(simplify_moveoutline~=0)
 			[poly_area,replaceplots_area]	= plotosmdata_simplify_moveoutline(...
@@ -466,7 +484,7 @@ try
 				replaceplots_area,...					% replaceplots
 				'object');									% area_limits
 		end
-
+		
 		% If there are line symboles, combine the lines in such a way that longer lines overlap shorter lines:
 		poly_line	= polyshape();
 		poly_lisy	= polyshape();
@@ -520,7 +538,7 @@ try
 				1,...											% testplot
 				replaceplots_line_symbols);			% replaceplots
 		end
-
+		
 		% Change the resolution a last time.
 		% The line/area symbols must be inside the lines/areas (less problems in map2stl.m):
 		poly_line		= changeresolution_poly(poly_line,dmax,dmin_lines,nmin);
@@ -535,7 +553,7 @@ try
 			'JointType','miter','MiterLimit',2);
 		poly_arsy		= intersect(poly_arsy,poly_area_buff,...
 			'KeepCollinearPoints',false);
-
+		
 		% Plot the polygons, lines and areas:
 		if PP.obj(iobj).display==1
 			if strcmp(PP.obj(iobj).visibility,'gray out')
@@ -551,19 +569,16 @@ try
 					visible		= 'on';
 				end
 			end
-
+			
 			% Areas:
 			if (numboundaries(poly_area)>0)||(numboundaries(poly_arsy)>0)
 				imapobj		= size(MAP_OBJECTS,1)+1;
 				h_poly_area	= [];
 				h_poly_arsy	= [];
-
+				
 				% Plot the areas:
 				if numboundaries(poly_area)>0
 					% Extend the userdata:
-					ud_area.in		= ud_in_v;
-					ud_area.iw		= ud_iw_v;
-					ud_area.ir		= ud_ir_v;
 					ud_area.shape0	= poly_area;
 					% Plot the polygon:
 					if isequal(ud_area.color_no,0)
@@ -584,15 +599,12 @@ try
 						'FaceAlpha'    ,facealpha,...
 						'Visible'		,visible,...
 						'UserData'     ,ud_area,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 				end
-
+				
 				% Plot the area symbols:
 				if numboundaries(poly_arsy)>0
 					% Extend the userdata:
-					ud_arsy.in		= ud_in_v;
-					ud_arsy.iw		= ud_iw_v;
-					ud_arsy.ir		= ud_ir_v;
 					ud_arsy.shape0	= poly_arsy;
 					% Plot the polygon:
 					if isequal(ud_arsy.color_no,0)
@@ -613,9 +625,9 @@ try
 						'FaceAlpha'    ,facealpha,...
 						'Visible'		,visible,...
 						'UserData'     ,ud_arsy,...
-						'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 				end
-
+				
 				% Save relevant data in the structure MAP_OBJECTS:
 				[xcenter,ycenter]						= centroid(poly_area);
 				MAP_OBJECTS(imapobj,1).disp		= 'area';
@@ -641,22 +653,19 @@ try
 				else
 					MAP_OBJECTS(imapobj,1).vis0	= 0;
 				end
-
+				
 			end
-
+			
 			% Lines:
 			for i_poly_line=1:size(poly_line,1)
 				if (numboundaries(poly_line(i_poly_line,1))>0)||(numboundaries(poly_lisy(i_poly_line,1))>0)
 					imapobj		= size(MAP_OBJECTS,1)+1;
 					h_poly_line	= [];
 					h_poly_lisy	= [];
-
+					
 					% Plot the lines:
 					if numboundaries(poly_line(i_poly_line,1))>0
 						% Extend the userdata:
-						ud_line{i_poly_line,1}.in		= ud_in_v;
-						ud_line{i_poly_line,1}.iw		= ud_iw_v;
-						ud_line{i_poly_line,1}.ir		= ud_ir_v;
 						ud_line{i_poly_line,1}.shape0	= poly_line(i_poly_line,1);
 						% Plot the polygon:
 						if isequal(ud_line{i_poly_line,1}.color_no,0)
@@ -677,15 +686,12 @@ try
 							'FaceAlpha'    ,facealpha,...
 							'Visible'		,visible,...
 							'UserData'     ,ud_line{i_poly_line,1},...
-							'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					end
-
+					
 					% Plot the line symbols:
 					if numboundaries(poly_lisy(i_poly_line,1))>0
 						% Extend the userdata:
-						ud_lisy{i_poly_line,1}.in		= ud_in_v;
-						ud_lisy{i_poly_line,1}.iw		= ud_iw_v;
-						ud_lisy{i_poly_line,1}.ir		= ud_ir_v;
 						ud_lisy{i_poly_line,1}.shape0	= poly_lisy(i_poly_line,1);
 						% Plot the polygon:
 						if isequal(ud_lisy{i_poly_line,1}.color_no,0)
@@ -706,9 +712,9 @@ try
 							'FaceAlpha'    ,facealpha,...
 							'Visible'		,visible,...
 							'UserData'     ,ud_lisy{i_poly_line,1},...
-							'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 					end
-
+					
 					% Save relevant data in the structure MAP_OBJECTS:
 					[xcenter,ycenter]						= centroid(poly_line(i_poly_line,1));
 					MAP_OBJECTS(imapobj,1).disp		= 'line';
@@ -734,13 +740,13 @@ try
 					else
 						MAP_OBJECTS(imapobj,1).vis0	= 0;
 					end
-
+					
 				end
 			end
 		end
-
+		
 	end
-
+	
 	% Set OSMDATA.iobj:
 	if ~isempty(ud_in_v)
 		OSMDATA.iobj.node(1,ud_in_v)			= iobj;
@@ -751,7 +757,7 @@ try
 	if ~isempty(ud_ir_v)
 		OSMDATA.iobj.relation(1,ud_ir_v)		= iobj;
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

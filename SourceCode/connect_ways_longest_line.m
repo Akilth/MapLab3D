@@ -1,4 +1,6 @@
-function connways=connect_ways_longest_line(connways,ways,iobj,lino,liwi,l2a,s,lino_new_min,tol)
+function connways=...
+	connect_ways_longest_line(...
+	connways,ways,iobj,lino,liwi,l2a,s,lino_new_min,tol)
 % Adds the paths in the structure ways to an existing structure connways according to the following principles:
 % -	Only individual ways with identical relid, role and tag values are connected.
 % -	Closed paths found in ways are added first. Among all closed paths, the longest ones are added first.
@@ -9,12 +11,15 @@ function connways=connect_ways_longest_line(connways,ways,iobj,lino,liwi,l2a,s,l
 % Sometimes there are small branches that prevent this if the order of connection with connect_ways is incorrect.
 %
 % Inputs:
-% connways				see connect_ways
-% ways(iw,1).xy		two-column matrix of vertices
-% ways(iw,1).relid	uint64 number: OpenStreetMap dataset ID
-% ways(iw,1).role		character array
-% ways(iw,1).tag		character array
-% iobj					see connect_ways
+% connways						see connect_ways
+% ways(iw,1).xy				two-column matrix of vertices
+% ways(iw,1).relid			uint64 number: OpenStreetMap dataset ID
+% ways(iw,1).role				character array
+% ways(iw,1).tag				character array
+% ways(iw,1).iw_osmdata		index in OSMDATA.way
+% ways(iw,1).ir_osmdata		index in OSMDATA.relation (0: no relation)
+% ways(iw,1).connect			connect lines with matching startpoints and/or endpoints (true/false)
+% iobj							see connect_ways
 % lino
 % liwi
 % l2a
@@ -22,7 +27,7 @@ function connways=connect_ways_longest_line(connways,ways,iobj,lino,liwi,l2a,s,l
 % lino_new_min
 % tol
 
-global GV
+global GV PP
 
 try
 	
@@ -39,7 +44,7 @@ try
 		lino_new_min				= 1;
 		tol							= GV.tol_1;
 		% Create testdata:
-		testdata_no					= 2;
+		testdata_no					= 1;
 		switch testdata_no
 			case 1
 				testplot						= true;
@@ -81,6 +86,7 @@ try
 				iw=iw+1;	ways(iw,1).xy	= [7 5;6 6]; ways(iw,1).role=role;
 				iw=iw+1;	ways(iw,1).xy	= [6 6;0 6]; ways(iw,1).role=role;
 				iw=iw+1;	ways(iw,1).xy	= [6 6;6 7]; ways(iw,1).role=role;
+				iw=iw+1;	ways(iw,1).xy	= [6 7;6 8]; ways(iw,1).role=role; ways(iw,1).connect	= false;
 				
 				% different relation ids:
 				relid							= uint64(123);
@@ -95,6 +101,18 @@ try
 				% Different tags
 				iw=iw+1;	ways(iw,1).xy	= [9 3;9 5]; ways(iw,1).tag='Testtag 1';
 				iw=iw+1;	ways(iw,1).xy	= [9 5;9 7]; ways(iw,1).tag='Testtag 2';
+				
+				for iw=1:size(ways,1)
+					ways(iw,1).iw_osmdata	= iw;			% index in OSMDATA.way
+					ways(iw,1).ir_osmdata	= 1;			% index in OSMDATA.relation (0: no relation)
+					if isempty(ways(iw,1).connect)
+						ways(iw,1).connect	= true;		% connect line (true/false)
+					end
+					if isempty(ways(iw,1).relid)
+						ways(iw,1).relid		= uint64(0);
+					end
+				end
+				
 			case 2
 				% see plotosmdata_getdata.m 764:
 				global connways_eqtags_main_filt connways_eqtags_main ways_main
@@ -114,32 +132,54 @@ try
 	end
 	
 	% Initializations:
+	if isempty(lino_new_min)
+		lino_new_min	= 1;
+	end
 	if isempty(ways)
 		return
 	end
+	if    ~isfield(ways,'xy'        )||...
+			~isfield(ways,'relid'     )||...
+			~isfield(ways,'role'      )||...
+			~isfield(ways,'tag'       )||...
+			~isfield(ways,'iw_osmdata')||...
+			~isfield(ways,'ir_osmdata')||...
+			~isfield(ways,'connect')
+		errormessage;
+	end
 	for iw=1:size(ways,1)
-		if ~isfield(ways(iw,1),'relid')
-			ways(iw,1).relid		= uint64(0);
-		else
-			if ~isnumeric(ways(iw,1).relid)
-				ways(iw,1).relid		= uint64(0);
-			end
+		if ~isnumeric(ways(iw,1).relid)
+			errormessage;
 		end
-		if ~isfield(ways(iw,1),'role')
-			ways(iw,1).role		= '';
-		else
-			if isnumeric(ways(iw,1).role)
-				ways(iw,1).role		= '';
-			end
+		if isempty(ways(iw,1).relid)
+			errormessage;
 		end
-		if ~isfield(ways(iw,1),'tag')
-			ways(iw,1).tag		= '';
-		else
-			if isnumeric(ways(iw,1).tag)
-				ways(iw,1).tag		= '';
-			end
+		if isnumeric(ways(iw,1).role)
+			ways(iw,1).role			= '';
+		end
+		if isnumeric(ways(iw,1).tag)
+			ways(iw,1).tag				= '';
+		end
+		if ~isnumeric(ways(iw,1).iw_osmdata)
+			errormessage;
+		end
+		if isempty(ways(iw,1).iw_osmdata)
+			errormessage;
+		end
+		if ~isnumeric(ways(iw,1).ir_osmdata)
+			errormessage;
+		end
+		if isempty(ways(iw,1).ir_osmdata)
+			errormessage;
+		end
+		if ~islogical(ways(iw,1).connect)
+			errormessage;
+		end
+		if isempty(ways(iw,1).connect)
+			errormessage;
 		end
 	end
+	
 	% First try to connect all ways without reversal (necessary for rivers):
 	conn_with_rev	= false;
 	
@@ -152,48 +192,57 @@ try
 		show_testplot(ha1,'G',G,connways);
 	end
 	for iG=1:size(G,1)
-		size_ways_0		= size(G(iG,1).ways,1)+1;
-		while (size(G(iG,1).ways,1)>0)&&(size_ways_0~=size(G(iG,1).ways,1))
-			size_ways_0		= size(G(iG,1).ways,1);
-			
-			% Connect unbranched lines:
-			G(iG,1)		= connect_unbranched_lines(G(iG,1));
-			
-			% Add lines to connways that are not connected to any other line:
-			iw_delete	= false(size(G(iG,1).ways,1),1);
-			for iw=1:size(G(iG,1).ways,1)
-				if    isscalar(find(G(iG,1).E(iw,1)==G(iG,1).E))&&...
-						isscalar(find(G(iG,1).E(iw,2)==G(iG,1).E))
-					% The way iw is not connected to any other way: Add way iw to connways and delete way iw from G:
-					connways		= connect_ways(...
-						connways,...									%
-						[],...											% connways_merge
-						G(iG,1).ways(iw,1).xy(:,1),...			% x
-						G(iG,1).ways(iw,1).xy(:,2),...			% y
-						iobj,...											% iobj
-						lino,...											% lino
-						liwi,...											% liwi
-						l2a,...											% l2a
-						s,...												% s
-						lino_new_min,...								% lino_new_min
-						G(iG,1).role,...								% role
-						G(iG,1).relid,...								% relid
-						G(iG,1).tag,...								% tag
-						tol,...											% tol
-						conn_with_rev);								% conn_with_rev
-					iw_delete(iw,1)	= true;
-				end
+		
+		% Connect unbranched lines:
+		G(iG,1)		= connect_unbranched_lines(G(iG,1));
+		
+		% Add lines to connways:
+		% - that are not connected to any other line or
+		% - that should not be connected to any other line.
+		iw_delete	= false(size(G(iG,1).ways,1),1);
+		for iw=1:size(G(iG,1).ways,1)
+			if    ~G(iG,1).ways(iw,1).connect||(...
+					isscalar(find(G(iG,1).E(iw,1)==G(iG,1).E))&&...
+					isscalar(find(G(iG,1).E(iw,2)==G(iG,1).E))     )
+				% The way iw is not connected to any other way: Add way iw to connways and delete way iw from G:
+				connways		= connect_ways(...
+					connways,...									%
+					[],...											% connways_merge
+					G(iG,1).ways(iw,1).xy(:,1),...			% x
+					G(iG,1).ways(iw,1).xy(:,2),...			% y
+					iobj,...											% iobj
+					lino,...											% lino
+					liwi,...											% liwi
+					0,...												% in
+					G(iG,1).ways(iw,1).iw_v_osmdata,...		% iw_v
+					G(iG,1).ir,...									% ir
+					l2a,...											% l2a
+					s,...												% s
+					lino_new_min,...								% lino_new_min
+					G(iG,1).role,...								% role
+					G(iG,1).relid,...								% relid
+					G(iG,1).tag,...								% tag
+					tol,...											% tol
+					conn_with_rev,...								% conn_with_rev
+					G(iG,1).ways(iw,1).connect);				% connect
+				iw_delete(iw,1)	= true;
 			end
-			G(iG,1).ways(iw_delete,:)				= [];
-			G(iG,1).E(iw_delete,:)					= [];
-			G(iG,1).L(iw_delete,:)					= [];
-			if testplot
-				show_testplot(ha2,sprintf('iG=%g: before creating graph object',iG),G,connways);
-				pause(0.25)
-			end
+		end
+		G(iG,1).ways(iw_delete,:)				= [];
+		G(iG,1).E(iw_delete,:)					= [];
+		G(iG,1).L(iw_delete,:)					= [];
+		if testplot
+			show_testplot(ha2,sprintf('iG=%g: before creating graph object',iG),G,connways);
+			pause(0.25)
+		end
+		
+		% The remaining lines form one or more networks and G(iG,1).ways(iw,1).connect is true for all remaining ways.
+		% Search for the longest route within the network:
+		if ~isempty(G(iG,1).ways)
 			
-			% The remaining lines form one or more networks. Search for the longest route within the network:
-			if ~isempty(G(iG,1).ways)
+			size_ways_0		= size(G(iG,1).ways,1)+1;
+			while (size(G(iG,1).ways,1)>0)&&(size_ways_0~=size(G(iG,1).ways,1))
+				size_ways_0		= size(G(iG,1).ways,1);
 				
 				% Create a graph object with directed edges:
 				Weight		= -G(iG,1).L;	% negative weights:	The longest path becomes the shortest path.
@@ -292,6 +341,9 @@ try
 						iobj,...											% iobj
 						lino,...											% lino
 						liwi,...											% liwi
+						0,...												% in
+						G(iG,1).ways(iw,1).iw_v_osmdata,...		% iw_v
+						G(iG,1).ir,...									% ir
 						l2a,...											% l2a
 						s,...												% s
 						lino_solution_min,...						% lino_new_min
@@ -299,13 +351,34 @@ try
 						G(iG,1).relid,...								% relid
 						G(iG,1).tag,...								% tag
 						tol,...											% tol
-						conn_with_rev);								% conn_with_rev
+						conn_with_rev,...								% conn_with_rev
+						G(iG,1).ways(iw,1).connect);				% connect
 				end
 				G(iG,1).ways(iw_solution_v,:)				= [];
 				G(iG,1).E(iw_solution_v,:)					= [];
 				G(iG,1).L(iw_solution_v,:)					= [];
+				
 				% Merge the solution with the other already connected ways:
-				connways=connect_ways(connways,connways_solution);
+				connways=connect_ways(...							%								Defaultvalues:			required
+					connways,...										% connways					-							X
+					connways_solution,...							% connways_merge			[]							X
+					[],...												% x							[]
+					[],...												% y							[]
+					[],...												% iobj						[]
+					[],...												% lino						[]
+					[],...												% liwi						[]
+					0,...													% in							0
+					0,...													% iw							0
+					0,...													% ir							0
+					1,...													% l2a							1
+					1,...													% s							1
+					1,...													% lino_new_min				1
+					'outer',...											% role						'outer'
+					uint64(0),...										% relid						uint64(0)
+					'',...												% tag							''
+					GV.tol_1,...										% tol							GV.tol_1
+					conn_with_rev,...									% conn_with_rev			true						X
+					true);												% connect					true
 				
 			end
 			if testplot
@@ -325,6 +398,9 @@ try
 				iobj,...											% iobj
 				lino,...											% lino
 				liwi,...											% liwi
+				0,...												% in
+				G(iG,1).ways(iw,1).iw_v_osmdata,...		% iw_v
+				G(iG,1).ir,...									% ir
 				l2a,...											% l2a
 				s,...												% s
 				lino_new_min,...								% lino_new_min
@@ -332,52 +408,41 @@ try
 				G(iG,1).relid,...								% relid
 				G(iG,1).tag,...								% tag
 				tol,...											% tol
-				conn_with_rev);								% conn_with_rev
+				conn_with_rev,...								% conn_with_rev
+				G(iG,1).ways(iw,1).connect);				% connect
 		end
 		
 		% Now try to connect the remaining open lines with reversal:
-		if ~isempty(connways.lines)
-			connways_old				= connways;
-			connways.lines				= [];
-			connways.xy_start			= [];
-			connways.xy_end			= [];
-			connways.lines_isouter	= [];
-			connways.lines_relid		= [];
-			for k_line=1:size(connways_old.lines,1)
-				x_k_line			= connways_old.lines(k_line,1).xy(:,1);
-				y_k_line			= connways_old.lines(k_line,1).xy(:,2);
-				iobj_k_line		= connways_old.lines(k_line,1).xy(:,3);
-				lino_k_line		= connways_old.lines(k_line,1).xy(:,4);
-				liwi_k_line		= connways_old.lines(k_line,1).xy(:,5);
-				if connways_old.lines_isouter(k_line,1)==1
-					role_k_line	= 'outer';
-				else
-					% Must not be empty, otherwise it will be initialized with 'outer' when connect_ways is called!
-					role_k_line	= 'inner';
-				end
-				relid_k_line	= connways_old.lines_relid(k_line,1);
-				tag_k_line		= connways_old.lines(k_line,:).tag;
-				connways			= connect_ways(...
-					connways,...				% connways
-					[],...						% connways_merge
-					x_k_line,...				% x
-					y_k_line,...				% y
-					iobj_k_line,...			% iobj
-					lino_k_line,...			% lino
-					liwi_k_line,...			% liwi
-					1,...							% l2a
-					1,...							% s
-					[],...						% lino_new_min
-					role_k_line,...			% role
-					relid_k_line,...			% relid
-					tag_k_line,...				% tag
-					GV.tol_1,...				% tol
-					true);						% conn_with_rev
+		if (iobj>=1)&&(iobj<=size(PP.obj,1))
+			if PP.obj(iobj,1).connect_ways_with_rev~=0
+				conn_with_rev		= true;
+			else
+				conn_with_rev		= false;
 			end
+			connect_ways_tol	= PP.obj(iobj,1).connect_ways_tol;
+		else
+			conn_with_rev		= true;
+			connect_ways_tol	= 0;
 		end
+		if conn_with_rev
+			connways		= connect_ways_apply_tol(...
+				connways,...						% connways
+				tol,...								% tol
+				conn_with_rev);					% conn_with_rev
+		end
+		
+		% Now try to connect the remaining open lines with increased tolerance:
+		if connect_ways_tol>GV.tol_1
+			connways		= connect_ways_apply_tol(...
+				connways,...						% connways
+				connect_ways_tol,...				% tol
+				conn_with_rev);					% conn_with_rev
+		end
+		
 		test=1;
 		
 	end
+	test=1;
 	
 catch ME
 	errormessage('',ME);
@@ -387,48 +452,58 @@ end
 % --------------------------------------------------------------------------------------------------------------------
 function G=get_graph(ways)
 % Input:
-% ways(iw_in,1).xy			two-column matrix of vertices
-% ways(iw_in,1).relid		uint64 number: OpenStreetMap dataset ID
-% ways(iw_in,1).role			character array: lines with different roles are not connected
-% ways(iw_in,1).tag			character array: lines with different tags  are not connected
+% ways(iw_in,1).xy						two-column matrix of vertices
+% ways(iw_in,1).relid					uint64 number: OpenStreetMap dataset ID
+% ways(iw_in,1).role						character array: lines with different roles are not connected
+% ways(iw_in,1).tag						character array: lines with different tags  are not connected
+% ways(iw_in,1).iw_osmdata				index in OSMDATA.way
+% ways(iw_in,1).ir_osmdata				index in OSMDATA.relation (0: no relation)
+% ways(iw_in,1).connect					connect line (true/false)
 % Output:
 % G(iG,1).relid
 % G(iG,1).role
 % G(iG,1).tag
-% G(iG,1).ways(iw,1).xy		two-column matrix of vertices
-% G(iG,1).P(iP,:)				All vertices or nodes or points.
-%									column 1: x-value
-%									column 2: y-value
-% G(iG,1).E(iw,:)				Edges of the Graph:	matrix of vertex identification numbers iP
-%									row iw, column 1: ID of the first vertex (iP1) of the way iw
-%									row iw, column 2: ID of the last  vertex (iP2) of the way iw
-% G(iG,1).L(iw,1)				Edge lengths
+% G(iG,1).ir
+% G(iG,1).ways(iw,1).xy					two-column matrix of vertices
+% G(iG,1).ways(iw,1).iw_v_osmdata	indices in OSMDATA.way
+% G(iG,1).ways(iw,1).connect			connect line (true/false)
+% G(iG,1).P(iP,:)							All vertices or nodes or points.
+%												column 1: x-value
+%												column 2: y-value
+% G(iG,1).E(iw,:)							Edges of the Graph:	matrix of vertex identification numbers iP
+%												row iw, column 1: ID of the first vertex (iP1) of the way iw
+%												row iw, column 2: ID of the last  vertex (iP2) of the way iw
+% G(iG,1).L(iw,1)							Edge lengths
 
 % Initialization of G: Assign the first way in G:
-iG								= 1;
-iw								= 1;
-iw_in							= 1;
-G(iG,1).ways(iw,1).xy	= ways(iw_in,1).xy;
-G(iG,1).relid				= ways(iw_in,1).relid;
-G(iG,1).role				= ways(iw_in,1).role;
-G(iG,1).tag					= ways(iw_in,1).tag;
-G(iG,1).P(1,:)				= ways(iw_in,1).xy(  1,:);
-G(iG,1).P(2,:)				= ways(iw_in,1).xy(end,:);
-G(iG,1).E(iw,:)			= [1 2];
+iG											= 1;
+iw											= 1;
+iw_in										= 1;
+G(iG,1).ways(iw,1).xy				= ways(iw_in,1).xy;
+G(iG,1).ways(iw,1).iw_v_osmdata	= ways(iw_in,1).iw_osmdata;
+G(iG,1).ways(iw,1).connect			= ways(iw_in,1).connect;
+G(iG,1).relid							= ways(iw_in,1).relid;
+G(iG,1).role							= ways(iw_in,1).role;
+G(iG,1).tag								= ways(iw_in,1).tag;
+G(iG,1).ir								= ways(iw_in,1).ir_osmdata;
+G(iG,1).P(1,:)							= ways(iw_in,1).xy(  1,:);
+G(iG,1).P(2,:)							= ways(iw_in,1).xy(end,:);
+G(iG,1).E(iw,:)						= [1 2];
 if size(ways(iw_in,1).xy,2)>=2
-	G(iG,1).L(iw,1)	= sum(sqrt(...
+	G(iG,1).L(iw,1)					= sum(sqrt(...
 		(ways(iw_in,1).xy(2:end,1)-ways(iw_in,1).xy(1:(end-1),1)).^2+...
 		(ways(iw_in,1).xy(2:end,2)-ways(iw_in,1).xy(1:(end-1),2)).^2    ));
 else
-	G(iG,1).L(iw,1)	= 0;
+	G(iG,1).L(iw,1)					= 0;
 end
 for iw_in=2:size(ways,1)
 	% Get iG:
 	iG					= 1;
 	while iG<=size(G,1)
-		if    isequal(G(iG,1).relid,ways(iw_in,1).relid)&&...
-				strcmp( G(iG,1).role ,ways(iw_in,1).role )&&...
-				strcmp( G(iG,1).tag  ,ways(iw_in,1).tag  )
+		if    isequal(G(iG,1).relid,ways(iw_in,1).relid     )&&...
+				strcmp( G(iG,1).role ,ways(iw_in,1).role      )&&...
+				strcmp( G(iG,1).tag  ,ways(iw_in,1).tag       )&&...
+				isequal(G(iG,1).ir   ,ways(iw_in,1).ir_osmdata)
 			break
 		end
 		iG				= iG+1;
@@ -437,25 +512,30 @@ for iw_in=2:size(ways,1)
 	% Add way iw_in to G:
 	if iG>size(G,1)
 		% Add the way iw_in as first way in G(iG,1):
-		iw								= 1;
-		G(iG,1).ways(iw,1).xy	= ways(iw_in,1).xy;
-		G(iG,1).relid				= ways(iw_in,1).relid;
-		G(iG,1).role				= ways(iw_in,1).role;
-		G(iG,1).tag					= ways(iw_in,1).tag;
-		G(iG,1).P(1,:)				= ways(iw_in,1).xy(  1,:);
-		G(iG,1).P(2,:)				= ways(iw_in,1).xy(end,:);
-		G(iG,1).E(iw,:)			= [1 2];
+		iw											= 1;
+		G(iG,1).ways(iw,1).xy				= ways(iw_in,1).xy;
+		G(iG,1).ways(iw,1).iw_v_osmdata	= ways(iw_in,1).iw_osmdata;
+		G(iG,1).ways(iw,1).connect			= ways(iw_in,1).connect;
+		G(iG,1).relid							= ways(iw_in,1).relid;
+		G(iG,1).role							= ways(iw_in,1).role;
+		G(iG,1).tag								= ways(iw_in,1).tag;
+		G(iG,1).ir								= ways(iw_in,1).ir_osmdata;
+		G(iG,1).P(1,:)							= ways(iw_in,1).xy(  1,:);
+		G(iG,1).P(2,:)							= ways(iw_in,1).xy(end,:);
+		G(iG,1).E(iw,:)						= [1 2];
 		if size(ways(iw_in,1).xy,2)>=2
-			G(iG,1).L(iw,1)		= sum(sqrt(...
+			G(iG,1).L(iw,1)					= sum(sqrt(...
 				(ways(iw_in,1).xy(2:end,1)-ways(iw_in,1).xy(1:(end-1),1)).^2+...
 				(ways(iw_in,1).xy(2:end,2)-ways(iw_in,1).xy(1:(end-1),2)).^2    ));
 		else
-			G(iG,1).L(iw,1)		= 0;
+			G(iG,1).L(iw,1)					= 0;
 		end
 	else
 		% Add the way iw_in to existing ways in G(iG,1):
-		iw								= size(G(iG,1).ways,1)+1;
-		G(iG,1).ways(iw,1).xy	= ways(iw_in,1).xy;
+		iw											= size(G(iG,1).ways,1)+1;
+		G(iG,1).ways(iw,1).xy				= ways(iw_in,1).xy;
+		G(iG,1).ways(iw,1).iw_v_osmdata	= ways(iw_in,1).iw_osmdata;
+		G(iG,1).ways(iw,1).connect			= ways(iw_in,1).connect;
 		% First vertex of the way iw_in:
 		iP1				= find(...
 			(ways(iw_in,1).xy(1,1)==G(iG,1).P(:,1))&...
@@ -495,29 +575,49 @@ for iG=1:size(G,1)
 	for iP=1:size(G(iG,1).P,1)
 		iw1		= find((G(iG,1).E(:,2)==iP));
 		iw2		= find((G(iG,1).E(:,1)==iP));
-		if isscalar(iw1)&&isscalar(iw2)&&~isequal(iw1,iw2)
+		if    isscalar(iw1)              &&...
+				isscalar(iw2)              &&...
+				~isequal(iw1,iw2)          &&...
+				G(iG,1).ways(iw1,1).connect&&...
+				G(iG,1).ways(iw2,1).connect
 			% The point iP connects exactly two different ways:   x----->-----x----->-----x
-			%                                                iw1    iP   iw2
+			%                                                          iw1    iP   iw2
 			% Append way iw2 to way iw1 and delete way iw2:
-			G(iG,1).ways(iw1,1).xy			= [G(iG,1).ways(iw1,1).xy;G(iG,1).ways(iw2,1).xy(2:end,:)];
-			G(iG,1).ways(iw2,:)				= [];
-			G(iG,1).E(iw1,2)					= G(iG,1).E(iw2,2);
-			G(iG,1).E(iw2,:)					= [];
-			G(iG,1).L(iw1,1)					= G(iG,1).L(iw1,1)+G(iG,1).L(iw2,1);
-			G(iG,1).L(iw2,:)					= [];
+			G(iG,1).ways(iw1,1).xy				= [G(iG,1).ways(iw1,1).xy;G(iG,1).ways(iw2,1).xy(2:end,:)];
+			G(iG,1).ways(iw1,1).iw_v_osmdata	= unique([...
+				G(iG,1).ways(iw1,1).iw_v_osmdata;...
+				G(iG,1).ways(iw2,1).iw_v_osmdata]);
+			if ~isequal(G(iG,1).ways(iw1,1).iw_v_osmdata,0)
+				G(iG,1).ways(iw1,1).iw_v_osmdata(G(iG,1).ways(iw1,1).iw_v_osmdata==0,:)	= [];
+			end
+			G(iG,1).ways(iw2,:)					= [];
+			G(iG,1).E(iw1,2)						= G(iG,1).E(iw2,2);
+			G(iG,1).E(iw2,:)						= [];
+			G(iG,1).L(iw1,1)						= G(iG,1).L(iw1,1)+G(iG,1).L(iw2,1);
+			G(iG,1).L(iw2,:)						= [];
 		else
 			iw1		= find((G(iG,1).E(:,1)==iP));
 			iw2		= find((G(iG,1).E(:,2)==iP));
-			if isscalar(iw1)&&isscalar(iw2)&&~isequal(iw1,iw2)
+			if    isscalar(iw1)              &&...
+					isscalar(iw2)              &&...
+					~isequal(iw1,iw2)          &&...
+					G(iG,1).ways(iw1,1).connect&&...
+					G(iG,1).ways(iw2,1).connect
 				% The point iP connects exactly two different ways:   x----->-----x----->-----x
-				%                                                iw2    iP   iw1
+				%                                                          iw2    iP   iw1
 				% Append way iw1 to way iw2 and delete way iw1:
-				G(iG,1).ways(iw2,1).xy			= [G(iG,1).ways(iw2,1).xy;G(iG,1).ways(iw1,1).xy(2:end,:)];
-				G(iG,1).ways(iw1,:)				= [];
-				G(iG,1).E(iw2,2)					= G(iG,1).E(iw1,2);
-				G(iG,1).E(iw1,:)					= [];
-				G(iG,1).L(iw2,1)					= G(iG,1).L(iw2,1)+G(iG,1).L(iw1,1);
-				G(iG,1).L(iw1,:)					= [];
+				G(iG,1).ways(iw2,1).xy				= [G(iG,1).ways(iw2,1).xy;G(iG,1).ways(iw1,1).xy(2:end,:)];
+				G(iG,1).ways(iw2,1).iw_v_osmdata	= unique([...
+					G(iG,1).ways(iw2,1).iw_v_osmdata;...
+					G(iG,1).ways(iw1,1).iw_v_osmdata]);
+				if ~isequal(G(iG,1).ways(iw2,1).iw_v_osmdata,0)
+					G(iG,1).ways(iw2,1).iw_v_osmdata(G(iG,1).ways(iw2,1).iw_v_osmdata==0,:)	= [];
+				end
+				G(iG,1).ways(iw1,:)					= [];
+				G(iG,1).E(iw2,2)						= G(iG,1).E(iw1,2);
+				G(iG,1).E(iw1,:)						= [];
+				G(iG,1).L(iw2,1)						= G(iG,1).L(iw2,1)+G(iG,1).L(iw1,1);
+				G(iG,1).L(iw1,:)						= [];
 			end
 		end
 	end
@@ -580,6 +680,9 @@ if display_G
 		end
 		if isfield(G(iG,1),'tag')
 			fprintf(1,'  ,   tag=''%s''',G(iG,1).tag);
+		end
+		if isfield(G(iG,1),'ir')
+			fprintf(1,'  ,   ir=''%s''',G(iG,1).ir);
 		end
 		fprintf(1,'\n');
 		if isfield(G(iG,1),'P')

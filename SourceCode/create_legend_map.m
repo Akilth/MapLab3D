@@ -300,6 +300,7 @@ try
 									end
 									linelength				= linelength-2*linelength_margin;
 									% Create the line:
+									% The assignment of in, iw, and ir is not necessary here.
 									[poly_liar_bgd,poly_liar_fgd,ud_liar_bgd,ud_liar_fgd]	= ...
 										line2poly(...
 										[-1;1]/2*linelength,...					% x
@@ -332,6 +333,7 @@ try
 									% Display as area:
 									mapobj_m(r,c).disp	= 'area';
 									% Create the area:
+									% The assignment of in, iw, and ir is not necessary here.
 									[poly_liar_bgd,poly_liar_fgd,ud_liar_bgd,ud_liar_fgd]	= ...
 										area2poly(polyshape(...
 										[-1; 1;1;-1;-1]/2*PP.legend.element(r,c).legsymb_areawidth,...		% x
@@ -358,6 +360,7 @@ try
 										end
 										areawidth				= areawidth-2*areawidth_margin;
 										% Create the area:
+										% The assignment of in, iw, and ir is not necessary here.
 										[poly_liar_bgd,~,~,~]	= ...
 											line2poly(...
 											[-1;1]/2*areawidth,...					% x
@@ -1980,7 +1983,7 @@ try
 				'FaceAlpha'    ,GV.visibility.show.facealpha,...
 				'Visible'		,'on',...
 				'UserData'     ,ud_bgd,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 		end
 		% Plot foreground:
 		if numboundaries(poly_fgd)>0
@@ -2003,7 +2006,7 @@ try
 				'FaceAlpha'    ,GV.visibility.show.facealpha,...
 				'Visible'		,'on',...
 				'UserData'     ,ud_fgd,...
-				'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 		end
 		% Save relevant data in the structure MAP_OBJECTS:
 		imapobj								= size(MAP_OBJECTS,1)+1;

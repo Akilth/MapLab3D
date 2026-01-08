@@ -1,4 +1,4 @@
-function ButtonDownFcn_ax_2dmap(clicked_object,event_data)
+function ButtonDownFcn_ax_2dmap(clicked_object,event_data,rbbox_pos)
 
 global MAP_OBJECTS GV_H GV APP
 
@@ -34,18 +34,6 @@ try
 		end
 	end
 	
-	
-	% clicked_object
-	% clicked_object.Type
-	% event_data
-	% event_data =
-	%   Hit with properties:
-	%                Button: 1
-	%     IntersectionPoint: [-250.37 60 -1]
-	%                Source: [1×1 Axes]
-	%             EventName: 'Hit'
-	% return
-	
 	imapobj				= [];
 	cancelsearching	= false;
 	for i=1:size(MAP_OBJECTS,1)
@@ -68,7 +56,40 @@ try
 	end
 	
 	% Rubberband box:
-	rbbox_pos	= rbbox;
+	if GV.mouse_interaction_method==1
+		rbbox_method		= 4;
+		switch rbbox_method
+			case 1
+				rbbox_pos	= rbbox;
+			case 2
+				% Disabling HandleVisibility for all objects except the figure of the 2D map speeds up execution.
+				% discovered through trial and error
+				objects_all		= findobj('HandleVisibility','on','-not','Name','2D map');
+				set(objects_all,'HandleVisibility','off');
+				rbbox_pos	= rbbox;
+				set(objects_all,'HandleVisibility','on');
+		end
+	elseif GV.mouse_interaction_method==2
+		% rbbox_pos already exists
+	end
+	
+	% Example parameters:
+	% rbbox_pos =
+	%    239   199    55    52
+	% 	rbbox_pos = [220   228     0     0]
+	% 	clicked_object = Polygon with properties:
+	%     FaceColor: [0.8627 0.8627 0.8627]
+	%     FaceAlpha: 0.3500
+	%     EdgeColor: [0 0 0]
+	%     LineWidth: 0.5000
+	%     LineStyle: '-'
+	%         Shape: [1×1 polyshape]
+	% event_data = Hit with properties:
+	%                Button: 1
+	%     IntersectionPoint: [-120.8314 137.0865 9.4118e-07]
+	%                Source: [1×1 Polygon]
+	%             EventName: 'Hit'
+	
 	tol_pixel	= 10;
 	% Conversion between axis data units and figure pixel:
 	%                              +------------------------------------------------------------------+
@@ -164,7 +185,7 @@ try
 						(event_data.IntersectionPoint(1,2)>GV.fig_2dmap_cm.lc_ymin)&&...		% y_ip
 						(event_data.IntersectionPoint(1,2)<GV.fig_2dmap_cm.lc_ymax)&&...
 						isequal(clicked_object,GV.fig_2dmap_cm.clicked_object)
-
+					
 					htemp		= [];
 					i_htemp	= 0;
 					if    (size(GV.fig_2dmap_cm.xy_liwimin,1)>0)&&...
@@ -472,7 +493,7 @@ try
 							% Switch to "Move vertex" mode:
 							APP.Mod_LiReVe_ButtonGroup.SelectedObject		= APP.MoveVerticesButton;
 						end
-						% Often the new point is not visible, even if the object is selected: switch directly to 
+						% Often the new point is not visible, even if the object is selected: switch directly to
 						% 'move vertex' while the mouse pointer is still in the same place to be able to move the vertex:
 						% This does not work:
 						% APP.Mod_LiReVe_ButtonGroup.SelectedObject.Text	= 'Move vertex';
@@ -484,9 +505,6 @@ try
 						plot_modify('select',imapobj,0);
 						APP.Mod_Polygons_PlotNo1_EditField.Value			= imapobj;
 						APP.Mod_Polygons_PlotNo2_EditField.Value			= 0;
-						if MAP_OBJECTS(imapobj,1).iobj>0
-							APP.Mod_AddPrevToOutput_ObjNo_EditField.Value	= MAP_OBJECTS(imapobj,1).iobj;
-						end
 					end
 				end
 				

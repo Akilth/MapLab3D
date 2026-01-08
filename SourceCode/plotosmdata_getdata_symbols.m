@@ -10,9 +10,15 @@ function [id_sym_node_cv,id_sym_way_cv]=plotosmdata_getdata_symbols(...
 	id_sym_way_cv,...
 	read_relations,...
 	read_nodes_ways,...
-	obj_eqtags_ioeqt)
+	obj_eqtags_ioeqt,...
+	msg)
 % Collect the data of all symbols
 % Used in plotosmdata_getdata
+% 
+% Note on the use of connect_ways in this function:
+% The structures calculated with connect_ways are only used to calculate the reference points in symboleqtags2poly.m.
+% Therefore, it is not necessary to pass the values in, iw_v, and ir when calling connect_ways.
+% These values are calculated in symboleqtags2poly.m and added to the UserData of the map objects.
 
 global GV PP PLOTDATA OSMDATA_TABLE OSMDATA_TABLE_INWR OSMDATA
 
@@ -77,11 +83,14 @@ try
 									y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 									[xc,yc]	= polysplit(x,y);
 									for ic=1:size(xc,1)
-										iw							= size(ways,1)+1;
-										ways(iw,1).xy			= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
-										ways(iw,1).relid		= uint64(0);						% uint64 number: OSM dataset ID
-										ways(iw,1).role		= '';									% character array
-										ways(iw,1).tag			= '';									% character array
+										iw								= size(ways,1)+1;
+										ways(iw,1).xy				= [xc{ic,1}(:) yc{ic,1}(:)];	% two-column matrix of vertices
+										ways(iw,1).relid			= uint64(0);						% uint64 number: OSM dataset ID
+										ways(iw,1).role			= '';									% character array
+										ways(iw,1).tag				= '';									% character array
+										ways(iw,1).iw_osmdata	= OSMDATA_TABLE_INWR(itable);	% index in OSMDATA.way
+										ways(iw,1).ir_osmdata	= 0;									% index in OSMDATA.relation
+										ways(iw,1).connect		= true;								% connect line (true/false)
 										if ~GV.get_nodes_ways_repeatedly_symbols
 											if ic==1
 												id_sym_way_cv{iseqt,1}(end+1,1)	= OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable));
@@ -110,12 +119,18 @@ try
 				
 				% Filter small objects out:
 				% After that, connways_eqtags_filt contains only objects that fulfill the conditions.
+				%
+				% Note: minarea=-999999
+				% This makes it possible to filter out the areas independently of the other limit values. Reason:
 				% The areas are filtered after the polygons have been calculated, since the shape of the areas
 				% can change by moving the outlines: see:	call_symboleqtags2poly
 				%														symboleqtags2poly
 				%														getdata_refpoints
 				%														connways_center
 				%														plotosmdata_simplify_moveoutline
+				% Disadvantage:
+				% When executing "Create map," texts and symbols are also generated for areas that are too small,
+				% and the function takes much longer for large maps.
 				connways_eqtags_filt	= connect_ways([]);
 				connways_eqtags_filt	= plotosmdata_getdata_filterout(...
 					connways_eqtags,...
@@ -124,10 +139,11 @@ try
 					PP.obj(iobj,1).symbolpar.mindimy,...
 					PP.obj(iobj,1).symbolpar.mindiag,...
 					PP.obj(iobj,1).symbolpar.minlength,...
-					-999999,...				% Special case: The areas are not filtered, regardless of the other limit values.
+					PP.obj(iobj,1).symbolpar.minarea,...			% See note
 					filter_nla_separatly,...
 					force_keep_data,...
-					obj_eqtags_ioeqt);
+					obj_eqtags_ioeqt,...
+					msg);
 				
 				% Create the symbol polygons and add the symbols to PLOTDATA: nodes
 				
@@ -153,7 +169,8 @@ try
 							isym_symbol_eqtags(iseqt,1),...
 							itable_symbol_eqtags{iseqt,1},...
 							connways_eqtags_select,...
-							text_tag_symbol_eqtags{iseqt,1});
+							text_tag_symbol_eqtags{iseqt,1},...
+							msg);
 					end
 					connways_eqtags_filt.nodes		= [];
 				end
@@ -172,12 +189,14 @@ try
 							isym_symbol_eqtags(iseqt,1),...
 							itable_symbol_eqtags{iseqt,1},...
 							connways_eqtags_filt,...
-							text_tag_symbol_eqtags{iseqt,1});
+							text_tag_symbol_eqtags{iseqt,1},...
+							msg);
 					else
 						for k_line=1:size(connways_eqtags_filt.lines,1)
 							connways_eqtags_select						= connect_ways([]);
 							connways_eqtags_select.lines				= connways_eqtags_filt.lines(k_line,1);
 							connways_eqtags_select.lines_isouter	= connways_eqtags_filt.lines_isouter(k_line,1);
+							connways_eqtags_select.lines_isinner	= connways_eqtags_filt.lines_isinner(k_line,1);
 							connways_eqtags_select.lines_relid		= connways_eqtags_filt.lines_relid(k_line,1);
 							connways_eqtags_select.xy_start			= connways_eqtags_filt.xy_start(k_line,1);
 							connways_eqtags_select.xy_end				= connways_eqtags_filt.xy_end(k_line,1);
@@ -202,12 +221,14 @@ try
 								isym_symbol_eqtags(iseqt,1),...
 								itable_symbol_eqtags{iseqt,1},...
 								connways_eqtags_select,...
-								text_tag_symbol_eqtags{iseqt,1});
+								text_tag_symbol_eqtags{iseqt,1},...
+								msg);
 						end
 						for k_area=1:size(connways_eqtags_filt.areas,1)
 							connways_eqtags_select						= connect_ways([]);
 							connways_eqtags_select.areas				= connways_eqtags_filt.areas(k_area,1);
 							connways_eqtags_select.areas_isouter	= connways_eqtags_filt.areas_isouter(k_area,1);
+							connways_eqtags_select.areas_isinner	= connways_eqtags_filt.areas_isinner(k_area,1);
 							connways_eqtags_select.areas_relid		= connways_eqtags_filt.areas_relid(k_area,1);
 							% alt 1:
 							% connways_eqtags_select			= connect_ways([]);
@@ -228,7 +249,8 @@ try
 								isym_symbol_eqtags(iseqt,1),...
 								itable_symbol_eqtags{iseqt,1},...
 								connways_eqtags_select,...
-								text_tag_symbol_eqtags{iseqt,1});
+								text_tag_symbol_eqtags{iseqt,1},...
+								msg);
 						end
 					end
 				end
@@ -254,7 +276,8 @@ function create_map_log_firstline=call_symboleqtags2poly(...
 	isym_symbol_eqtags_iseqt,...			% isym_symbol_eqtags(iseqt,1)
 	itable_symbol_eqtags_iseqt,...		% itable_symbol_eqtags{iseqt,1}
 	connways_eqtags_select,...
-	text_tag_symbol_eqtags_iseqt)
+	text_tag_symbol_eqtags_iseqt,...
+	msg)
 % Create the symbol polygons and add the symbols to PLOTDATA
 
 global PLOTDATA PP GV
@@ -393,7 +416,8 @@ try
 		PP.obj(iobj,1).symbolpar.minarea,...
 		filter_nla_separatly,...
 		force_keep_data,...
-		obj_eqtags_ioeqt);
+		obj_eqtags_ioeqt,...
+		msg);
 	GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,dx_all_mm);
 	GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,dy_all_mm);
 	GV.log.create_map.text	= sprintf('%s%8.3f | ',GV.log.create_map.text,diag_all_mm);

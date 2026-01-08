@@ -21,7 +21,15 @@ try
 	end
 	if create_fig
 		% open the map figure:
-		GV_H.fig_2dmap				= figure;
+		% Create the figure with toolstrip:
+		% GV_H.fig_2dmap				= figure;
+		% Create the figure without toolstrip: This speeds up selection of map objects.
+		switch GV.fig_2dmap_type
+			case 1
+				GV_H.fig_2dmap		= figure;
+			case 2
+				GV_H.fig_2dmap		= uifigure;
+		end
 		figure_theme(GV_H.fig_2dmap,'set',[],'light');
 		% Figure size:
 		fig_2dmap_pos				= GV_H.fig_2dmap.Position;
@@ -45,6 +53,12 @@ try
 	set(GV_H.fig_2dmap,'NumberTitle','off');
 	set(GV_H.fig_2dmap,'SizeChangedFcn',@(src,event)SizeChangedFcn_fig_2dmap(src,event,1,0));
 	set(GV_H.fig_2dmap,'Units','pixels');
+	set(GV_H.fig_2dmap,'WindowButtonUpFcn',GV.fig_2dmap_WindowButtonUpFcn);
+	set(GV_H.fig_2dmap,'WindowButtonDownFcn',GV.fig_2dmap_WindowButtonDownFcn);
+	% If the figure type is uifigure, these values must be set to the default figure vales:
+	% (https://de.mathworks.com/help/matlab/ref/matlab.ui.figure.html#mw_7ddd8cf0-2c8d-4d52-b1e5-9587dc7346cf)
+	set(GV_H.fig_2dmap,'HandleVisibility','on');
+	set(GV_H.fig_2dmap,'AutoResizeChildren','off');
 	
 	% cameratoolbar disabled, because it changes the axis position:
 	% The modification of lines and polygons like "Move vertex" will not work.
@@ -54,7 +68,7 @@ try
 	GV_H.ax_2dmap	= axes(GV_H.fig_2dmap);
 	set(GV_H.ax_2dmap,'Units','pixels');
 	hold(GV_H.ax_2dmap,'on');
-	set(GV_H.ax_2dmap,'ButtonDownFcn',@ButtonDownFcn_ax_2dmap);
+	set(GV_H.ax_2dmap,'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 	grid(GV_H.ax_2dmap,'on');
 	box(GV_H.ax_2dmap,'on');
 	xlabel(GV_H.ax_2dmap,'x / mm');
@@ -62,10 +76,19 @@ try
 	% The contour lines are deleted:
 	APP.View_ShowContourLines_Menu.Checked	= 'off';
 	
-	% Control Chart Interactivity disabled, because it changes the axis position:
-	GV_H.ax_2dmap_toolbar	= axtoolbar(GV_H.ax_2dmap,{'export','datacursor','pan'});
-	% GV_H.ax_2dmap.Toolbar.Visible='off';
-	% disableDefaultInteractivity(GV_H.ax_2dmap);
+	toolbar_method	= 2;
+	switch toolbar_method
+		case 1
+			% Control Chart Interactivity disabled, because it changes the axis position.
+			GV_H.ax_2dmap_toolbar	= axtoolbar(GV_H.ax_2dmap,{'export','datacursor','pan'});
+			% GV_H.ax_2dmap.Toolbar.Visible='off';
+			% disableDefaultInteractivity(GV_H.ax_2dmap);
+		case 2
+			% Disabling GV_H.ax_2dmap_toolbar completely speeds up selection of objects with the mouse.
+			% Creating and deleting prevents a default toolbar.
+			GV_H.ax_2dmap_toolbar	= axtoolbar(GV_H.ax_2dmap,{'export','datacursor','pan'});
+			delete(GV_H.ax_2dmap_toolbar);
+	end
 	
 	% Set the base color:
 	if ~isempty(PP)

@@ -148,7 +148,7 @@ The project began with student research projects in the electrical engineering p
 - The programming project was started during the first coronavirus lockdown in 2020, when the laboratories were closed and the student research projects had to be carried out at home. This allowed students to practice the MATLAB skills they had learned in the previous semester.
 - From 2022, the project was continued by [Andreas Kilthau](https://github.com/Akilth).
 - In 2023, a 3D-printed map was exhibited at the German National Garden Show (“Bundesgartenschau”) in Mannheim at the DHBW stand ([exhibit](https://www.printables.com/education/502996-3d-printing-of-maps-by-combining-openstreetmap-dat)).
-- In 2025, the app was released as a public beta version.
+- In 2025, the app was released as a public beta version. Since then, development has continued through [Andreas Kilthau](https://github.com/Akilth) and further student research projects.
 - Along with the release of the app, [Kristian Kahl](https://wiki.openstreetmap.org/wiki/User:Kristian.Kahl) created a user manual in the OpenStreetMap Wiki, which he has been continuously expanding and updating since then: [MapLab3D Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
 
 ## Development
@@ -156,7 +156,7 @@ The project began with student research projects in the electrical engineering p
 MapLab3D is written in MATLAB. Almost all functions are commented in English, with a few exceptions.
 
 MATLAB program version and required add-ons:
-- MATLAB version: 2025a
+- MATLAB version: 2025b
 - Mapping Toolbox
 - Image Processing Toolbox
 - Matlab Compiler

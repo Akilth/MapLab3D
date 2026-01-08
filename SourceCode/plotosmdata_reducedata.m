@@ -4,11 +4,11 @@ function plotosmdata_reducedata(msg)
 global PP GV PLOTDATA WAITBAR GV_H
 
 try
-
+	
 	if nargin==0
 		msg	= '';
 	end
-
+	
 	% Test:
 	testplot_show_k	= 0;		% Show indices k
 	testout				= 0;		% Test output in command window
@@ -16,7 +16,7 @@ try
 		fprintf(1,'%s\n',GV.log.create_map.line_str);
 		fprintf(1,'Reduce plot data:\n');
 	end
-
+	
 	% Testplot preparation:
 	m_tp_subplot						= 3;
 	n_tp_subplot						= 2;
@@ -37,7 +37,7 @@ try
 			if ~isempty(PLOTDATA.obj(iobj,1).connways.lines)
 				% or: if (PP.obj(iobj).display~=0)&&(PP.obj(iobj).display_as_line~=0)
 				hf_tpar=149560000+iobj;
-				figure(hf_tpar);
+				hf_tpar=figure(hf_tpar);
 				figure_theme(hf_tpar,'set',[],'light');
 				clf(hf_tpar,'reset');
 				figure_theme(hf_tpar,'set',[],'light');
@@ -58,7 +58,7 @@ try
 			end
 		end
 	end
-
+	
 	% Plausibility check:
 	for iobj=1:size(PLOTDATA.obj,1)
 		lino_iobj_v	= zeros(0,1);
@@ -77,15 +77,15 @@ try
 			end
 		end
 	end
-
-
+	
+	
 	%******************************************************************************************************************
 	% 1) Connect all lines of different objects but with the same color:
 	%    Connect only lines with matching start- and end-points.
 	%    PLOTDATA.col(icno,1).colno			background color numbers
 	%    PLOTDATA.col(icno,1).connways		connected lines
 	%******************************************************************************************************************
-
+	
 	PLOTDATA.col		= [];
 	PLOTDATA.colno_v	= sort(PLOTDATA.colno_v);
 	for icno=1:size(PLOTDATA.colno_v,1)
@@ -125,12 +125,12 @@ try
 			end
 		end
 	end
-
+	
 	% Testplots: Before reducing data:
 	for k_tp_obj=1:length(objno_testplot_simplify_v)
 		iobj	= objno_testplot_simplify_v(k_tp_obj);
 		colno	= PP.obj(iobj).color_no_bgd;
-
+		
 		% Testplot of only object number iobj:
 		if ~isempty(PLOTDATA.obj(iobj,1).connways)
 			for k=1:size(PLOTDATA.obj(iobj,1).connways.lines,1)
@@ -184,7 +184,7 @@ try
 			end
 			legend(ha_tp(k_tp_obj,1),subset,labels);
 		end
-
+		
 		% Testplot of all line objects of the same color as object number iobj:
 		for icno=1:size(PLOTDATA.colno_v,1)
 			if isequal(PLOTDATA.colno_v(icno,1),colno)
@@ -213,16 +213,16 @@ try
 				end
 			end
 		end
-
+		
 	end
-
-
+	
+	
 	%******************************************************************************************************************
 	% 2) Delete unbranched lines in PLOTDATA, that are too short:
 	%    PLOTDATA.col(icno,1).mindiag_unbranched
 	%    PLOTDATA.col(icno,1).minlength_unbranched
 	%******************************************************************************************************************
-
+	
 	obj_delete	= [];
 	for iobj=1:size(PLOTDATA.obj,1)
 		obj_delete(iobj,1).lino	= [];
@@ -313,6 +313,7 @@ try
 			% Delete lines in PLOTDATA.col(icno,1).connways.lines:
 			PLOTDATA.col(icno,1).connways.lines(k_delete,:)				= [];
 			PLOTDATA.col(icno,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.col(icno,1).connways.lines_isinner(k_delete,:)	= [];
 			PLOTDATA.col(icno,1).connways.lines_relid(k_delete,:)		= [];
 			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)			= [];
 			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)			= [];
@@ -334,18 +335,19 @@ try
 			end
 			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)				= [];
 			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isinner(k_delete,:)	= [];
 			PLOTDATA.obj(iobj,1).connways.lines_relid(k_delete,:)		= [];
 			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)			= [];
 			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
-
-
+	
+	
 	% Testplots: after deleting unbranched lines:
 	for k_tp_obj=1:length(objno_testplot_simplify_v)
 		iobj	= objno_testplot_simplify_v(k_tp_obj);
 		colno	= PP.obj(iobj).color_no_bgd;
-
+		
 		% Testplot of only object number iobj:
 		if ~isempty(PLOTDATA.obj(iobj,1).connways)
 			for k=1:size(PLOTDATA.obj(iobj,1).connways.lines,1)
@@ -400,7 +402,7 @@ try
 			end
 			legend(ha_tp(k_tp_obj,3),subset,labels);
 		end
-
+		
 		% Testplot of all line objects of the same color as object number iobj:
 		for icno=1:size(PLOTDATA.colno_v,1)
 			if isequal(PLOTDATA.colno_v(icno,1),colno)
@@ -425,18 +427,18 @@ try
 				end
 			end
 		end
-
+		
 	end
-
-
+	
+	
 	%******************************************************************************************************************
 	% 3) Connect all lines of different objects but with the same background color:
 	%    Connect touching lines, divided by nans.
 	%******************************************************************************************************************
-
+	
 	method	= 1;
 	switch method
-
+		
 		case 1
 			% Create a circle around the start and end point of each line
 			% Only overlap of the start and end point will be detected.
@@ -580,6 +582,7 @@ try
 									% Delete line k1:
 									PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
 									PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+									PLOTDATA.col(icno,1).connways.lines_isinner(k1,:)	= [];
 									PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
 									PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
 									PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
@@ -617,6 +620,7 @@ try
 										% Delete line k1:
 										PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
 										PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+										PLOTDATA.col(icno,1).connways.lines_isinner(k1,:)	= [];
 										PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
 										PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
 										PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
@@ -631,7 +635,7 @@ try
 					end
 				end
 			end
-
+			
 		case 2
 			% Convert the lines to polygons for testing for overlap:
 			% Every overlap will be detected (not only overlap of the start and end point),
@@ -687,6 +691,7 @@ try
 								% Delete line k1:
 								PLOTDATA.col(icno,1).connways.lines(k1,:)				= [];
 								PLOTDATA.col(icno,1).connways.lines_isouter(k1,:)	= [];
+								PLOTDATA.col(icno,1).connways.lines_isinner(k1,:)	= [];
 								PLOTDATA.col(icno,1).connways.lines_relid(k1,:)		= [];
 								PLOTDATA.col(icno,1).connways.xy_start(k1,:)			= [];
 								PLOTDATA.col(icno,1).connways.xy_end(k1,:)			= [];
@@ -702,15 +707,15 @@ try
 					end
 				end
 			end
-
+			
 	end
-
+	
 	%******************************************************************************************************************
 	% 4) Delete branched/touching lines in PLOTDATA, that are too short:
 	%    PLOTDATA.col(icno,1).mindiag_branched
 	%    PLOTDATA.col(icno,1).minlength_branched
 	%******************************************************************************************************************
-
+	
 	obj_delete	= [];
 	for iobj=1:size(PLOTDATA.obj,1)
 		obj_delete(iobj,1).lino	= [];
@@ -834,6 +839,7 @@ try
 			% Delete lines in PLOTDATA.col(icno,1).connways.lines:
 			PLOTDATA.col(icno,1).connways.lines(k_delete,:)				= [];
 			PLOTDATA.col(icno,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.col(icno,1).connways.lines_isinner(k_delete,:)	= [];
 			PLOTDATA.col(icno,1).connways.lines_relid(k_delete,:)		= [];
 			PLOTDATA.col(icno,1).connways.xy_start(k_delete,:)			= [];
 			PLOTDATA.col(icno,1).connways.xy_end(k_delete,:)			= [];
@@ -865,18 +871,19 @@ try
 			end
 			PLOTDATA.obj(iobj,1).connways.lines(k_delete,:)				= [];
 			PLOTDATA.obj(iobj,1).connways.lines_isouter(k_delete,:)	= [];
+			PLOTDATA.obj(iobj,1).connways.lines_isinner(k_delete,:)	= [];
 			PLOTDATA.obj(iobj,1).connways.lines_relid(k_delete,:)		= [];
 			PLOTDATA.obj(iobj,1).connways.xy_start(k_delete,:)			= [];
 			PLOTDATA.obj(iobj,1).connways.xy_end(k_delete,:)			= [];
 		end
 	end
-
-
+	
+	
 	%******************************************************************************************************************
 	% 4) Delete symbols that are too far away from the line:
 	%    PLOTDATA.obj(iobj,1).symb
 	%******************************************************************************************************************
-
+	
 	for iobj=1:size(PLOTDATA.obj,1)
 		if ~isempty(PP.obj(iobj).display)
 			% If this object number exists:
@@ -884,17 +891,26 @@ try
 			if dmax2lines>=0
 				if ~isempty(PLOTDATA.obj(iobj,1).connways)
 					if isempty(PLOTDATA.obj(iobj,1).connways.lines)
-
+						
 						% Delete all texts and symbols:
 						PLOTDATA.obj(iobj,1).text				= [];
 						PLOTDATA.obj(iobj,1).symb				= [];
 						PLOTDATA.obj(iobj,1).text_eqtags		= cell(0,1);
 						PLOTDATA.obj(iobj,1).symb_eqtags		= cell(0,1);
-
+						
 					else
-
+						
 						% Check texts:
 						if ~isempty(PLOTDATA.obj(iobj,1).text)
+							fprintf(1,'-----------------------------------------------------------------------------------------------------------------------------------\n');
+							textstr1	= sprintf('ObjNo %1.0f: Delete texts that are too far away from a line:',iobj);
+							textstr2	= sprintf('obj(%1.0f,1).reduce_nodes.dmax2lines_m            = %g m',...
+								iobj,PP.obj(iobj).reduce_nodes.dmax2lines_m);
+							textstr3	= sprintf('obj(%1.0f,1).reduce_nodes.dmax2lines_m/scale*1000 = %1.3f mm',...
+								iobj,dmax2lines);
+							fprintf(1,'%s%s| Distance to              | Deleted | Reference point       |\n',textstr1,blanks(70-length(textstr1)));
+							fprintf(1,'%s%s| nearest line             |         |         x |         y |\n',textstr2,blanks(70-length(textstr2)));
+							fprintf(1,'%s%s|        mm |            m |         |        mm |        mm |\n',textstr3,blanks(70-length(textstr3)));
 							for iteqt=1:size(PLOTDATA.obj(iobj,1).text,1)
 								if ~isempty(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd)
 									if numboundaries(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd)>0
@@ -907,14 +923,57 @@ try
 												size(PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_bgd,1)      )
 											errormessage;
 										end
-										keep_symb_v	= false(size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),1);
+										mindistance_v	= ones(size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),1)*1e20;
 										for k=1:size(PLOTDATA.obj(iobj,1).connways.lines,1)
-											mindistance_v	= mindistance_poly_p(...
+											mindistance_k_v	= mindistance_poly_p(...
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,1),...	% query points x
 												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2));		% query points y
-											keep_symb_v	= keep_symb_v|(mindistance_v<=dmax2lines);
+											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
+											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
+										end
+										for k=1:size(PLOTDATA.obj(iobj,1).connways.areas,1)
+											mindistance_k_v	= mindistance_poly_p(...
+												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,1),...			% vertices x
+												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,2),...			% vertices y
+												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,1),...	% query points x
+												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2));		% query points y
+											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
+											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
+										end
+										keep_symb_v	= (mindistance_v<=dmax2lines);
+										if size(PLOTDATA.obj(iobj,1).connways.lines,1)>=1
+											i2							= 1;
+											textstr_name			= PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1}{i2,1};
+											for i2=2:size(PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1},1)
+												textstr_name		= sprintf('%s %s',...
+													textstr_name,...
+													PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1}{i2,1});
+											end
+											textstr_name		= textstr_name(1:min(69,length(textstr_name)));
+											pos_rp_last			= [1 1]*1e20;
+											for itext=1:size(PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints,1)
+												if ~isequal(pos_rp_last,PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(itext,1))
+													pos_rp_last			= PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(itext,1);
+													textstr_dist_mm	= sprintf('%1.3f',mindistance_v(itext,1));
+													textstr_dist_m		= sprintf('%1.1f',mindistance_v(itext,1)*PP.project.scale/1000);
+													if keep_symb_v(itext,1)
+														textstr_del		= ' ';
+													else
+														textstr_del		= 'X';
+													end
+													textstr_rp_x		= sprintf('%1.3f',PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(itext,1));
+													textstr_rp_y		= sprintf('%1.3f',PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(itext,2));
+													fprintf(1,'%s%s|%s%s |%s%s |       %s |%s%s |%s%s |\n',...
+														textstr_name,blanks(70-length(textstr_name)),...
+														blanks(10-length(textstr_dist_mm)),textstr_dist_mm,...
+														blanks(13-length(textstr_dist_m)),textstr_dist_m,...
+														textstr_del,...
+														blanks(10-length(textstr_rp_x)),textstr_rp_x,...
+														blanks(10-length(textstr_rp_y)),textstr_rp_y);
+												end
+											end
 										end
 										PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd(~keep_symb_v,:)	= [];
 										PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_obj(~keep_symb_v,:)	= [];
@@ -928,9 +987,18 @@ try
 								end
 							end
 						end
-
+						
 						% Check symbols:
 						if ~isempty(PLOTDATA.obj(iobj,1).symb)
+							fprintf(1,'-----------------------------------------------------------------------------------------------------------------------------------\n');
+							textstr1	= sprintf('ObjNo %1.0f: Delete symbols that are too far away from a line:',iobj);
+							textstr2	= sprintf('obj(%1.0f,1).reduce_nodes.dmax2lines_m            = %g m',...
+								iobj,PP.obj(iobj).reduce_nodes.dmax2lines_m);
+							textstr3	= sprintf('obj(%1.0f,1).reduce_nodes.dmax2lines_m/scale*1000 = %1.3f mm',...
+								iobj,dmax2lines);
+							fprintf(1,'%s%s| Distance to              | Deleted | Reference point       |\n',textstr1,blanks(70-length(textstr1)));
+							fprintf(1,'%s%s| nearest line             |         |         x |         y |\n',textstr2,blanks(70-length(textstr2)));
+							fprintf(1,'%s%s|        mm |            m |         |        mm |        mm |\n',textstr3,blanks(70-length(textstr3)));
 							for iseqt=1:size(PLOTDATA.obj(iobj,1).symb,1)
 								if ~isempty(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd)
 									if numboundaries(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd)>0
@@ -945,14 +1013,48 @@ try
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_bgd,1)       )
 											errormessage;
 										end
-										keep_symb_v	= false(size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),1);
+										mindistance_v	= ones(size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),1)*1e20;
 										for k=1:size(PLOTDATA.obj(iobj,1).connways.lines,1)
-											mindistance_v	= mindistance_poly_p(...
+											mindistance_k_v	= mindistance_poly_p(...
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,1),...	% query points x
 												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2));		% query points y
-											keep_symb_v	= keep_symb_v|(mindistance_v<=dmax2lines);
+											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
+											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
+										end
+										for k=1:size(PLOTDATA.obj(iobj,1).connways.areas,1)
+											mindistance_k_v	= mindistance_poly_p(...
+												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,1),...			% vertices x
+												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,2),...			% vertices y
+												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,1),...	% query points x
+												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2));		% query points y
+											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
+											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
+										end
+										keep_symb_v	= (mindistance_v<=dmax2lines);
+										if size(PLOTDATA.obj(iobj,1).connways.lines,1)>=1
+											for itext=1:size(PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints,1)
+												textstr_name		= sprintf('''%s''=''%s'' ',...
+													PLOTDATA.obj(iobj,1).symb(iseqt,1).symbol_eqtags_text{itext,1},...
+													PLOTDATA.obj(iobj,1).symb(iseqt,1).symbol_eqtags_text{itext,2});
+												textstr_dist_mm	= sprintf('%1.3f',mindistance_v(itext,1));
+												textstr_dist_m		= sprintf('%1.1f',mindistance_v(itext,1)*PP.project.scale/1000);
+												if keep_symb_v(itext,1)
+													textstr_del		= ' ';
+												else
+													textstr_del		= 'X';
+												end
+												textstr_rp_x		= sprintf('%1.3f',PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(itext,1));
+												textstr_rp_y		= sprintf('%1.3f',PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(itext,2));
+												fprintf(1,'%s%s|%s%s |%s%s |       %s |%s%s |%s%s |\n',...
+													textstr_name,blanks(70-length(textstr_name)),...
+													blanks(10-length(textstr_dist_mm)),textstr_dist_mm,...
+													blanks(13-length(textstr_dist_m)),textstr_dist_m,...
+													textstr_del,...
+													blanks(10-length(textstr_rp_x)),textstr_rp_x,...
+													blanks(10-length(textstr_rp_y)),textstr_rp_y);
+											end
 										end
 										PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd(~keep_symb_v,:)			= [];
 										PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_obj(~keep_symb_v,:)			= [];
@@ -965,19 +1067,19 @@ try
 								end
 							end
 						end
-
+						
 					end
 				end
 			end
 		end
 	end
-
-
+	
+	
 	% Testplots: after deleting branched/touching lines:
 	for k_tp_obj=1:length(objno_testplot_simplify_v)
 		iobj	= objno_testplot_simplify_v(k_tp_obj);
 		colno	= PP.obj(iobj).color_no_bgd;
-
+		
 		% Testplot of only object number iobj:
 		if ~isempty(PLOTDATA.obj(iobj,1).connways)
 			for k=1:size(PLOTDATA.obj(iobj,1).connways.lines,1)
@@ -1032,7 +1134,7 @@ try
 			end
 			legend(ha_tp(k_tp_obj,5),subset,labels);
 		end
-
+		
 		% Testplot of all line objects of the same color as object number iobj:
 		for icno=1:size(PLOTDATA.colno_v,1)
 			if isequal(PLOTDATA.colno_v(icno,1),colno)
@@ -1057,11 +1159,11 @@ try
 				end
 			end
 		end
-
+		
 		drawnow;
-
+		
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

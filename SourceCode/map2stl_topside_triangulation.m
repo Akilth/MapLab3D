@@ -719,7 +719,7 @@ if testplot_obj_bot_reg>0
 	m_obj		= ceil(sqrt(imax_obj+1));
 	n_obj		= ceil((imax_obj+1)/m_obj);
 	
-	hf			= 10022;
+	hf			= 100220;
 	if testplot_obj_bot_reg==1
 		hf=figure(hf);
 	else
@@ -779,7 +779,7 @@ if testplot_obj_bot_reg>0
 end
 
 if testplot_obj_bot_reg_1plot==1
-	hf=figure(10021);
+	hf=figure(100210);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_bot_reg');
@@ -920,7 +920,7 @@ if (testplot_obj_ncp>0)&&~isempty(obj_nextcolprio)
 	end
 	m_obj		= ceil(sqrt(imax_obj+1));
 	n_obj		= ceil((imax_obj+1)/m_obj);
-	hf			= 10028;
+	hf			= 100280;
 	if testplot_obj_bot_reg==1
 		hf=figure(hf);
 	else
@@ -981,7 +981,7 @@ if (testplot_obj_ncp>0)&&~isempty(obj_nextcolprio)
 end
 
 if testplot_obj_ncp_1plot==1
-	hf=figure(10029);
+	hf=figure(100290);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_ncp');
@@ -1199,7 +1199,7 @@ if testplot_obj_bot_bh==1
 	end
 	m_obj		= ceil(sqrt(imax_obj+1));
 	n_obj		= ceil((imax_obj+1)/m_obj);
-	hf=figure(10023);
+	hf=figure(100230);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_bot_bh');
@@ -1250,7 +1250,7 @@ if testplot_obj_bot_bh==1
 end
 
 if testplot_obj_bot_bh_1plot==1
-	hf=figure(10024);
+	hf=figure(100240);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_bot_bh');
@@ -1850,7 +1850,7 @@ if testplot_obj_bot_bh_reg==1
 	end
 	m_obj		= ceil(sqrt(imax_obj+1));
 	n_obj		= ceil((imax_obj+1)/m_obj);
-	hf=figure(10025);
+	hf=figure(100250);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_bot_bh_reg');
@@ -1903,7 +1903,7 @@ if testplot_obj_bot_bh_reg==1
 end
 
 if testplot_obj_bot_bh_reg_1plot==1
-	hf=figure(10026);
+	hf=figure(100260);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','obj_bot_bh_reg');
@@ -2446,7 +2446,7 @@ end
 
 % Testplots:
 if testplot_triang_hareas==1
-	hf=figure(10027);
+	hf=figure(100270);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','T areas');
@@ -2786,7 +2786,7 @@ end
 
 % Testplots:
 if    (testplot_triang_top==1)||get_iT_margin_error_occurred
-	hf		= figure(10050);
+	hf		= figure(100500);
 	clf(hf,'reset');
 	set(hf,'Tag','maplab3d_figure');
 	set(hf,'Name','triang');

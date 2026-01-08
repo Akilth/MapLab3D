@@ -1,53 +1,65 @@
 function connways=connect_ways(...
-	connways,...				% connways
-	connways_merge,...		% connways_merge
-	x,...							% x
-	y,...							% y
-	iobj,...						% iobj
-	lino,...						% lino
-	liwi,...						% liwi
-	l2a,...						% l2a
-	s,...							% s
-	lino_new_min,...			% lino_new_min
-	role,...						% role
-	relid,...					% relid
-	tag,...						% tag
-	tol,...						% tol
-	conn_with_rev)				% conn_with_rev
+	connways,...				%  1) connways
+	connways_merge,...		%  2) connways_merge
+	x,...							%  3) x
+	y,...							%  4) y
+	iobj,...						%  5) iobj
+	lino,...						%  6) lino
+	liwi,...						%  7) liwi
+	in,...						%  8) in
+	iw_v,...						%  9) iw_v
+	ir,...						% 10) ir
+	l2a,...						% 11) l2a
+	s,...							% 12) s
+	lino_new_min,...			% 13) lino_new_min
+	role,...						% 14) role
+	relid,...					% 15) relid
+	tag,...						% 16) tag
+	tol,...						% 17) tol
+	conn_with_rev,...			% 18) conn_with_rev
+	connect)						% 19) connect
 % Adds the ways defined by the x-coordinates and the y-coordinates contained in the vectors x and y to already
 % existing ways. Ways with the same start and end points are connected.
 %
-% Inputs:
-% 1)	connways				structure (see below), contains connected ways, will be extended by x and y
-% 2)	connways_merge		will be added to connways
-% 3)	x						x-values of the new way
-% 4)	y						y-values of the new way
-% 5)	iobj					object number of the new way
-% 6)	lino					line number, for identification when lines of different object numbers are mixed
-% 7)	liwi					line width of the new way
-% 8)	l2a					l2a=1:	If the start and end points of one connected way are equal, this way is stored
+% Input:
+%  1)	connways				structure (see below), contains connected ways, will be extended by x and y
+%  2)	connways_merge		will be added to connways
+%  3)	x						x-value of the new node / x-values of the new way
+%  4)	y						y-value of the new node / y-values of the new way
+%  5)	iobj					object number of the new way
+%  6)	lino					line number, for identification when lines of different object numbers are mixed
+%  7)	liwi					line width of the new way
+%  8) in						index   of the new node     in OSMDATA.node
+%  9) iw_v					indices of the new way      in OSMDATA.way			Nx1 vector
+% 10) ir						index   of the new relation in OSMDATA.relation
+%								Lines with different indices ir will not get connected.
+% 11)	l2a					line to area:
+%								l2a=1:	If the start and end points of one connected way are equal, this way is stored
 %											as area (default).
 %								l2a=0:	a closed way will not be stored as area.
-% 9)	s						Scale all data in connways by s
-% 10)	lino_new_min		The numbering of new lines in connways begins with this number.
-% 11) role					Function of a member in a multipolygon relation:
+% 12)	s						Scale all data in connways by s
+% 13)	lino_new_min		The numbering of new lines in connways begins with this number.
+% 14) role					Function of a member in a multipolygon relation:
 %								'outer':	Way forms an outer part of a multipolygon relation and default value of areas.
 %								'inner':	Way forms an inner part of a multipolygon relation.
-%								Lines with different values lines_isouter are not connected, but saved separatly.
-% 12) relid					identification number of the relation (uint64)
+%								Lines with different values lines_isouter or lines_isinner are not connected,
+%								but saved separatly.
+% 15) relid					identification number of the relation (uint64)
 %								The areas must be plotted sorted by the number of the relation.
 %								Lines with different relations IDs are not connected, but saved separatly.
-% 13) tag					character array:
+% 16) tag					character array:
 %								Lines with different tags are not connected, but saved separatly.
-% 14)	tol					Maximum distance at which the start and end points of two lines are connected.
-% 15) conn_with_rev		connect with reversal:
+% 17)	tol					Maximum distance at which the start and end points of two lines are connected.
+% 18) conn_with_rev		connect with reversal:
 %								true:		Default:
 %											Connect lines with two identical starting points or two identical end points.
 %											In the case of rivers, this could change the direction of flow.
 %								false:	Connect only matching startpoints and endpoints of two lines.
+% 19) connect				true:		Default: connect lines with matching startpoints and/or endpoints
+%								false:	Lines are not connected
 %
 % Output:
-% The field .xy has 5 columns:
+% The fields .xy have 5 columns:
 % 													column 1: x-values
 %													column 2: y-values
 %													column 3: iobj: object number (when connecting lines of different objects)
@@ -55,32 +67,46 @@ function connways=connect_ways(...
 %													column 5: liwi: line width    (when connecting lines with different widths)
 % connways.nodes.xy							nodes: all single points [x,y]
 %													There are no nodes: connways.nodes=[]
-% connways.lines(k_line,1).xy				lines: set of ways, that have the same start- and endpoint
+% connways.lines(k_line,1).xy				lines: set of several connected ways
 %													There are no lines: connways.lines=[]
 % connways.xy_start(k_line,:)				corresponding start points as one vector: [x(1)   y(1)  ]
 % connways.xy_end(k_line,:)				corresponding end   points as one vector: [x(end) y(end)]
 % connways.lino_max							maximum line number in connways.lines(:,1).xy(:,4)
 % connways.areas(k_area,1).xy				areas: set of closed ways
 %													There are no areas: connways.areas=[]
-% connways.lines_isouter(k_line,1)		lines: role (in case the line is closed later):
+% connways.lines_isouter(k_line,1)		lines: role is 'outer' (in case the line is closed later):
 %													1:		outer
-%													0:		inner
-% connways.areas_isouter(k_area,1)		areas: role:
+%													0:		other role
+% connways.lines_isinner(k_line,1)		lines: role is 'inner' (in case the line is closed later):
+%													1:		inner
+%													0:		other role
+% connways.areas_isouter(k_area,1)		areas: role is 'outer':
 %													1:		outer
-%													0:		inner
+%													0:		other role
+% connways.areas_isinner(k_area,1)		areas: role is 'inner':
+%													1:		inner
+%													0:		other role
 % connways.nodes_relid(k_node,1)			nodes: OpenStreetMap identification number of the relation
 %													0:		The node does not belong to a relation
 % connways.lines_relid(k_line,1)			lines: OpenStreetMap identification number  of the relation
 %													0:		The line does not belong to a relation
 % connways.areas_relid(k_area,1)			areas: OpenStreetMap identification number  of the relation
 %													0:		The area does not belong to a relation
-% connways.lines(k_line,:).tag			tags of lines and
+% connways.lines(k_line,1).tag			tags of lines and
 % connways.areas(k_area,1).tag			tags of areas: objects with equal tags:
 %													defined in:		PP.obj(iobj,1).filter_by_key.incltagkey
 %													calculated in:	filter_objecttags: values of object_eqtags
 %													added in:		plotosmdata_getdata_filterout
 %													='':				no incltagkey has been defined
 %													Lines with different tags will not get connected.
+% connways.lines(k_line,1).connect		lines: line will get connected to other lines (true/false)
+% connways.nodes.in							nodes: index in OSMDATA.node
+% connways.nodes.ir							nodes: index in OSMDATA.relation (0: no relation)
+% connways.lines(k_line,1).iw_v			lines: indices in OSMDATA.way
+% connways.lines(k_line,1).ir				lines: index in OSMDATA.relation (0: no relation)
+%													Lines with different indices ir will not get connected.
+% connways.areas(k_area,1).iw_v			areas: indices in OSMDATA.way
+% connways.areas(k_area,1).ir				areas: index in OSMDATA.relation (0: no relation)
 %
 % Syntax, e.g.:
 % connways=connect_ways([]);																	Initialization of connways
@@ -92,8 +118,6 @@ function connways=connect_ways(...
 % connways=connect_ways(connways);															connways will not be modified
 % connways=connect_ways(connways,[]            ,[],[],[]  ,[]  ,[]  ,[],s);	Scale all data in connways by s
 
-global PP GV
-
 try
 	
 	% Initialization of the structure connways:
@@ -102,17 +126,22 @@ try
 		connways.nodes_relid		= uint64([]);
 		connways.lines				= [];
 		connways.lines_isouter	= [];
+		connways.lines_isinner	= [];
 		connways.lines_relid		= uint64([]);
 		connways.xy_start			= [];
 		connways.xy_end			= [];
 		connways.lino_max			= [];
 		connways.areas				= [];
 		connways.areas_isouter	= [];
+		connways.areas_isinner	= [];
 		connways.areas_relid		= uint64([]);
 		if nargin==1
 			return
 		end
 	end
+	
+	% If isempty(connways), the global variables are not necessary.
+	global PP GV
 	
 	% Default values:
 	if nargin<1
@@ -137,52 +166,76 @@ try
 		liwi	= [];
 	end
 	if nargin<8
+		in	= 0;
+	else
+		if isempty(in)
+			in		= 0;
+		end
+	end
+	if nargin<9
+		iw_v	= 0;
+	else
+		if isempty(iw_v)
+			iw_v		= 0;
+		end
+	end
+	if nargin<10
+		ir	= 0;
+	else
+		if isempty(ir)
+			ir		= 0;
+		end
+	end
+	if nargin<11
 		l2a	= 1;
 	else
 		if isempty(l2a)
 			l2a	= 1;
 		end
 	end
-	if nargin<9
+	if nargin<12
 		s		= 1;
 	else
 		if isempty(s)
 			s		= 1;
 		end
 	end
-	if nargin<10
+	if nargin<13
 		lino_new_min	= 1;
 	else
 		if isempty(lino_new_min)
 			lino_new_min	= 1;
 		end
 	end
-	if nargin<11
+	if nargin<14
 		role	= 'outer';
 	else
 		if isempty(role)
 			role	= 'outer';
 		end
 	end
-	if nargin<12
+	if nargin<15
 		relid	= uint64(0);
 	else
 		if isempty(relid)
 			relid	= uint64(0);
 		end
 	end
-	if nargin<13
+	if nargin<16
 		tag		= '';
 	else
 		if isempty(tag)
 			tag		= '';
 		end
 	end
-	if nargin<14
+	if nargin<17
 		tol	= GV.tol_1;
 	end
-	if nargin<15
+	if nargin<18
 		conn_with_rev	= true;
+	end
+	if nargin<19
+		connect	= true;
 	end
 	
 	% Scale all data in connways:
@@ -207,7 +260,7 @@ try
 	end
 	
 	% Merge the structure connways_merge with connways:
-	if (nargin>2)&&~isempty(connways)&&~isempty(connways_merge)
+	if (~isempty(x)||~isempty(y))&&~isempty(connways_merge)
 		errormessage;
 	end
 	if ~isempty(connways_merge)
@@ -236,6 +289,8 @@ try
 		end
 		for kobj=1:size(PP.obj,1)
 			if connways_merge_lino_min(kobj,1)<connways_lino_max(kobj,1)
+				size(connways_merge_lino_min)
+				size(connways_lino_max)
 				errormessage;
 			end
 		end
@@ -246,16 +301,20 @@ try
 				connways.nodes_relid		= connways_merge.nodes_relid;
 			else
 				connways.nodes.xy			= [connways.nodes.xy   ;connways_merge.nodes.xy   ];
+				connways.nodes.in			= [connways.nodes.in   ;connways_merge.nodes.in   ];
+				connways.nodes.ir			= [connways.nodes.ir   ;connways_merge.nodes.ir   ];
 				connways.nodes_relid		= [connways.nodes_relid;connways_merge.nodes_relid];
 			end
 		end
 		for k=1:size(connways_merge.lines,1)
 			% Do not change the line numbers when merging two structures!
-			if connways_merge.lines_isouter(k,1)==1
+			if     connways_merge.lines_isouter(k,1)==1
 				role_connways_merge_lines_isouter_k	= 'outer';
+			elseif connways_merge.lines_isinner(k,1)==1
+				role_connways_merge_lines_isouter_k	= 'inner';
 			else
 				% Must not be empty, otherwise it will be initialized with 'outer' when connect_ways is called!
-				role_connways_merge_lines_isouter_k	= 'inner';
+				role_connways_merge_lines_isouter_k	= '???';
 			end
 			connways		= connect_ways(connways,[],...
 				connways_merge.lines(k,1).xy(:,1),...							% x
@@ -263,14 +322,20 @@ try
 				connways_merge.lines(k,1).xy(:,3),...							% iobj
 				connways_merge.lines(k,1).xy(:,4),...							% lino
 				connways_merge.lines(k,1).xy(:,5),...							% liwi
+				0,...																		% in
+				connways_merge.lines(k,1).iw_v,...								% iw_v
+				connways_merge.lines(k,1).ir,...									% ir
 				l2a,...																	% l2a
-				[],...																	% s
-				[],...																	% lino_new_min
+				s,...																		% s
+				lino_new_min,...														% lino_new_min
 				role_connways_merge_lines_isouter_k,...						% role
 				connways_merge.lines_relid(k,1),...								% relid
-				connways_merge.lines(k,1).tag);									% tag
+				connways_merge.lines(k,1).tag,...								% tag
+				tol,...																	% tol
+				conn_with_rev,...														% conn_with_rev
+				connways_merge.lines(k,1).connect);								% connect
 		end
-		if size(connways.lino_max,1)==0
+		if isempty(connways.lino_max)
 			connways.lino_max		= connways_merge.lino_max;
 		else
 			connways.lino_max		= max(connways.lino_max,connways_merge.lino_max);
@@ -279,7 +344,10 @@ try
 			k_new										= size(connways.areas,1)+1;
 			connways.areas(k_new,1).xy			= connways_merge.areas(k,1).xy;
 			connways.areas(k_new,1).tag		= connways_merge.areas(k,1).tag;
+			connways.areas(k_new,1).iw_v		= connways_merge.areas(k,1).iw_v;
+			connways.areas(k_new,1).ir			= connways_merge.areas(k,1).ir;
 			connways.areas_isouter(k_new,1)	= connways_merge.areas_isouter(k,1);
+			connways.areas_isinner(k_new,1)	= connways_merge.areas_isinner(k,1);
 			connways.areas_relid(k_new,1)		= connways_merge.areas_relid(k,1);
 		end
 	end
@@ -317,9 +385,13 @@ try
 			if isempty(connways.nodes)
 				connways.nodes.xy			= [x y iobj lino liwi];
 				connways.nodes_relid		= relid;
+				connways.nodes.in			= in;
+				connways.nodes.ir			= ir;
 			else
 				connways.nodes.xy			= [connways.nodes.xy   ;x y iobj lino liwi];
 				connways.nodes_relid		= [connways.nodes_relid;relid             ];
+				connways.nodes.in			= [connways.nodes.in   ;in                ];
+				connways.nodes.ir			= [connways.nodes.ir   ;ir                ];
 			end
 			
 		else
@@ -388,10 +460,15 @@ try
 			% Add a line without NaNs [x y] to connways.lines(k,1).xy:
 			k_con	= [];				% k_con: connected line
 			kmax	= size(connways.lines,1);
-			if strcmp(role,'outer')
+			if strcmp(role,'outer')||strcmp(role,'outline')
 				role_isouter	= 1;
 			else
 				role_isouter	= 0;
+			end
+			if strcmp(role,'inner')
+				role_isinner	= 1;
+			else
+				role_isinner	= 0;
 			end
 			if kmax==0
 				% Add the first line:
@@ -405,29 +482,45 @@ try
 				connways.lines(k_con,1).xy				= [x      y      iobj lino liwi];
 				connways.lines(k_con,1).tag			= tag;
 				connways.lines_isouter(k_con,1)		= role_isouter;
+				connways.lines_isinner(k_con,1)		= role_isinner;
 				connways.lines_relid(k_con,1)			= relid;
 				connways.xy_start(k_con,:)				= [x(1)   y(1)  ];
 				connways.xy_end(k_con,:)				= [x(end) y(end)];
 				connways.lino_max							= max(lino_new_min,max(lino));
+				connways.lines(k_con,1).iw_v			= iw_v;
+				connways.lines(k_con,1).ir				= ir;
+				connways.lines(k_con,1).connect		= connect;
 			else
-				% New line number:
+				% Add line to existing lines:
 				if isempty(lino)
-					connways.lino_max	= max(connways.lino_max+1,lino_new_min);
+					% New line number:
+					connways.lino_max	= max([connways.lino_max+1;lino_new_min]);
 					lino					= ones(size(x))*connways.lino_max;
+				else
+					% Use the given line number(s):
+					connways.lino_max	= max([connways.lino_max;lino]);
 				end
 				if isscalar(lino)
 					lino	= ones(size(x))*lino;
+				else
+					if ~isequal(size(x),size(lino))
+						% This should not happen:
+						errormessage;
+					end
 				end
-				% Connect line segments, that have the same values tag, lines_isouter and relid:
-				if isempty(k_con)
+				% Connect line segments, that have the same values ir, tag, lines_isouter, lines_isinner and relid:
+				if isempty(k_con)&&connect
 					k	= find(...
 						(abs(connways.xy_end(:,1)-x(1))<tol) & ...
 						(abs(connways.xy_end(:,2)-y(1))<tol)       );
 					if ~isempty(k)
 						% The first point of [x,y] is the last point of a previous line:
 						for ik=1:length(k)
-							if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+							if            connways.lines(k(ik),1).connect              &&...
+									isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+									isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 									isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+									isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 									strcmp( connways.lines(k(ik),1).tag    ,tag         )
 								% Except at the start or end point, the lines to be connected should not touch:
 								connect_lines					= true;
@@ -443,29 +536,36 @@ try
 								end
 								if connect_lines
 									% The lines do not intersect:
-									k_con								= k(ik);
-									connways.lines(k_con,1).xy	= [connways.lines(k_con,1).xy;[  ...
+									k_con									= k(ik);
+									connways.lines(k_con,1).xy		= [connways.lines(k_con,1).xy;[  ...
 										x(2:end)    ...
 										y(2:end)    ...
 										iobj(2:end) ...
 										lino(2:end) ...
 										liwi(2:end)     ]];
-									connways.xy_end(k_con,:)	= [x(end) y(end)];
+									connways.lines(k_con,1).iw_v	= unique([connways.lines(k_con,1).iw_v;iw_v]);
+									if ~isequal(connways.lines(k_con,1).iw_v,0)
+										connways.lines(k_con,1).iw_v(connways.lines(k_con,1).iw_v==0,:)	= [];
+									end
+									connways.xy_end(k_con,:)		= [x(end) y(end)];
 									break
 								end
 							end
 						end
 					end
 				end
-				if isempty(k_con)
+				if isempty(k_con)&&connect
 					k	= find(...
 						(abs(connways.xy_start(:,1)-x(end))<tol) & ...
 						(abs(connways.xy_start(:,2)-y(end))<tol)       );
 					if ~isempty(k)
 						% The last point of [x,y] is the first point of a previous line:
 						for ik=1:length(k)
-							if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+							if            connways.lines(k(ik),1).connect              &&...
+									isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+									isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 									isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+									isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 									strcmp( connways.lines(k(ik),1).tag    ,tag         )
 								% Except at the start or end point, the lines to be connected should not touch:
 								connect_lines					= true;
@@ -481,29 +581,36 @@ try
 								end
 								if connect_lines
 									% The lines do not intersect:
-									k_con								= k(ik);
-									connways.lines(k_con,1).xy	= [[  ...
+									k_con									= k(ik);
+									connways.lines(k_con,1).xy		= [[  ...
 										x(1:(end-1))    ...
 										y(1:(end-1))    ...
 										iobj(1:(end-1)) ...
 										lino(1:(end-1)) ...
 										liwi(1:(end-1))     ];connways.lines(k_con,1).xy];
-									connways.xy_start(k_con,:)	= [x(1) y(1)];
+									connways.lines(k_con,1).iw_v	= unique([connways.lines(k_con,1).iw_v;iw_v]);
+									if ~isequal(connways.lines(k_con,1).iw_v,0)
+										connways.lines(k_con,1).iw_v(connways.lines(k_con,1).iw_v==0,:)	= [];
+									end
+									connways.xy_start(k_con,:)		= [x(1) y(1)];
 									break
 								end
 							end
 						end
 					end
 				end
-				if isempty(k_con)&&conn_with_rev
+				if isempty(k_con)&&connect&&conn_with_rev
 					k	= find(...
 						(abs(connways.xy_end(:,1)-x(end))<tol) & ...
 						(abs(connways.xy_end(:,2)-y(end))<tol)       );
 					if ~isempty(k)
 						% The last point of [x,y] is the last point of a previous line:
 						for ik=1:length(k)
-							if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+							if            connways.lines(k(ik),1).connect              &&...
+									isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+									isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 									isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+									isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 									strcmp( connways.lines(k(ik),1).tag    ,tag         )
 								% Except at the start or end point, the lines to be connected should not touch:
 								connect_lines					= true;
@@ -519,29 +626,36 @@ try
 								end
 								if connect_lines
 									% The lines do not intersect:
-									k_con								= k(ik);
-									connways.lines(k_con,1).xy	= [connways.lines(k_con,1).xy;[  ...
+									k_con									= k(ik);
+									connways.lines(k_con,1).xy		= [connways.lines(k_con,1).xy;[  ...
 										x((end-1):-1:1)    ...
 										y((end-1):-1:1)    ...
 										iobj((end-1):-1:1) ...
 										lino((end-1):-1:1) ...
 										liwi((end-1):-1:1)     ]];
-									connways.xy_end(k_con,:)	= [x(1) y(1)];
+									connways.lines(k_con,1).iw_v	= unique([connways.lines(k_con,1).iw_v;iw_v]);
+									if ~isequal(connways.lines(k_con,1).iw_v,0)
+										connways.lines(k_con,1).iw_v(connways.lines(k_con,1).iw_v==0,:)	= [];
+									end
+									connways.xy_end(k_con,:)		= [x(1) y(1)];
 									break
 								end
 							end
 						end
 					end
 				end
-				if isempty(k_con)&&conn_with_rev
+				if isempty(k_con)&&connect&&conn_with_rev
 					k	= find(...
 						(abs(connways.xy_start(:,1)-x(1))<tol) & ...
 						(abs(connways.xy_start(:,2)-y(1))<tol)       );
 					if ~isempty(k)
 						% The first point of [x,y] is the first point of a previous line:
 						for ik=1:length(k)
-							if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+							if            connways.lines(k(ik),1).connect              &&...
+									isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+									isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 									isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+									isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 									strcmp( connways.lines(k(ik),1).tag    ,tag         )
 								% Except at the start or end point, the lines to be connected should not touch:
 								connect_lines					= true;
@@ -557,14 +671,18 @@ try
 								end
 								if connect_lines
 									% The lines do not intersect:
-									k_con								= k(ik);
-									connways.lines(k_con,1).xy	= [[  ...
+									k_con									= k(ik);
+									connways.lines(k_con,1).xy		= [[  ...
 										x(end:-1:2)    ...
 										y(end:-1:2)    ...
 										iobj(end:-1:2) ...
 										lino(end:-1:2) ...
 										liwi(end:-1:2)     ];connways.lines(k_con,1).xy];
-									connways.xy_start(k_con,:)	= [x(end) y(end)];
+									connways.lines(k_con,1).iw_v	= unique([connways.lines(k_con,1).iw_v;iw_v]);
+									if ~isequal(connways.lines(k_con,1).iw_v,0)
+										connways.lines(k_con,1).iw_v(connways.lines(k_con,1).iw_v==0,:)	= [];
+									end
+									connways.xy_start(k_con,:)		= [x(end) y(end)];
 									break
 								end
 							end
@@ -573,23 +691,28 @@ try
 				end
 				
 				if isempty(k_con)
-					% The current way does not continue a previous way: store separatly as a new way:
+					% The current way does not continue a previous way or connect=false: store separatly as a new way:
 					k_con											= kmax+1;
 					connways.lines(k_con,1).xy				= [x      y     iobj lino liwi];
 					connways.lines(k_con,1).tag			= tag;
 					connways.lines_isouter(k_con,1)		= role_isouter;
+					connways.lines_isinner(k_con,1)		= role_isinner;
 					connways.lines_relid(k_con,1)			= relid;
 					connways.xy_start(k_con,:)				= [x(1)   y(1)  ];
 					connways.xy_end(k_con,:)				= [x(end) y(end)];
+					connways.lines(k_con,1).iw_v			= iw_v;
+					connways.lines(k_con,1).ir				= ir;
+					connways.lines(k_con,1).connect		= connect;
 				else
 					% Test whether the currently connected way touches another way that has the same values
-					% tag, roleisouter and relid:
+					% tag, ir, roleisouter and relid:
 					k_con2					= [];
 					x							= connways.lines(k_con,1).xy(:,1);
 					y							= connways.lines(k_con,1).xy(:,2);
 					iobj						= connways.lines(k_con,1).xy(:,3);
 					lino						= connways.lines(k_con,1).xy(:,4);
 					liwi						= connways.lines(k_con,1).xy(:,5);
+					iw_v						= connways.lines(k_con,1).iw_v;
 					excl_k_con				= true(size(connways.lines,1),1);
 					excl_k_con(k_con,1)	= false;
 					k_v						= (1:size(connways.lines,1))';
@@ -600,8 +723,11 @@ try
 						if ~isempty(k)
 							% The first point of [x,y] is the last point of a previous line:
 							for ik=1:length(k)
-								if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+								if            connways.lines(k(ik),1).connect              &&...
+										isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+										isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 										isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+										isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 										strcmp( connways.lines(k(ik),1).tag    ,tag         )
 									% Except at the start or end point, the lines to be connected should not touch:
 									connect_lines					= true;
@@ -624,9 +750,14 @@ try
 											iobj(2:end) ...
 											lino(2:end) ...
 											liwi(2:end)     ]];
+										connways.lines(k_con2,1).iw_v		= unique([connways.lines(k_con2,1).iw_v;iw_v]);
+										if ~isequal(connways.lines(k_con2,1).iw_v,0)
+											connways.lines(k_con2,1).iw_v(connways.lines(k_con2,1).iw_v==0,:)	= [];
+										end
 										connways.xy_end(k_con2,:)			= [x(end) y(end)];
 										connways.lines(k_con,:)				= [];
 										connways.lines_isouter(k_con,:)	= [];
+										connways.lines_isinner(k_con,:)	= [];
 										connways.lines_relid(k_con,:)		= [];
 										connways.xy_start(k_con,:)			= [];
 										connways.xy_end(k_con,:)			= [];
@@ -645,8 +776,11 @@ try
 						if ~isempty(k)
 							% The last point of [x,y] is the first point of a previous line:
 							for ik=1:length(k)
-								if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+								if            connways.lines(k(ik),1).connect              &&...
+										isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+										isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 										isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+										isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 										strcmp( connways.lines(k(ik),1).tag    ,tag         )
 									% Except at the start or end point, the lines to be connected should not touch:
 									connect_lines					= true;
@@ -669,9 +803,14 @@ try
 											iobj(1:(end-1)) ...
 											lino(1:(end-1)) ...
 											liwi(1:(end-1))     ];connways.lines(k_con2,1).xy];
+										connways.lines(k_con2,1).iw_v		= unique([connways.lines(k_con2,1).iw_v;iw_v]);
+										if ~isequal(connways.lines(k_con2,1).iw_v,0)
+											connways.lines(k_con2,1).iw_v(connways.lines(k_con2,1).iw_v==0,:)	= [];
+										end
 										connways.xy_start(k_con2,:)		= [x(1) y(1)];
 										connways.lines(k_con,:)				= [];
 										connways.lines_isouter(k_con,:)	= [];
+										connways.lines_isinner(k_con,:)	= [];
 										connways.lines_relid(k_con,:)		= [];
 										connways.xy_start(k_con,:)			= [];
 										connways.xy_end(k_con,:)			= [];
@@ -690,8 +829,11 @@ try
 						if ~isempty(k)
 							% The last point of [x,y] is the last point of a previous line:
 							for ik=1:length(k)
-								if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+								if            connways.lines(k(ik),1).connect              &&...
+										isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+										isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 										isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+										isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 										strcmp( connways.lines(k(ik),1).tag    ,tag         )
 									% Except at the start or end point, the lines to be connected should not touch:
 									connect_lines					= true;
@@ -714,9 +856,14 @@ try
 											iobj((end-1):-1:1) ...
 											lino((end-1):-1:1) ...
 											liwi((end-1):-1:1)     ]];
+										connways.lines(k_con2,1).iw_v		= unique([connways.lines(k_con2,1).iw_v;iw_v]);
+										if ~isequal(connways.lines(k_con2,1).iw_v,0)
+											connways.lines(k_con2,1).iw_v(connways.lines(k_con2,1).iw_v==0,:)	= [];
+										end
 										connways.xy_end(k_con2,:)			= [x(1) y(1)];
 										connways.lines(k_con,:)				= [];
 										connways.lines_isouter(k_con,:)	= [];
+										connways.lines_isinner(k_con,:)	= [];
 										connways.lines_relid(k_con,:)		= [];
 										connways.xy_start(k_con,:)			= [];
 										connways.xy_end(k_con,:)			= [];
@@ -735,8 +882,11 @@ try
 						if ~isempty(k)
 							% The first point of [x,y] is the first point of a previous line:
 							for ik=1:length(k)
-								if    isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+								if            connways.lines(k(ik),1).connect              &&...
+										isequal(connways.lines_isouter(k(ik),1),role_isouter)&&...
+										isequal(connways.lines_isinner(k(ik),1),role_isinner)&&...
 										isequal(connways.lines_relid(k(ik),1)  ,relid       )&&...
+										isequal(connways.lines(k(ik),1).ir     ,ir          )&&...
 										strcmp( connways.lines(k(ik),1).tag    ,tag         )
 									% Except at the start or end point, the lines to be connected should not touch:
 									connect_lines					= true;
@@ -760,9 +910,14 @@ try
 											iobj(end:-1:2) ...
 											lino(end:-1:2) ...
 											liwi(end:-1:2)     ];connways.lines(k_con2,1).xy];
+										connways.lines(k_con2,1).iw_v		= unique([connways.lines(k_con2,1).iw_v;iw_v]);
+										if ~isequal(connways.lines(k_con2,1).iw_v,0)
+											connways.lines(k_con2,1).iw_v(connways.lines(k_con2,1).iw_v==0,:)	= [];
+										end
 										connways.xy_start(k_con2,:)		= [x(end) y(end)];
 										connways.lines(k_con,:)				= [];
 										connways.lines_isouter(k_con,:)	= [];
+										connways.lines_isinner(k_con,:)	= [];
 										connways.lines_relid(k_con,:)		= [];
 										connways.xy_start(k_con,:)			= [];
 										connways.xy_end(k_con,:)			= [];
@@ -786,10 +941,14 @@ try
 					k_new										= size(connways.areas,1)+1;
 					connways.areas(k_new,1).xy			= connways.lines(k_con,1).xy;
 					connways.areas(k_new,1).tag		= connways.lines(k_con,1).tag;
+					connways.areas(k_new,1).iw_v		= connways.lines(k_con,1).iw_v;
+					connways.areas(k_new,1).ir			= connways.lines(k_con,1).ir;
 					connways.areas_isouter(k_new,1)	= role_isouter;
+					connways.areas_isinner(k_new,1)	= role_isinner;
 					connways.areas_relid(k_new,1)		= relid;
 					connways.lines(k_con,:)				= [];
 					connways.lines_isouter(k_con,:)	= [];
+					connways.lines_isinner(k_con,:)	= [];
 					connways.lines_relid(k_con,:)		= [];
 					connways.xy_start(k_con,:)			= [];
 					connways.xy_end(k_con,:)			= [];

@@ -1306,22 +1306,30 @@ try
 		end
 		
 		% Search all members of the relation:
-		try
 		connways			= connect_ways([]);
 		[  OSMDATA.relation(1,ir).no_nodes,...			% no_nodes
 			OSMDATA.relation(1,ir).no_ways,...			% no_ways
 			OSMDATA.relation(1,ir).no_relations,...	% no_relations
 			connways,...
 			in_relation_v]=getdata_relation(ir,connways,0,0,[],in_relation_v);
-		catch
-			test=1;
+		
+		% It may happen that connways does not contain any data:
+		if    ~isempty(connways.nodes)||...
+				~isempty(connways.lines)||...
+				~isempty(connways.areas)
+			% connways contains data: Calculate the dimensions in x- and y-direction:
+			[  OSMDATA.relation_xmin_mm(1,ir),...
+				OSMDATA.relation_xmax_mm(1,ir),...
+				OSMDATA.relation_ymin_mm(1,ir),...
+				OSMDATA.relation_ymax_mm(1,ir)]	= connways_dim(connways);
+		else
+			% connways does not contain any data:
+			OSMDATA.relation_xmin_mm(1,ir)	= 0;
+			OSMDATA.relation_xmax_mm(1,ir)	= 0;
+			OSMDATA.relation_ymin_mm(1,ir)	= 0;
+			OSMDATA.relation_ymax_mm(1,ir)	= 0;
 		end
-		% Calculate the dimensions in x- and y-direction:
-		[  OSMDATA.relation_xmin_mm(1,ir),...
-			OSMDATA.relation_xmax_mm(1,ir),...
-			OSMDATA.relation_ymin_mm(1,ir),...
-			OSMDATA.relation_ymax_mm(1,ir)]	= connways_dim(connways);
-
+		
 		% Calculate the length of the whole relation (ways and areas):
 		OSMDATA.relation(1,ir).length_mm		= connways_length(connways);
 		

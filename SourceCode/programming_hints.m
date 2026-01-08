@@ -15,6 +15,7 @@ function programming_hints
 
 %------------------------------------------------------------------------------------------------------------------
 % Create figure: always assign this tag (after "clf(hf,'reset');"):
+% Figures created with appdesigner: additionally set HandleVisibility='on'
 set(hf,'Tag','maplab3d_figure');
 
 % Set the figure theme to light:

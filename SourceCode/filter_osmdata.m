@@ -1112,8 +1112,7 @@ try
 	OSMDATA_TABLE(r_table_filtercrit,:)			= [];
 	OSMDATA_TABLE_INWR(r_table_filtercrit,:)	= [];
 	
-	% Sort the elements by length in descending order. This way, when connect_ways is called,
-	% all long ways are connected first, increasing the probability of creating the longest possible line.
+	% Sort the elements by length in descending order. 
 	OSMDATA_TABLE_No		= OSMDATA_TABLE.No;
 	[~,isort]				= sort(OSMDATA_TABLE.Length,'descend');
 	OSMDATA_TABLE			= OSMDATA_TABLE(isort,:);

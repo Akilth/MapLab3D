@@ -7,17 +7,17 @@ function set_previewtype_dropdown(set_dropdown_items)
 global GV_H PP APP PRINTDATA MAP_OBJECTS
 
 try
-
+	
 	if nargin<1
 		set_dropdown_items	= 1;
 	end
-
+	
 	% Display state:
 	stateisbusy	= display_on_gui('state','','isbusy');
 	if ~stateisbusy
 		display_on_gui('state','','busy');
 	end
-
+	
 	% Items and Value of the dropdown menu:
 	if set_dropdown_items~=0
 		delete_obj_union_equalcolors	= false;
@@ -121,7 +121,7 @@ try
 		APP.Mod_UnitedColors_SelectColNo_DropDown.Items	= Items_UC;
 		APP.Mod_UnitedColors_SelectColNo_DropDown.Value	= APP.Mod_UnitedColors_SelectColNo_DropDown.Items{1,1};
 	end
-
+	
 	% Modify the map:
 	if ~isempty(MAP_OBJECTS)
 		if ~strcmp(APP.Mod_UnitedColors_SelectColNo_DropDown.Value,'None')
@@ -169,6 +169,8 @@ try
 								end
 							case 2
 								% Show also texts and symbols that have the same color:
+								% Displaying text allows lines to be cut at the correct position. 
+								% It also prevents a cutting line from accidentally cutting through texts or symbols.
 								if MAP_OBJECTS(imapobj,1).vis0~=0
 									% The object is visible:
 									if   (strcmp(MAP_OBJECTS(imapobj,1).disp,'text')           ||...
@@ -177,10 +179,18 @@ try
 											(MAP_OBJECTS(imapobj,1).iobj>0)
 										% The object is a text or symbol:
 										if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'color_no')
+											set_visible_on		= false;
 											for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 												if MAP_OBJECTS(imapobj,1).h(i,1).UserData.color_no==cnuc
+													set_visible_on		= true;
+												end
+											end
+											if set_visible_on
+												for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 													MAP_OBJECTS(imapobj,1).h(i,1).Visible	= 'on';
-												else
+												end
+											else
+												for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 													MAP_OBJECTS(imapobj,1).h(i,1).Visible	= 'off';
 												end
 											end
@@ -278,7 +288,7 @@ try
 				end
 				% Create/modify legend:
 				create_legend_mapfigure;
-
+				
 			else
 				errormessage;
 			end
@@ -318,16 +328,16 @@ try
 			drawnow;
 		end
 	end
-
+	
 	% Update MAP_OBJECTS_TABLE:
 	display_map_objects;
-
+	
 	% Display state:
 	if ~stateisbusy
 		% t_plot_modify	= etime(clock,t_start_statebusy)
 		display_on_gui('state','','notbusy');
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

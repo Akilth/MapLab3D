@@ -341,9 +341,29 @@ try
 	xlabel(GV_H.ax_frame_crosssection,'x / mm');
 	ylabel(GV_H.ax_frame_crosssection,'y / mm');
 	title(GV_H.ax_frame_crosssection,'Frame cross section');
-	plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(:,1),frame_cross_section_xz(:,2),'.-b')
-	plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(k_printout,1),frame_cross_section_xz(k_printout,2),'xr')
-	plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(1,1),frame_cross_section_xz(1,2),'xb')
+	plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(:,1),frame_cross_section_xz(:,2),'.-b','MarkerSize',12)
+	if testdata==1
+		plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(k_printout,1),frame_cross_section_xz(k_printout,2),'xr')
+		plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(1,1),frame_cross_section_xz(1,2),'xb')
+		text(GV_H.ax_frame_crosssection,frame_cross_section_xz(k_printout,1),frame_cross_section_xz(k_printout,2),...
+			sprintf('k_printout=%1.0f',k_printout),...
+			'Color','r',...
+			'HorizontalAlignment','center',...
+			'VerticalAlignment','top',...
+			'Interpreter','none');
+		text(GV_H.ax_frame_crosssection,frame_cross_section_xz(1,1),frame_cross_section_xz(1,2),...
+			'k=1',...
+			'Color','b',...
+			'HorizontalAlignment','center',...
+			'VerticalAlignment','top',...
+			'Interpreter','none');
+		text(GV_H.ax_frame_crosssection,frame_cross_section_xz(kmax,1),frame_cross_section_xz(kmax,2),...
+			sprintf('kmax=%1.0f',kmax),...
+			'Color','b',...
+			'HorizontalAlignment','center',...
+			'VerticalAlignment','top',...
+			'Interpreter','none');
+	end
 	plot(GV_H.ax_frame_crosssection,cp1_x,cp1_z,'+b');
 	plot(GV_H.ax_frame_crosssection,cp2_x,cp2_z,'+b');
 	drawnow;
@@ -464,15 +484,38 @@ try
 	end
 	plot(GV_H.ax_frame_crosssection,frame_cross_section_xz(:,1),frame_cross_section_xz(:,2),'.:b')
 	
+	% Get the frame area and number of parts (for the map2stl summary):
+	PRINTDATA.frame				= [];
+	PRINTDATA.frame.tile			= [];
+	PRINTDATA.frame.color_no	= color_no;
+	% Structure frame at this point:
+	% frame(tile_no,1).poly(1,1)			outer polygon
+	% frame(tile_no,1).poly(end,1)		inner polygon
+	for tile_no=1:size(poly_tiles,1)
+		frame(tile_no,1).poly_bottomside	= frame(tile_no,1).poly(1,1);
+		frame(tile_no,1).poly_bottomside	= addboundary(...
+			frame(tile_no,1).poly_bottomside,...
+			frame(tile_no,1).poly(end,1).Vertices);
+		frame(tile_no,1).poly_bottomside					= intersect(...
+			frame(tile_no,1).poly_bottomside,...
+			poly_tiles(tile_no,1),'KeepCollinearPoints',false);
+		PRINTDATA.frame.tile(tile_no,1).area			= area(frame(tile_no,1).poly_bottomside);
+		PRINTDATA.frame.tile(tile_no,1).no_regions	= length(regions(frame(tile_no,1).poly_bottomside));
+		if testdata~=0
+			plot(ha2,frame(tile_no,1).poly_bottomside,...
+				'EdgeAlpha',0,...
+				'FaceAlpha',0.05);
+			set_breakpoint	= 1;
+		end
+	end
+	
 	% Add the start polygon (outer) to the end of frame(tile_no,1).poly (for calculating the bottom side):
-	frame_cross_section_xz				= [frame_cross_section_xz;frame_cross_section_xz(1,:)];
+	frame_cross_section_xz					= [frame_cross_section_xz;frame_cross_section_xz(1,:)];
 	for tile_no=1:size(poly_tiles,1)
 		frame(tile_no,1).poly(end+1,1)	= frame(tile_no,1).poly(1,1);
 	end
 	
 	% Triangulation:
-	PRINTDATA.frame		= [];
-	PRINTDATA.frame.tile	= [];
 	for tile_no=1:size(poly_tiles,1)
 		PRINTDATA.frame.tile(tile_no,1).T	= [];
 		connways_margin					= connect_ways([]);
@@ -724,8 +767,15 @@ try
 		if ~isempty(frame(tile_no,1).P)
 			% tile_no is not an inner tile:
 			
-			T_print	= triangulation(frame(tile_no,1).CL,frame(tile_no,1).P);
+			% Save the part to PRINTDATA, so the frame can be displayed together with the whole map:
+			PRINTDATA.frame.tile(tile_no,1).T	= triangulation(frame(tile_no,1).CL,frame(tile_no,1).P);
 			
+			% For printing, the parts are lowered onto the printing plate:
+			T_print							= struct;
+			T_print.ConnectivityList	= frame(tile_no,1).CL;
+			T_print.Points					= frame(tile_no,1).P;
+			T_print.Points(:,3)			= T_print.Points(:,3)-min(T_print.Points(:,3));
+			T_print							= triangulation(T_print.ConnectivityList,T_print.Points);
 			if plot_whole_parts~=0
 				if any(tile_no==tile_no_test)||isempty(tile_no_test)
 					Tplot3=triangulation(T_print.ConnectivityList,T_print.Points);
@@ -735,33 +785,114 @@ try
 				end
 			end
 			
-			% Save the part to PRINTDATA, so the frame can be displayed together with the whole map:
-			% The bottom height (z_bottom) is assumed to be zero.
-			PRINTDATA.frame.tile(tile_no,1).T	= T_print;
+			% xy range:
+			PRINTDATA.frame.tile(tile_no,1).xmin	= min(T_print.Points(:,1));
+			PRINTDATA.frame.tile(tile_no,1).xmax	= max(T_print.Points(:,1));
+			PRINTDATA.frame.tile(tile_no,1).ymin	= min(T_print.Points(:,2));
+			PRINTDATA.frame.tile(tile_no,1).ymax	= max(T_print.Points(:,2));
+			if PRINTDATA.frame.tile(tile_no,1).xmin<0
+				PRINTDATA.frame.tile(tile_no,1).xmin_str	= sprintf('m%04.0f',abs(PRINTDATA.frame.tile(tile_no,1).xmin));
+			else
+				PRINTDATA.frame.tile(tile_no,1).xmin_str	= sprintf('p%04.0f',PRINTDATA.frame.tile(tile_no,1).xmin);
+			end
+			if PRINTDATA.frame.tile(tile_no,1).xmax<0
+				PRINTDATA.frame.tile(tile_no,1).xmax_str	= sprintf('m%04.0f',abs(PRINTDATA.frame.tile(tile_no,1).xmax));
+			else
+				PRINTDATA.frame.tile(tile_no,1).xmax_str	= sprintf('p%04.0f',PRINTDATA.frame.tile(tile_no,1).xmax);
+			end
+			if PRINTDATA.frame.tile(tile_no,1).ymin<0
+				PRINTDATA.frame.tile(tile_no,1).ymin_str	= sprintf('m%04.0f',abs(PRINTDATA.frame.tile(tile_no,1).ymin));
+			else
+				PRINTDATA.frame.tile(tile_no,1).ymin_str	= sprintf('p%04.0f',PRINTDATA.frame.tile(tile_no,1).ymin);
+			end
+			if PRINTDATA.frame.tile(tile_no,1).ymax<0
+				PRINTDATA.frame.tile(tile_no,1).ymax_str	= sprintf('m%04.0f',abs(PRINTDATA.frame.tile(tile_no,1).ymax));
+			else
+				PRINTDATA.frame.tile(tile_no,1).ymax_str	= sprintf('p%04.0f',PRINTDATA.frame.tile(tile_no,1).ymax);
+			end
 			
-			% STL Export:
-			if (color_no>=1)&&(color_no<=size(PP.color,1))
-				color_text	= sprintf('C%03.0f',color_no);
-				if PP.general.save_filename.brand~=0
-					color_text	= sprintf('%s %s',color_text,PP.color(color_no,1).brand);
-				end
-				if PP.general.save_filename.color~=0
-					color_text	= sprintf('%s %s',color_text,PP.color(color_no,1).color_short_text);
-				end
-			else
-				color_text	= sprintf('C%02.0f',color_no);
-			end
-			color_text	= validfilename(color_text);
+			%------------------------------------------------------------------------------------------------
+			% Export as STL-file:
+			% File name:			PROJECTFILENAME-Cxxx-Txxx-a-b-c-Xde-Yfg-zmin hmm-zcenter imm
+			% legend:
+			% T	tile number
+			% C	color number
+			% optional:
+			% a	PP.color(colno,1).description					REPLACED BY 'Frame' !!!
+			% b	PP.color(colno,1).brand
+			% c	PP.color(colno,1).color_short_text
+			% X	x coordinates
+			% d	PRINTDATA.frame.tile(tile_no,1).xmin_str
+			% e	PRINTDATA.frame.tile(tile_no,1).xmax_str
+			% Y	y coordinates
+			% f	PRINTDATA.frame.tile(tile_no,1).ymin_str
+			% g	PRINTDATA.frame.tile(tile_no,1).ymax_str
+			% h	min(T_print.Points(:,3))
+			% i	(min(T_print.Points(:,3))+max(T_print.Points(:,3)))/2
+			%------------------------------------------------------------------------------------------------
+			
+			% Filename:
+			filename_text				= GV.pp_projectfilename;
+			filename_text				= validfilename(filename_text);
+			color_tile_file_text		= sprintf('-C%03.0f',color_no);
 			if size(poly_tiles,1)==1
-				filename_stl	= sprintf('%s - %s - Frame',...
-					validfilename(GV.pp_projectfilename),...
-					color_text);
+				tile_text				= '';
 			else
-				filename_stl	= sprintf('%s - T%03.0f - %s - Frame',...
-					validfilename(GV.pp_projectfilename),...
-					tile_no,...
-					color_text);
+				tile_text				= sprintf('-T%03.0f',tile_no);
+				tile_text				= validfilename(tile_text);
 			end
+			color_tile_file_text		= sprintf('%s%s',color_tile_file_text,tile_text);
+			color_tile_file_text		= validfilename(color_tile_file_text);
+			% if PP.general.save_filename.color_description==0
+			% 	color_description_text		= '';
+			% else
+			% 	color_description_text		= sprintf('-%s',PP.color(color_no,1).description);
+			% 	color_description_text		= validfilename(color_description_text);
+			% end
+			color_description_text	= '-Frame';
+			if PP.general.save_filename.color_brand==0
+				color_brand_text		= '';
+			else
+				color_brand_text		= sprintf('-%s',PP.color(color_no,1).brand);
+				color_brand_text		= validfilename(color_brand_text);
+			end
+			if PP.general.save_filename.color_short_text==0
+				color_short_text		= '';
+			else
+				color_short_text		= sprintf('-%s',PP.color(color_no,1).color_short_text);
+				color_short_text		= validfilename(color_short_text);
+			end
+			if PP.general.save_filename.tilecoordinates==0
+				tilecoordinates_text	= '';
+			else
+				tilecoordinates_text	= sprintf('-X%s%s-Y%s%s',...
+					PRINTDATA.frame.tile(tile_no,1).xmin_str,PRINTDATA.frame.tile(tile_no,1).xmax_str,...
+					PRINTDATA.frame.tile(tile_no,1).ymin_str,PRINTDATA.frame.tile(tile_no,1).ymax_str);
+				tilecoordinates_text	= validfilename(tilecoordinates_text);
+			end
+			if PP.general.save_filename.zmin==0
+				zmin_text				= '';
+			else
+				zmin_text				= sprintf('-zmin %1.3fmm',min(T_print.Points(:,3)));
+				% Do not use validfilename here so that the decimal point is not deleted.
+			end
+			if PP.general.save_filename.zcenter==0
+				zcenter_text			= '';
+			else
+				zcenter_text			= sprintf('-zcenter %1.3fmm',(min(T_print.Points(:,3))+max(T_print.Points(:,3)))/2);
+				% Do not use validfilename here so that the decimal point is not deleted.
+			end
+			filename_stl				= sprintf('%s%s%s%s%s%s%s%s',...
+				filename_text,...
+				color_tile_file_text,...
+				color_description_text,...
+				color_brand_text,...
+				color_short_text,...
+				tilecoordinates_text,...
+				zmin_text,...
+				zcenter_text);
+			PRINTDATA.frame.tile(tile_no,1).filename_stl		= filename_stl;
+			
 			% Create the project directories if necessary:
 			if ~isfield(GV,'projectdirectory_stl')
 				get_projectdirectory;				% Assign GV.projectdirectory_stl
@@ -777,6 +908,7 @@ try
 					get_projectdirectory;			% Assign GV.projectdirectory_stl_repaired
 				end
 			end
+			
 			% Save the STL files:
 			path_filename_stl	= [GV.projectdirectory_stl filename_stl '.stl'];
 			stlwrite(T_print,path_filename_stl);
@@ -819,6 +951,13 @@ try
 	plot_poly_tiles;
 	% Create/modify legend:
 	create_legend_mapfigure;
+	
+	% Last steps: Save '... - map2stl summary.txt':
+	map_pathname_stl		= '';				% Only required if save_maptopview=true
+	save_ppbackup			= false;
+	save_summary			= true;
+	save_maptopview		= false;
+	map2stl_completion(PP,map_pathname_stl,save_ppbackup,save_summary,save_maptopview);
 	
 	% Display state:
 	display_on_gui('state',...
