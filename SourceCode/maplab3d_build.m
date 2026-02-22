@@ -55,14 +55,16 @@ packageOpts	= [];
 %									Commit and push changes in main
 
 % Create new release:
-% Github:						Tag:					v1.0.0.3-beta
+% Github:						Create new release
+%									Select tag - Create new tag: v1.0.0.3-beta
 %									Release title:		MapLab3D 1.0.0.3 Public Beta
-%									Release notes:		Download the MapLab3D_1_0_0_3_Public_Beta file to install and run the program. Installation instructions can be found [here](https://github.com/Akilth/MapLab3D/blob/main/README.md) and in the [Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
+%									Release notes:		Download the MapLab3D_1_0_0_3_Public_Beta.zip file to install and run the program. Installation instructions can be found [here](https://github.com/Akilth/MapLab3D/blob/main/README.md) and in the [Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
 % 
-%															First published version
+%															For changes, see the [changelog](https://github.com/Akilth/MapLab3D/blob/main/CHANGELOG.md).
 % 
 %															or enter changelog
 %									Upload the zip file
+%									Publish release
 % Matlab Branch Manager:	New Tag:				v1.0.0.3-beta
 
 % Matlab Branch Manager:	create new branch development, set development as HEAD
