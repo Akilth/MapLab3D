@@ -26,17 +26,17 @@ packageOpts	= [];
 % -	Clear the other sheets
 
 % Set current version number in:
-% -	MapLab3D_ProjectParameters_x_x_x_x.xlsx						and
-%		MapLab3D_ProjectParameters_x_x_x_x_Reference.xlsx			and
-%		MapLab3D_ProjectParameters_x_x_x_x_Colors_Database.xlsx
+% -	MapLab3D_ProjectParameters_1_x_x_x.xlsx						and
+%		MapLab3D_ProjectParameters_1_x_x_x_Reference.xlsx			and
+%		MapLab3D_ProjectParameters_1_x_x_x_Colors_Database.xlsx
 %		-	File name
 %		-	project.version_no
 %		-	Save and Close all Excel files.
 % -	Check the file set_version_number.m
 % -	Appdesigner
-%		-	maplab3d.Name			MapLab3D_x_x_x_x
+%		-	maplab3d.Name			MapLab3D_1_x_x_x
 %			maplab3d.Version		x.x
-%		-	app.MapLab3D.Name		MapLab3D x.x.x.x
+%		-	app.MapLab3D.Name		MapLab3D 1.x.x.x
 % -	CHANGELOG.md:				Version number and date
 
 % Documentation of the changes contained in the new version.
@@ -58,13 +58,14 @@ packageOpts	= [];
 %									- Make shure that HEAD is main
 %									  Press Button Push
 %									- Set Development as HEAD
+%									  Use main only to publish releases!
 %									- New Tag: v1.0.0.3-beta
 
 % Create new release:
 % Github:						Create new release
-%									Select tag - Create new tag: v1.0.0.3-beta
-%									Release title:		MapLab3D 1.0.0.3 Public Beta
-%									Release notes:		Download the MapLab3D_1_0_0_3_Public_Beta.zip file to install and run the program. Installation instructions can be found [here](https://github.com/Akilth/MapLab3D/blob/main/README.md) and in the [Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
+%									Select tag - Create new tag: v1.x.x.x-beta
+%									Release title:		MapLab3D 1.x.x.x Public Beta
+%									Release notes:		Download the MapLab3D_1_x_x_x_Public_Beta.zip file to install and run the program. Installation instructions can be found [here](https://github.com/Akilth/MapLab3D/blob/main/README.md) and in the [Wiki](https://wiki.openstreetmap.org/wiki/MapLab3D).
 % 
 %															For changes, see the [changelog](https://github.com/Akilth/MapLab3D/blob/main/CHANGELOG.md).
 % 
@@ -90,7 +91,7 @@ packageOpts	= [];
 ProjectRootDir				= 'C:\Daten\Projekte\MapLab3D';	% C:\Daten\Projekte\MapLab3D\
 SourceCodeSubDir			= 'SourceCode';						% C:\Daten\Projekte\MapLab3D\SourceCode\
 SymbolsSubDir				= 'Symbols';							% C:\Daten\Projekte\MapLab3D\Symbols\
-StandaloneSubDirShort	= 'StandaloneApp';					% C:\Daten\Projekte\MapLab3D\StandaloneApp_0_9_0_0\
+StandaloneSubDirShort	= 'StandaloneApp';					% C:\Daten\Projekte\MapLab3D\StandaloneApp_1_x_x_x\
 BuildSubDir					= 'AppCompiler\Build';				% C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Build
 PackageSubDir				= 'AppCompiler\Package';			% C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Package
 ProjectBackupRootDir		= 'C:\Daten\Projekte\MapLab3D_Versions';
@@ -115,7 +116,7 @@ set_settings('save',SETTINGS);
 % --------------------------------------------------------------------------------------------------------------------
 % Derived settings:
 % Settings:            for example:
-% ver_date_dirname	= 'V_0_9_0_0-20250805-084829'
+% ver_date_dirname	= 'V_1_x_x_x-20250805-084829'
 ver_date_dirname		= sprintf('V_%g_%g_%g_%g-%04.0f%02.0f%02.0f-%02.0f%02.0f%02.0f',...
 	VER.no1,VER.no2,VER.no3,VER.no4,...
 	build_datevec(1),...
@@ -124,15 +125,15 @@ ver_date_dirname		= sprintf('V_%g_%g_%g_%g-%04.0f%02.0f%02.0f-%02.0f%02.0f%02.0f
 	build_datevec(4),...
 	build_datevec(5),...
 	build_datevec(6));
-% ProjectBackupDir	= 'C:\Daten\Projekte\MapLab3D_Versions\V_0_9_0_0-20250805-084829'
+% ProjectBackupDir	= 'C:\Daten\Projekte\MapLab3D_Versions\V_1_x_x_x-20250805-084829'
 ProjectBackupDir		= fullfile(ProjectBackupRootDir,ver_date_dirname);
-% FileName_PP			= 'MapLab3D_ProjectParameters_0_9_0_0.xlsx'
+% FileName_PP			= 'MapLab3D_ProjectParameters_1_x_x_x.xlsx'
 FileName_PP				= sprintf(FileName_PP_str   ,VER.no1,VER.no2,VER.no3,VER.no4);
-% FileName_PPRef		= 'MapLab3D_ProjectParameters_0_9_0_0_Reference.xlsx'
+% FileName_PPRef		= 'MapLab3D_ProjectParameters_1_x_x_x_Reference.xlsx'
 FileName_PPRef			= sprintf(FileName_PPRef_str,VER.no1,VER.no2,VER.no3,VER.no4);
-% FileName_PPCol		= 'MapLab3D_ProjectParameters_0_9_0_0_Colors_Database.xlsx'
+% FileName_PPCol		= 'MapLab3D_ProjectParameters_1_x_x_x_Colors_Database.xlsx'
 FileName_PPCol			= sprintf(FileName_PPCol_str,VER.no1,VER.no2,VER.no3,VER.no4);
-% StandaloneSubDir	= 'StandaloneApp_0_9_0_0'
+% StandaloneSubDir	= 'StandaloneApp_1_x_x_x'
 StandaloneSubDir		= sprintf('%s_%g_%g_%g_%g',StandaloneSubDirShort,VER.no1,VER.no2,VER.no3,VER.no4);
 if ~isempty(VER.str_fn)
 	StandaloneSubDir	= sprintf('%s%s',StandaloneSubDir,VER.str_fn);
@@ -141,11 +142,11 @@ end
 save_standalone_in_maplab3d_repo	= false;
 if save_standalone_in_maplab3d_repo
 	% Save the standalone directory together with the source code, it will be part of the repo:
-	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D\StandaloneApp_0_9_0_0'
+	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D\StandaloneApp_1_x_x_x'
 	StandaloneDir			= fullfile(ProjectRootDir,StandaloneSubDir);
 else
 	% Save the standalone directory not together with the source code, the repo will be smaller:
-	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D_Versions\V_0_9_0_0-20250805-084829\StandaloneApp_0_9_0_0'
+	% StandaloneDir		= 'C:\Daten\Projekte\MapLab3D_Versions\V_1_x_x_x-20250805-084829\StandaloneApp_1_x_x_x'
 	StandaloneDir			= fullfile(ProjectBackupDir,StandaloneSubDir);
 end
 
@@ -223,8 +224,8 @@ for i=1:size(listing,1)
 end
 
 % Build standalone application:
-% 'compiler.build'	mcc -W 'main:MapLab3D_0_9_0_0,version=0.9.0.0' -T link:exe -d C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Build -v -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_errorfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_stopfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_timerfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\osmfilter.exe -a C:\Daten\Projekte\MapLab3D\SourceCode\pp_ref.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\settings.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\symbols.mat -Z autodetect -o MapLab3D_0_9_0_0 -r C:\Users\telearbeit\AppData\Local\Temp\tp777b2079_1238_4c7b_8333_66f960e27f2d\icon.ico C:\Daten\Projekte\MapLab3D\SourceCode\maplab3d.mlapp
-% 'mcc'					mcc -W 'main:MapLab3D_0_9_0_0,version=0.9.0.0' -T link:exe -d C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Build -v -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_errorfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_stopfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_timerfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\osmfilter.exe -a C:\Daten\Projekte\MapLab3D\SourceCode\pp_ref.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\settings.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\symbols.mat -Z autodetect -o MapLab3D_0_9_0_0 -r C:\Daten\Projekte\MapLab3D\SourceCode\MapLab3D_Logo_256x256_RGB.ico -R '-logfile,MapLab3D_0_9_0_0_log.txt' C:\Daten\Projekte\MapLab3D\SourceCode\maplab3d.mlapp
+% 'compiler.build'	mcc -W 'main:MapLab3D_1_x_x_x,version=0.9.0.0' -T link:exe -d C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Build -v -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_errorfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_stopfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_timerfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\osmfilter.exe -a C:\Daten\Projekte\MapLab3D\SourceCode\pp_ref.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\settings.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\symbols.mat -Z autodetect -o MapLab3D_1_x_x_x -r C:\Users\telearbeit\AppData\Local\Temp\tp777b2079_1238_4c7b_8333_66f960e27f2d\icon.ico C:\Daten\Projekte\MapLab3D\SourceCode\maplab3d.mlapp
+% 'mcc'					mcc -W 'main:MapLab3D_1_x_x_x,version=0.9.0.0' -T link:exe -d C:\Daten\Projekte\MapLab3D_Versions\AppCompiler\Build -v -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_errorfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_stopfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\timer_timerfcn.m -a C:\Daten\Projekte\MapLab3D\SourceCode\osmfilter.exe -a C:\Daten\Projekte\MapLab3D\SourceCode\pp_ref.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\settings.mat -a C:\Daten\Projekte\MapLab3D\SourceCode\symbols.mat -Z autodetect -o MapLab3D_1_x_x_x -r C:\Daten\Projekte\MapLab3D\SourceCode\MapLab3D_Logo_256x256_RGB.ico -R '-logfile,MapLab3D_1_x_x_x_log.txt' C:\Daten\Projekte\MapLab3D\SourceCode\maplab3d.mlapp
 switch compile_method
 	case 'mcc'
 		% with:			log file
@@ -265,7 +266,7 @@ switch compile_method
 		% see:			https://de.mathworks.com/help/compiler/compiler.build.standaloneapplication.html
 		%
 		% During this command, the directory containing the icons is created and then deleted again:
-		% C:\Daten\Projekte\MapLab3D\StandaloneApp\Build\MapLab3D_x_x_x_x_resources
+		% C:\Daten\Projekte\MapLab3D\StandaloneApp\Build\MapLab3D_1_x_x_x_resources
 		% Copy the directory during this time to obtain the icon files for mcc!
 		% This is only necessary if the icon has been changed.
 		buildResult = compiler.build.standaloneApplication(buildOpts);
@@ -277,7 +278,7 @@ end
 % Package:
 
 % Set package properties:
-ApplicationExe								= sprintf('%s.exe',buildOpts.ExecutableName);		% 'MapLab3D_x_x_x_x.exe'
+ApplicationExe								= sprintf('%s.exe',buildOpts.ExecutableName);		% 'MapLab3D_1_x_x_x.exe'
 packageOpts.OutputDir					= fullfile(ProjectBackupRootDir,PackageSubDir);
 ApplicationExeFull						= fullfile(buildOpts.OutputDir,ApplicationExe);
 packageOpts.ApplicationName			= buildOpts.ExecutableName;
@@ -374,10 +375,10 @@ for i=1:size(listing,1)
 end
 
 % Create the release zip file:
-% zipfilename = 'C:\Daten\Projekte\MapLab3D\StandaloneApp_x_x_x_x\Release\MapLab3D_x_x_x_x'
+% zipfilename = 'C:\Daten\Projekte\MapLab3D\StandaloneApp_1_x_x_x\Release\MapLab3D_1_x_x_x'
 % filenames   =
 % {'C:\Daten\Projekte\MapLab3D\Symbols'                                                        }
-% {'C:\Daten\Projekte\MapLab3D\StandaloneApp_0_9_0_0\Package\MapLab3D_0_9_0_0_WebInstaller.exe'}
+% {'C:\Daten\Projekte\MapLab3D\StandaloneApp_1_x_x_x\Package\MapLab3D_1_x_x_x_WebInstaller.exe'}
 % {'C:\Daten\Projekte\MapLab3D\MapLab3D_ProjectParameters_0_9.xlsx'                            }
 % {'C:\Daten\Projekte\MapLab3D\MapLab3D_ProjectParameters_0_9_Reference.xlsx'                  }
 % {'C:\Daten\Projekte\MapLab3D\MapLab3D_ProjectParameters_colors_database.xlsx'                }
