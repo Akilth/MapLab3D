@@ -46,13 +46,18 @@ packageOpts	= [];
 % Run this file.
 
 % Commit and push:
-% Source Control:				Add untracked files to Source Control
-%									Commit, Message: "Version 1.1.0.0 Public Beta"
-% Matlab Branch Manager:	Make shure that HEAD is development
-%									Push changes in development
-%									Set main as HEAD: Right-click on Brachnes/main: Switch to this Branch
-%									Merge development with main (development does not exist any more)
-%									Commit and push changes in main
+% Source Control:				- Add untracked files to Source Control
+%									- Commit, Message: "Version 1.1.0.0 Public Beta"
+% Matlab Branch Manager:	- Make shure that HEAD is development
+%									- Push changes in Development
+%									- Set main as HEAD:
+%									  Right-click on Brachnes/main: Switch to this Branch
+%									- Merge development with main:
+%									  Right-click on Brachnes/Development: Merge into main
+%									  Merge from Branch Development
+%									- Make shure that HEAD is main
+%									  Press Button Push
+%									- Set Development as HEAD
 
 % Create new release:
 % Github:						Create new release
