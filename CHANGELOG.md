@@ -22,7 +22,7 @@ the project parameters may need to be edited.
 
 ### Fixed
 
-## [1.1.0.0 Public Beta] - 2025-08-28
+## [1.1.0.0 Public Beta] - 2026-02-22
 
 ### Known issues
 
