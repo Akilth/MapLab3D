@@ -37,7 +37,7 @@ packageOpts	= [];
 %		-	maplab3d.Name			MapLab3D_x_x_x_x
 %			maplab3d.Version		x.x
 %		-	app.MapLab3D.Name		MapLab3D x.x.x.x
-% -	CHANGELOG.md
+% -	CHANGELOG.md:				Version number and date
 
 % Documentation of the changes contained in the new version.
 
@@ -58,6 +58,7 @@ packageOpts	= [];
 %									- Make shure that HEAD is main
 %									  Press Button Push
 %									- Set Development as HEAD
+%									- New Tag: v1.0.0.3-beta
 
 % Create new release:
 % Github:						Create new release
@@ -70,9 +71,8 @@ packageOpts	= [];
 %															or enter changelog
 %									Upload the zip file
 %									Publish release
-% Matlab Branch Manager:	New Tag:				v1.0.0.3-beta
 
-% Matlab Branch Manager:	create new branch development, set development as HEAD
+% Matlab Branch Manager:	create new branch development if necessary, set development as HEAD
 % Matlab:						Increase version numbers
 % Matlab Branch Manager:	Commit and push changes in development
 

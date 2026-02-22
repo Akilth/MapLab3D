@@ -25,7 +25,7 @@ global VER
 % https://de.wikipedia.org/wiki/Versionsnummer
 % https://en.wikipedia.org/wiki/Software_versioning
 VER.no1		= 1;
-VER.no2		= 1;
+VER.no2		= 2;
 VER.no3		= 0;
 VER.no4		= 0;
 
