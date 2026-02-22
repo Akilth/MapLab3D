@@ -10,6 +10,7 @@ function imapobj_new_v=plot_modify(action,imapobj_v,par1,par2,par3,par4,par5)
 % 					hide								hide object
 %														par1								execute function display_map_objects (0/1)
 %														par2								hide temporarily (0/1)
+% 					restore							restore temporary visibilty
 % 					show								show object
 % 					gray_out							gray out object
 % 					select							select object
@@ -24,6 +25,7 @@ function imapobj_new_v=plot_modify(action,imapobj_v,par1,par2,par3,par4,par5)
 % 					scale								scale object
 % 														par1:								scale factor in x-direction
 % 														par2:								scale factor in y-direction
+%					set_dim							set Dimensions
 % 					delete							delete specific objects
 % 					ungroup							divide a polygon into its regions
 % 					group								group objects
@@ -214,11 +216,12 @@ try
 		strcmp(action,'select')  || ...
 		strcmp(action,'deselect')|| ...
 		strcmp(action,'hide')    || ...
+		strcmp(action,'restore') || ...
 		strcmp(action,'show')    || ...
 		strcmp(action,'gray_out')|| ...
 		strcmp(action,'move')    || ...
 		strcmp(action,'scale')   || ...
-		strcmp(action,'rotate')        )&&(length(imapobj_v)<=5);
+		strcmp(action,'rotate')        )&&(length(imapobj_v)<=20);
 	if ~stateisbusy
 		% t_start_statebusy	= clock;
 		display_on_gui('state','','busy');
@@ -295,6 +298,24 @@ try
 			
 			rot		= par1;
 			
+			% Center point:
+			x_line	= zeros(0,1);
+			y_line	= zeros(0,1);
+			for k=1:length(imapobj_v)
+				imapobj								= imapobj_v(k);
+				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+					switch MAP_OBJECTS(imapobj,1).h(i,1).Type
+						case 'polygon'
+							x_line	= [x_line;MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1)];
+							y_line	= [y_line;MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2)];
+						case 'line'
+							x_line	= [x_line;MAP_OBJECTS(imapobj,1).h(i,1).XData(:)];
+							y_line	= [y_line;MAP_OBJECTS(imapobj,1).h(i,1).YData(:)];
+					end
+				end
+			end
+			x_center		= mean(x_line(~isnan(x_line)));
+			y_center		= mean(y_line(~isnan(y_line)));
 			% Rotate objects:
 			for k=1:length(imapobj_v)
 				imapobj								= imapobj_v(k);
@@ -307,21 +328,6 @@ try
 						drawnow;
 					end
 				end
-				% Center point:
-				x_line	= zeros(0,1);
-				y_line	= zeros(0,1);
-				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-					switch MAP_OBJECTS(imapobj,1).h(i,1).Type
-						case 'polygon'
-							x_line	= [x_line;MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1)];
-							y_line	= [y_line;MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2)];
-						case 'line'
-							x_line	= [x_line;MAP_OBJECTS(imapobj,1).h(i,1).XData(:)];
-							y_line	= [y_line;MAP_OBJECTS(imapobj,1).h(i,1).YData(:)];
-					end
-				end
-				x_center		= mean(x_line(~isnan(x_line)));
-				y_center		= mean(y_line(~isnan(y_line)));
 				% Rotate:
 				MAP_OBJECTS(imapobj,1).mod		= true;
 				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -481,6 +487,63 @@ try
 				% much slower:
 				% display_map_objects(imapobj_v);
 			end
+			
+			
+			%------------------------------------------------------------------------------------------------------------
+		case 'restore'
+			
+			imapobj_sh_v	= false(size(imapobj_v));
+			imapobj_go_v	= false(size(imapobj_v));
+			for k=1:length(imapobj_v)
+				imapobj			= imapobj_v(k);
+				% Waitbar:
+				if waitbar_activ
+					if etime(clock,waitbar_t1)>=GV.waitbar_dtupdate
+						waitbar_t1	= clock;
+						progress		= min((k-1)/length(imapobj_v),1);
+						set(GV_H.patch_waitbar,'XData',[0 progress progress 0]);
+						drawnow;
+					end
+				end
+				if MAP_OBJECTS(imapobj,1).vis0~=0
+					for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+						if ~MAP_OBJECTS(imapobj,1).h(i,1).Visible
+							MAP_OBJECTS(imapobj,1).h(i,1).Visible	= 'on';
+							if strcmp(MAP_OBJECTS(imapobj,1).h(i,1).Type,'polygon')
+								if    isequal(MAP_OBJECTS(imapobj,1).h(i,1).EdgeAlpha,GV.visibility.grayout.edgealpha)&&...
+										isequal(MAP_OBJECTS(imapobj,1).h(i,1).FaceAlpha,GV.visibility.grayout.facealpha)
+									imapobj_go_v(k)		= true;
+								else
+									imapobj_sh_v(k)		= true;
+								end
+							else
+								imapobj_sh_v(k)		= true;
+							end
+						end
+						% Display the source data of the selected object, if the object is selected:
+						if MAP_OBJECTS(imapobj,1).h(i,1).Selected
+							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+								% Source plot handles:
+								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
+								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
+								k_source		= ishandle(source);
+								% Make the source plots visible:
+								set(source(k_source),'Visible','on');
+							end
+						end
+					end
+				end
+			end
+			% Update MAP_OBJECTS_TABLE:
+			if APP.ShowMapObjectsTable_Menu.Checked&&...
+					~isempty(imapobj_v)&&~isempty(MAP_OBJECTS)
+				MAP_OBJECTS_TABLE.Vis(imapobj_v(imapobj_sh_v),1)				= '';
+				MAP_OBJECTS_TABLE.Vis(imapobj_v(imapobj_go_v),1)				= 'GO';
+				GV_H.map_objects_table.Data.Vis(imapobj_v(imapobj_sh_v),1)	= '';
+				GV_H.map_objects_table.Data.Vis(imapobj_v(imapobj_go_v),1)	= 'GO';
+			end
+			% slower:
+			% display_map_objects(imapobj_v);
 			
 			
 			%------------------------------------------------------------------------------------------------------------
@@ -712,7 +775,7 @@ try
 					end
 				end
 				% Create/modify legend:
-				if length(imapobj_v)==1
+				if isscalar(imapobj_v)
 					create_legend_mapfigure;
 				end
 				% Center point:
@@ -773,6 +836,114 @@ try
 					end
 				end
 			end
+			
+			% Changing .Shape, .XData, .YData, .mod, .x or .y does not require updating the table!
+			% Update MAP_OBJECTS_TABLE:
+			% display_map_objects(imapobj_v);
+			
+			
+			%------------------------------------------------------------------------------------------------------------
+		case 'set_dim'
+			
+			% Check imapobj_v:
+			if length(imapobj_v)~=1
+				errormessage(sprintf(['Error:\n',...
+					'Exactly one object must be selected to use this function.']));
+			end
+			imapobj		= imapobj_v;
+			
+			% Current dimensions:
+			xmin0				= 1e10;
+			ymin0				= 1e10;
+			xmax0				= -1e10;
+			ymax0				= -1e10;
+			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+				switch MAP_OBJECTS(imapobj,1).h(i,1).Type
+					case 'polygon'
+						[xlim,ylim]		= boundingbox(MAP_OBJECTS(imapobj,1).h(i,1).Shape);
+					case 'line'
+						x_line			= MAP_OBJECTS(imapobj,1).h(i,1).XData(:);
+						y_line			= MAP_OBJECTS(imapobj,1).h(i,1).YData(:);
+						xlim				= [min(x_line) max(x_line)];
+						ylim				= [min(y_line) max(y_line)];
+				end
+				xmin0				= min(xmin0,xlim(1));
+				ymin0				= min(ymin0,ylim(1));
+				xmax0				= max(xmax0,xlim(2));
+				ymax0				= max(ymax0,ylim(2));
+			end
+			dimx0				= xmax0-xmin0;
+			dimy0				= ymax0-ymin0;
+			
+			% Enter the data:
+			definput		= {num2str(dimx0);num2str(dimy0)};
+			prompt		= {...
+				'Dimension x (width) / mm';...
+				'Dimension y (depth) / mm'};
+			dlgtitle		= 'Enter dimensions';
+			warntext		= 'xxxxx';
+			while ~isempty(warntext)
+				answer		= inputdlg_local(prompt,dlgtitle,1,definput);
+				if size(answer,1)~=2
+					if ~stateisbusy
+						display_on_gui('state','','notbusy');
+					end
+					return
+				end
+				warntext		= '';
+				if    ~isempty(strfind(answer{1,1},','))||...
+						~isempty(strfind(answer{2,1},','))
+					warntext	= sprintf([...
+						'Error:\n',...
+						'Invalid character '',''.\n',...
+						'Use the decimal point ''.'' as decimal separator.']);
+				else
+					dimx		= str2double(answer{1,1});
+					dimy		= str2double(answer{2,1});
+					if    any(isnan(dimx))||...
+							any(isnan(dimy))
+						warntext	= sprintf([...
+							'Error:\n',...
+							'Invalid values.\n',...
+							'You must enter numbers.']);
+					end
+				end
+				if ~isempty(warntext)
+					if isfield(GV_H.warndlg,'plot_modify')
+						if ishandle(GV_H.warndlg.plot_modify)
+							close(GV_H.warndlg.plot_modify);
+						end
+					end
+					warntext	= sprintf('%s\nPress OK to repeat.',warntext);
+					GV_H.warndlg.plot_modify		= warndlg(warntext,'Warning');
+					GV_H.warndlg.plot_modify.Tag	= 'maplab3d_figure';
+					while ishandle(GV_H.warndlg.plot_modify)
+						pause(0.2);
+					end
+				end
+			end
+			
+			% Change the dimensions:
+			MAP_OBJECTS(imapobj,1).mod		= true;
+			% Scale factors:
+			sx		= dimx/dimx0;
+			sy		= dimy/dimy0;
+			% Center point:
+			x		= (xmax0+xmin0)/2;
+			y		= (ymax0+ymin0)/2;
+			% Scale:
+			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+				switch MAP_OBJECTS(imapobj,1).h(i,1).Type
+					case 'polygon'
+						MAP_OBJECTS(imapobj,1).h(i,1).Shape	= scale(MAP_OBJECTS(imapobj,1).h(i,1).Shape,[sx sy],[x y]);
+					case 'line'
+						x_line										= MAP_OBJECTS(imapobj,1).h(i,1).XData(:);
+						y_line										= MAP_OBJECTS(imapobj,1).h(i,1).YData(:);
+						MAP_OBJECTS(imapobj,1).h(i,1).XData	= sx*(x_line-x)+x;
+						MAP_OBJECTS(imapobj,1).h(i,1).YData	= sy*(y_line-y)+y;
+				end
+			end
+			
 			% Changing .Shape, .XData, .YData, .mod, .x or .y does not require updating the table!
 			% Update MAP_OBJECTS_TABLE:
 			% display_map_objects(imapobj_v);
@@ -1269,52 +1440,65 @@ try
 					if strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'line')
 						xdata0				= MAP_OBJECTS(imapobj,1).h.XData';
 						ydata0				= MAP_OBJECTS(imapobj,1).h.YData';
-						i_v				= find(...				% if the start- and endpoint of a closed line has to be moved
-							(abs(xdata0(par2,1)-xdata0)<GV.tol_1)&...
-							(abs(ydata0(par2,1)-ydata0)<GV.tol_1)    );
-						xdata				= xdata0;
-						ydata				= ydata0;
-						xdata(i_v,1)	= par3;
-						ydata(i_v,1)	= par4;
-						self_intersection_detected	= false;
-						for i_i_v=1:length(i_v)
-							i		= i_v(i_i_v);
-							% Check for intersection of the line segment before vertex [xdata(i,1) ydata(i,1)]:
-							if i>1
-								[xi,yi] = polyxpoly(xdata0,ydata0,...
-									[xdata(i-1,1) xdata(i,1)],...
-									[ydata(i-1,1) ydata(i,1)],'unique');
-								% The startpoint of the new line segment is not an intersection point:
-								k_delete			= (...
-									(abs(xi-xdata(i-1,1))<GV.tol_1)&...
-									(abs(yi-ydata(i-1,1))<GV.tol_1)    );
-								xi(k_delete)	= [];
-								if ~isempty(xi)
-									self_intersection_detected	= true;
-									break
-								end
-							end
-							% Check for intersection of the line segment after vertex [xdata(i,1) ydata(i,1)]:
-							if i<(length(xdata)-1)
-								[xi,yi] = polyxpoly(xdata0,ydata0,...
-									[xdata(i,1) xdata(i+1,1)],...
-									[ydata(i,1) ydata(i+1,1)],'unique');
-								% The endpoint of the new line segment is not an intersection point:
-								k_delete			= (...
-									(abs(xi-xdata(i+1,1))<GV.tol_1)&...
-									(abs(yi-ydata(i+1,1))<GV.tol_1)    );
-								xi(k_delete)	= [];
-								if ~isempty(xi)
-									self_intersection_detected	= true;
-									break
-								end
+					elseif strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'polygon')
+						% Use the boundary-function (same method as in ButtonDownFcn_ax_2dmap.m):
+						[xdata0,ydata0]	= boundary(MAP_OBJECTS(imapobj,1).h.Shape);
+					else
+						errormessage;
+					end
+					% Move vertex and check for intersection:
+					i_v				= find(...				% if the start- and endpoint of a closed line has to be moved
+						(abs(xdata0(par2,1)-xdata0)<GV.tol_1)&...
+						(abs(ydata0(par2,1)-ydata0)<GV.tol_1)    );
+					xdata				= xdata0;
+					ydata				= ydata0;
+					xdata(i_v,1)	= par3;
+					ydata(i_v,1)	= par4;
+					self_intersection_detected	= false;
+					for i_i_v=1:length(i_v)
+						i		= i_v(i_i_v);
+						% Check for intersection of the line segment before vertex [xdata(i,1) ydata(i,1)]:
+						if i>1
+							[xi,yi] = polyxpoly(xdata,ydata,...
+								[xdata(i-1,1) xdata(i,1)],...
+								[ydata(i-1,1) ydata(i,1)],'unique');
+							% The startpoint of the new line segment is not an intersection point:
+							k_delete			= ((...
+								(abs(xi-xdata(i-1,1))<GV.tol_1)&...
+								(abs(yi-ydata(i-1,1))<GV.tol_1)    )|(...
+								(abs(xi-xdata(i  ,1))<GV.tol_1)&...
+								(abs(yi-ydata(i  ,1))<GV.tol_1)    )     );
+							xi(k_delete)	= [];
+							if ~isempty(xi)
+								self_intersection_detected	= true;
+								break
 							end
 						end
-						if self_intersection_detected
-							errormessage(sprintf(['Error:\n',...
-								'The new point (%g,%g) results in an\n',...
-								'intersection with the existing line.'],par3,par4));
+						% Check for intersection of the line segment after vertex [xdata(i,1) ydata(i,1)]:
+						if i<(length(xdata)-1)
+							[xi,yi] = polyxpoly(xdata,ydata,...
+								[xdata(i,1) xdata(i+1,1)],...
+								[ydata(i,1) ydata(i+1,1)],'unique');
+							% The endpoint of the new line segment is not an intersection point:
+							k_delete			= ((...
+								(abs(xi-xdata(i  ,1))<GV.tol_1)&...
+								(abs(yi-ydata(i  ,1))<GV.tol_1)    )|(...
+								(abs(xi-xdata(i+1,1))<GV.tol_1)&...
+								(abs(yi-ydata(i+1,1))<GV.tol_1)    )     );
+							xi(k_delete)	= [];
+							if ~isempty(xi)
+								self_intersection_detected	= true;
+								break
+							end
 						end
+					end
+					if self_intersection_detected
+						errormessage(sprintf(['Error:\n',...
+							'The new point (%g,%g) results in an\n',...
+							'intersection with the existing line.'],par3,par4));
+					end
+					% Assign the result:
+					if strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'line')
 						MAP_OBJECTS(imapobj,1).h.XData	= xdata';
 						MAP_OBJECTS(imapobj,1).h.YData	= ydata';
 						if    (abs(MAP_OBJECTS(imapobj,1).h.XData(1)-MAP_OBJECTS(imapobj,1).h.XData(end))<GV.tol_1)&&...
@@ -1327,24 +1511,7 @@ try
 							MAP_OBJECTS(imapobj,1).y		= mean(MAP_OBJECTS(imapobj,1).h.YData);
 						end
 					elseif strcmp(MAP_OBJECTS(imapobj,1).h(1,1).Type,'polygon')
-						% Use the boundary-function (same method as in ButtonDownFcn_ax_2dmap.m):
-						[xdata,ydata]	= boundary(MAP_OBJECTS(imapobj,1).h.Shape);
-						x_par2			= xdata(par2,1);
-						y_par2			= ydata(par2,1);
-						poly				= simplify(MAP_OBJECTS(imapobj,1).h.Shape);
-						[xdata,ydata]	= boundary(poly);
-						i_v				= find(...
-							(abs(x_par2-xdata)<GV.tol_1)&...
-							(abs(y_par2-ydata)<GV.tol_1)    );
-						xdata(i_v,1)	= par3;
-						ydata(i_v,1)	= par4;
-						poly_new			= polyshape(xdata,ydata,'Simplify',false);
-						if ~issimplified(poly_new)
-							errormessage(sprintf(['Error:\n',...
-								'The new point (%g,%g) results in an\n',...
-								'intersection with the existing line.'],par3,par4));
-						end
-						MAP_OBJECTS(imapobj,1).h.Shape	= poly_new;
+						MAP_OBJECTS(imapobj,1).h.Shape	= polyshape(xdata,ydata,'KeepCollinearPoints',true);
 						[xcenter,ycenter]						= centroid(MAP_OBJECTS(imapobj,1).h.Shape);
 						MAP_OBJECTS(imapobj,1).x			= xcenter;
 						MAP_OBJECTS(imapobj,1).y			= ycenter;
@@ -3327,11 +3494,11 @@ try
 							MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
 							~...																		% dbuffer
 							]=subtract_dside(...
+							poly,...																	% poly1
+							MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
 							PP,...																	% PP_local
 							MAP_OBJECTS(imapobj1,1).h(1,1).UserData.color_no,...		% colno1
-							MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no,...		% colno2
-							poly,...																	% poly1
-							MAP_OBJECTS(imapobj2,1).h(i,1).Shape);							% poly2 (Subtrahend)
+							MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no);			% colno2
 					end
 					
 					% % old:
@@ -3866,7 +4033,6 @@ try
 				[poly_bgd,poly_obj,~,~,~,~]		= texteqtags2poly(...
 					iobj,...								% iobj
 					iteqt,...							% iteqt
-					[],...								% itable_v
 					text_eqtags,...					% text_eqtags
 					connways_eqtags_select,...		% connways_eqtags
 					'change_text',...					% text_symb

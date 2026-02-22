@@ -23,6 +23,7 @@ try
 	if APP.CreatemapSettingsShowLegendTestplotMenu.Checked
 		testplot		= 1;
 	end
+	testplot_xy	= 0;		% x-y coordinates, for testing
 	
 	%------------------------------------------------------------------------------------------------------------------
 	% Clear an existing legend:
@@ -623,85 +624,6 @@ try
 			
 		end					% end of: for c=1:nc
 	end						% end of: for r=1:nr
-	
-	% Not empty rows:
-	row_is_not_empty		= false(nr,1);
-	for r=1:nr
-		for c=1:nc
-			if    (sum(numboundaries(text_bgd_m(r,c).poly))>0)||...
-					(sum(numboundaries(text_fgd_m(r,c).poly))>0)||...
-					(    numboundaries(liar_bgd_m(r,c).poly )>0)||...
-					(    numboundaries(liar_fgd_m(r,c).poly )>0)||...
-					(    numboundaries(symb_bgd_m(r,c).poly )>0)||...
-					(    numboundaries(symb_fgd_m(r,c).poly )>0)
-				row_is_not_empty(r,1)		= true;
-				break
-			end
-		end
-	end
-	
-	% Symbol center position with respect to text baseline of line 1:
-	method			= 2;
-	switch method
-		case 1
-			for r=1:nr
-				for c=1:nc
-					lift_sym_txt_m(r,c)		= PP.legend.element(r,c).legsymb_dy;
-				end
-				c_nez		= lift_sym_txt_m(r,:)~=0;			% columns where legsymb_dy is not equal to zero
-				if any(c_nez)
-					% If there are in row r any values legsymb_dy not equal to zero:
-					c_ez		= lift_sym_txt_m(r,:)==0;		% columns where legsymb_dy is equal to zero
-					lift_sym_txt_m(r,c_ez)	= min(lift_sym_txt_m(r,c_nez));
-				end
-			end
-		case 2
-			for r=1:nr
-				for c=1:nc
-					lift_sym_txt_m(r,c)		= PP.legend.element(r,c).legsymb_dy;
-				end
-			end
-	end
-	
-	% Line spacing of the first line of the row r to the last line of the row r-1 (ls_row_v):
-	ls_row_v				= zeros(nr,1);
-	for r=1:nr
-		% Get the next non empty row above row r:
-		r_above			= r-1;
-		while (r_above>0)&&~row_is_not_empty(r_above,1)
-			% The complete row above row r is empty and will not be displayed:
-			r_above		= r_above-1;
-		end
-		for c=1:nc
-			% ymin of the row above r, column c:
-			if r_above>0
-				% There are non empty rows above row r:
-				ymin_txt_r_above	= ymin_txt_m(r_above,c);
-				ymin_sym_r_above	= ymin_sym_m(r_above,c)+lift_sym_txt_m(r_above,c);
-			end
-			% ymax of the row r, column c:
-			ymax_txt_r				= ymax_txt_m(r,c);
-			ymax_sym_r				= ymax_sym_m(r,c)+lift_sym_txt_m(r,c);
-			% Minimum line spacing ls_row between texts and symbols:
-			if r_above==0
-				% r is the topmost row:
-				ls_row_r_c_txt_min		= -1e10;
-				ls_row_r_c_sym_min		= -1e10;
-			else
-				ls_row_r_c_txt_min		= ymax_txt_r+PP.legend.dmin_legelements-(ymin_txt_r_above+h_row_v(r_above,1));
-				ls_row_r_c_sym_min		= ymax_sym_r+PP.legend.dmin_legelements-(ymin_sym_r_above+h_row_v(r_above,1));
-			end
-			% Line spacing:
-			if r==44
-				test=1;
-			end
-			ls_row_v(r,1)			= max([...
-				ls_row_v(r,1),...
-				ls_row_r_c_txt_min,...
-				ls_row_r_c_sym_min,...
-				PP.legend.element(r,c).text_spacing_para]);
-		end
-	end
 	
 	
 	%------------------------------------------------------------------------------------------------------------------
@@ -1459,6 +1381,92 @@ try
 	
 	
 	%------------------------------------------------------------------------------------------------------------------
+	% row_is_not_empty:	Detect not empty rows: after calculating the map scale bar
+	% lift_sym_txt_m:		Symbol center position with respect to text baseline of line 1
+	% ls_row_v:				Line spacing of the first line of the row r to the last line of the row r-1
+	%------------------------------------------------------------------------------------------------------------------
+	
+	% Not empty rows:
+	row_is_not_empty		= false(nr,1);
+	for r=1:nr
+		for c=1:nc
+			if    (sum(numboundaries(text_bgd_m(r,c).poly))>0)||...
+					(sum(numboundaries(text_fgd_m(r,c).poly))>0)||...
+					(    numboundaries(liar_bgd_m(r,c).poly )>0)||...
+					(    numboundaries(liar_fgd_m(r,c).poly )>0)||...
+					(    numboundaries(symb_bgd_m(r,c).poly )>0)||...
+					(    numboundaries(symb_fgd_m(r,c).poly )>0)
+				row_is_not_empty(r,1)		= true;
+				break
+			end
+		end
+	end
+	
+	% Symbol center position with respect to text baseline of line 1:
+	method			= 2;
+	switch method
+		case 1
+			for r=1:nr
+				for c=1:nc
+					lift_sym_txt_m(r,c)		= PP.legend.element(r,c).legsymb_dy;
+				end
+				c_nez		= lift_sym_txt_m(r,:)~=0;			% columns where legsymb_dy is not equal to zero
+				if any(c_nez)
+					% If there are in row r any values legsymb_dy not equal to zero:
+					c_ez		= lift_sym_txt_m(r,:)==0;		% columns where legsymb_dy is equal to zero
+					lift_sym_txt_m(r,c_ez)	= min(lift_sym_txt_m(r,c_nez));
+				end
+			end
+		case 2
+			for r=1:nr
+				for c=1:nc
+					lift_sym_txt_m(r,c)		= PP.legend.element(r,c).legsymb_dy;
+				end
+			end
+	end
+	
+	% Line spacing of the first line of the row r to the last line of the row r-1 (ls_row_v):
+	ls_row_v				= zeros(nr,1);
+	for r=1:nr
+		% Get the next non empty row above row r:
+		r_above			= r-1;
+		while (r_above>0)&&~row_is_not_empty(r_above,1)
+			% The complete row above row r is empty and will not be displayed:
+			r_above		= r_above-1;
+		end
+		for c=1:nc
+			% ymin of the row above r, column c:
+			if r_above>0
+				% There are non empty rows above row r:
+				ymin_txt_r_above	= ymin_txt_m(r_above,c);
+				ymin_sym_r_above	= ymin_sym_m(r_above,c)+lift_sym_txt_m(r_above,c);
+			end
+			% ymax of the row r, column c:
+			ymax_txt_r				= ymax_txt_m(r,c);
+			ymax_sym_r				= ymax_sym_m(r,c)+lift_sym_txt_m(r,c);
+			% Minimum line spacing ls_row between texts and symbols:
+			if r_above==0
+				% r is the topmost row:
+				ls_row_r_c_txt_min		= -1e10;
+				ls_row_r_c_sym_min		= -1e10;
+			else
+				ls_row_r_c_txt_min		= ymax_txt_r+PP.legend.dmin_legelements-(ymin_txt_r_above+h_row_v(r_above,1));
+				ls_row_r_c_sym_min		= ymax_sym_r+PP.legend.dmin_legelements-(ymin_sym_r_above+h_row_v(r_above,1));
+			end
+			% Line spacing:
+			if r==44
+				test=1;
+			end
+			ls_row_v(r,1)			= max([...
+				ls_row_v(r,1),...
+				ls_row_r_c_txt_min,...
+				ls_row_r_c_sym_min,...
+				PP.legend.element(r,c).text_spacing_para]);
+		end
+	end
+	
+	
+	%------------------------------------------------------------------------------------------------------------------
 	% Translate the polygons and testplot:
 	%------------------------------------------------------------------------------------------------------------------
 	
@@ -1524,6 +1532,12 @@ try
 								plot(ha,symb_bgd_m(r,c).poly,'EdgeColor','k','FaceColor','g');
 								plot(ha,symb_fgd_m(r,c).poly,'EdgeColor','k','FaceColor','g');
 								plot(ha,x+[0 1]*w_colsym_l_v(1,c),y+[0 0],'-xr','LineWidth',1.5,'MarkerSize',10);
+								if testplot_xy==1
+									text(ha,x,y_row_v(r,1),[num2str(x) 'mm'],...
+										'Color','r','Clipping','on','HorizontalAlignment','left','VerticalAlignment','bottom');
+									text(ha,x,y_row_v(r,1),[num2str(y_row_v(r,1)) 'mm  '],...
+										'Color','r','Clipping','on','HorizontalAlignment','right','VerticalAlignment','middle');
+								end
 							end
 							x			= x+w_colsym_l_v(1,c)+PP.legend.dst;
 							if sum(numboundaries(text_bgd_m(r,c).poly))>0
@@ -1546,6 +1560,10 @@ try
 							end
 							if testplot==1
 								plot(ha,x+[0 1]*w_coltxt_r_v(1,c),y+[0 0],'-xr','LineWidth',1.5,'MarkerSize',10);
+								if testplot_xy==1
+									text(ha,x,y_row_v(r,1),[num2str(x) 'mm'],...
+										'Color','r','Clipping','on','HorizontalAlignment','left','VerticalAlignment','bottom');
+								end
 							end
 							xmax		= x+w_coltxt_r_v(1,c);
 							x			= x+w_coltxt_r_v(1,c)+PP.legend.dco;
@@ -1617,6 +1635,13 @@ try
 								plot(ha,symb_fgd_m(r,c).poly,'EdgeColor','k','FaceColor','g');
 								plot(ha,text_bgd_m(r,c).poly,'EdgeColor','k','FaceColor','b');
 								plot(ha,text_fgd_m(r,c).poly,'EdgeColor','k','FaceColor','b');
+								plot(ha,xpoly+xlim,y+[0 0],'-xr','LineWidth',1.5,'MarkerSize',10);
+								if testplot_xy==1
+									text(ha,xpoly+xlim(1),y_row_v(r,1),[num2str(xpoly+xlim(1)) 'mm'],...
+										'Color','r','Clipping','on','HorizontalAlignment','left','VerticalAlignment','bottom');
+									text(ha,xpoly+xlim(1),y_row_v(r,1),[num2str(y_row_v(r,1)) 'mm  '],...
+										'Color','r','Clipping','on','HorizontalAlignment','right','VerticalAlignment','middle');
+								end
 							end
 						end
 						xmax		= x+w_coltxt_r_v(1,c);
@@ -1627,6 +1652,10 @@ try
 			end
 			if testplot==1
 				plot(ha,[0 1]*xmax,[1 1]*y-h_row_v(r,1),':r','LineWidth',0.5);		% bottom side of the current row
+				if testplot_xy==1
+					text(ha,0,y-h_row_v(r,1),[num2str(y-h_row_v(r,1)) 'mm  '],...
+						'Color','r','Clipping','on','HorizontalAlignment','right','VerticalAlignment','middle');
+				end
 			end
 		end
 	end

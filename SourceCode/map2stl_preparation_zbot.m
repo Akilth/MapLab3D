@@ -517,7 +517,7 @@ switch method_zbot
 		% Geringfügige Überlappungen aufheben:
 		% Wenn sich Kartenobjekte mit unterschiedlichen Farben nur geringfügig am Rand überlappen, führt dies zu einem
 		% in der Regel unnötigen Übereinanderstapeln der Teile. In diesem Fall wird das untere Teil von dem oberen Teil
-		% mit Berücksichtigung des seitlichen Abstands d_sied beschnitten, so dass die Teile nebeneinander eingesetzt
+		% mit Berücksichtigung des seitlichen Abstands d_side beschnitten, so dass die Teile nebeneinander eingesetzt
 		% werden können.
 		for iobj=1:length(obj_reg_union_ovcol.poly)
 			obj_reg_subtrahend(iobj,1)				= polyshape();

@@ -34,7 +34,7 @@ try
 		case 'set'
 			% Set tooltips:
 			for ip=1:size(p,1)
-				if isprop(APP.(p{ip,1}),'Tooltip')
+				if isprop(APP.(p{ip,1}),'Tooltip')&&isfield(GV.tooltips,p{ip,1})
 					APP.(p{ip,1}).Tooltip	= GV.tooltips.(p{ip,1});
 				end
 			end

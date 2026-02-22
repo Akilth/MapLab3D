@@ -169,7 +169,7 @@ try
 								end
 							case 2
 								% Show also texts and symbols that have the same color:
-								% Displaying text allows lines to be cut at the correct position. 
+								% Displaying text allows lines to be cut at the correct position.
 								% It also prevents a cutting line from accidentally cutting through texts or symbols.
 								if MAP_OBJECTS(imapobj,1).vis0~=0
 									% The object is visible:
@@ -292,7 +292,9 @@ try
 			else
 				errormessage;
 			end
-			drawnow;
+			% Execution times when loading a large project:
+			% drawnow nocallbacks;		% 24.849s
+			pause(0.001);					% s
 		else
 			% Hide all cutting lines and united equal colors, show the rest depending on MAP_OBJECTS(imapobj,1).vis0:
 			imapobj_hide	= false(size(MAP_OBJECTS));
@@ -325,7 +327,9 @@ try
 					end
 				end
 			end
-			drawnow;
+			% Execution times when loading a large project:
+			% drawnow nocallbacks;		% 83.967s
+			pause(0.001);					% 26.447s
 		end
 	end
 	

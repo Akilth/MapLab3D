@@ -527,6 +527,8 @@ try
 									~,...									% poly2 (Subtrahend)
 									dbuffer...							% dbuffer
 									]=subtract_dside(...
+									[],...								% poly1
+									[],...								% poly2 (Subtrahend)
 									PP,...								% PP_local
 									colno_1,...							% colno1
 									colno_2);							% colno2
@@ -653,11 +655,11 @@ try
 													MAP_OBJECTS(imapobj_2,1).h(rpoly_2,1).Shape,...		% poly2 (Subtrahend)
 													~...																% dbuffer
 													]=subtract_dside(...
+													MAP_OBJECTS(imapobj_1,1).h(rpoly_1,1).Shape,...		% poly1
+													MAP_OBJECTS(imapobj_2,1).h(rpoly_2,1).Shape,...		% poly2 (Subtrahend)
 													PP,...															% PP_local
 													colno_1,...														% colno1
-													colno_2,...														% colno2
-													MAP_OBJECTS(imapobj_1,1).h(rpoly_1,1).Shape,...		% poly1
-													MAP_OBJECTS(imapobj_2,1).h(rpoly_2,1).Shape);		% poly2 (Subtrahend)
+													colno_2);														% colno2
 												
 												% % old:
 												%

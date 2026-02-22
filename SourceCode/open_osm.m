@@ -125,6 +125,9 @@ try
 		% Load the filtered OSM-data:
 		% Call osmfilter:
 		try
+			msg	= sprintf('Calling osmfilter. This may take some time ... ');
+			set(GV_H.text_waitbar,'String',msg);
+			drawnow;
 			[osm_filename_filt,osm_pathname_filt,osmfilter_command]	= call_osmfilter(osm_filename,osm_pathname,1);
 		catch ME
 			errormessage('',ME);
@@ -744,7 +747,7 @@ try
 		ELE.elefiltset(ifs,1).ny			= length(ELE.elefiltset(ifs,1).yv_mm);
 		mapsize_x_mm	= ELE.elefiltset(ifs,1).xmax_mm-ELE.elefiltset(ifs,1).xmin_mm;
 		mapsize_y_mm	= ELE.elefiltset(ifs,1).ymax_mm-ELE.elefiltset(ifs,1).ymin_mm;
-		if (mapsize_x_mm>1000)||(mapsize_y_mm>1000)
+		if (mapsize_x_mm>1500)||(mapsize_y_mm>1500)
 			question	= sprintf(['The map dimension is %gmm x %gmm.\n',...
 				'This will lead to a long execution time\n',...
 				'and a high memory requirement.\n',...
@@ -760,7 +763,7 @@ try
 				return
 			end
 		else
-			if (ELE.elefiltset(ifs,1).nx>1000)||(ELE.elefiltset(ifs,1).ny>1000)
+			if (ELE.elefiltset(ifs,1).nx>5000)||(ELE.elefiltset(ifs,1).ny>5000)
 				question	= sprintf(['The the grid of elevation data is %g x %g points.\n',...
 					'This will lead to a long execution time\n',...
 					'and a high memory requirement.\n',...
@@ -1747,82 +1750,184 @@ try
 	
 	switch fn_keyval
 		case 'keys'
-			fn_kv_no	= 'keys_no';
+			fn_kv_no		= 'keys_no';
 		case 'values'
-			fn_kv_no	= 'values_no';
+			fn_kv_no		= 'values_no';
 	end
 	
-	di_sort	= 50;		% after this number of loops the keys/values will be sorted anew for faster comparing
-	inwrmax	= size(OSMDATA.(fn_nwr),2);
-	fn_inwrt	= [fn_inwr 't'];
+	use_testmethod		= false;
+	if use_testmethod
+		ikvmax			= 0;
+	end
+	inwrmax			= size(OSMDATA.(fn_nwr),2);
+	fn_inwrt			= [fn_inwr 't'];
 	for inwr=1:inwrmax
 		
 		% Waitbar:
 		WAITBAR.k	= WAITBAR.k+1;
-		if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-			WAITBAR.t1	= clock;
-			x				= WAITBAR.x0(WAITBAR.i)+WAITBAR.dx(WAITBAR.i)*WAITBAR.k/WAITBAR.kmax;
-			t_remaining	= etime(WAITBAR.t1,WAITBAR.t0)*(1-x)/x;		% remaining time as number of seconds
-			t_end			= datenum(WAITBAR.t1)+t_remaining/86400;		% end time as fractional number of days
-			msg			= sprintf([...
-				'Indexing keys and values: %1.0f/%1.0f ...   /   ',...
-				'Estimated remaining time: %s   /   ',...
-				'Estimated end time: %s'],...
-				inwr,inwrmax,...
-				dt_string(t_remaining),...
-				datestr(t_end,WAITBAR.formatOut));
-			set(GV_H.patch_waitbar,'XData',[0 x x 0]);
-			set(GV_H.text_waitbar,'String',msg);
-			drawnow;
-		end
-		
-		if OSMDATA.istag.(fn_nwr)(1,inwr)
-			for itag=1:size(OSMDATA.(fn_nwr)(1,inwr).tag,2)
-				kv_string	= OSMDATA.(fn_nwr)(1,inwr).tag(1,itag).(fn_kv);
-				kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string));			% 7.110 / 0.094
-				% kv_no	= length(kv_string)+10000*sum(uint64(kv_string).*uint64(1:length(kv_string)));		% 14.119s
-				% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(10*(1:length(kv_string))));		%
-				% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(2.^(1:length(kv_string))));		% 8.454 s) / 0.99
-				ikmax	= size(OSMDATA.(fn_keyval),1);
-				if ikmax==0
-					ik		= 1;
-				else
-					% The calculated number kv_no is not unique, maybe different texts have the same number:
-					ik_v	= find(OSMDATA.(fn_kv_no)==kv_no);
-					if isempty(ik_v)
-						ik		= size(OSMDATA.(fn_keyval),1)+1;
-					else
-						ik		= [];
-						for i_ik_v=1:length(ik_v)
-							if strcmp(kv_string,OSMDATA.(fn_keyval)(ik_v(i_ik_v),1).(fn_kv))
-								% The key or value character array kv_string already exists at position ik_v(i_ik_v):
-								ik		= ik_v(i_ik_v);
-								break
-							end
-						end
-						if isempty(ik)
-							% At least one other character array has the same number as kv_string, kv_string is new:
-							ik		= size(OSMDATA.(fn_keyval),1)+1;
-						end
-					end
-				end
-				if ik>ikmax
-					% new key string:
-					OSMDATA.(fn_keyval)(ik,1).(fn_kv)	= kv_string;
-					OSMDATA.(fn_keyval)(ik,1).N			= 0;
-					OSMDATA.(fn_keyval)(ik,1).in			= [];
-					OSMDATA.(fn_keyval)(ik,1).iw			= [];
-					OSMDATA.(fn_keyval)(ik,1).ir			= [];
-					OSMDATA.(fn_keyval)(ik,1).int			= [];
-					OSMDATA.(fn_keyval)(ik,1).iwt			= [];
-					OSMDATA.(fn_keyval)(ik,1).irt			= [];
-					OSMDATA.(fn_kv_no)(ik,1)				= kv_no;
-				end
-				OSMDATA.(fn_keyval)(ik,1).N				= OSMDATA.(fn_keyval)(ik,1).N+1;
-				OSMDATA.(fn_keyval)(ik,1).(fn_inwr)		= [OSMDATA.(fn_keyval)(ik,1).(fn_inwr)  inwr];
-				OSMDATA.(fn_keyval)(ik,1).(fn_inwrt)	= [OSMDATA.(fn_keyval)(ik,1).(fn_inwrt) itag];
+		if mod(inwr,100)==0			% Do not run etime every time due to time reasons.
+			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+				WAITBAR.t1	= clock;
+				x				= WAITBAR.x0(WAITBAR.i)+WAITBAR.dx(WAITBAR.i)*WAITBAR.k/WAITBAR.kmax;
+				t_remaining	= etime(WAITBAR.t1,WAITBAR.t0)*(1-x)/x;		% remaining time as number of seconds
+				t_end			= datenum(WAITBAR.t1)+t_remaining/86400;		% end time as fractional number of days
+				msg			= sprintf([...
+					'Indexing keys and values: %s %s: %1.0f/%1.0f ...   /   ',...
+					'Estimated remaining time: %s   /   ',...
+					'Estimated end time: %s'],...
+					fn_nwr,fn_keyval,inwr,inwrmax,...
+					dt_string(t_remaining),...
+					datestr(t_end,WAITBAR.formatOut));
+				set(GV_H.patch_waitbar,'XData',[0 x x 0]);
+				set(GV_H.text_waitbar,'String',msg);
+				drawnow;
 			end
 		end
+		
+		if ~use_testmethod
+			% Normal method, already tested:
+			
+			if OSMDATA.istag.(fn_nwr)(1,inwr)
+				for itag=1:size(OSMDATA.(fn_nwr)(1,inwr).tag,2)
+					kv_string	= OSMDATA.(fn_nwr)(1,inwr).tag(1,itag).(fn_kv);																% 0.840 / 327980
+					kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string));															% 0.135 / 327980
+					% kv_no	= length(kv_string)+10000*sum(uint64(kv_string).*uint64(1:length(kv_string)));
+					% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(10*(1:length(kv_string))));
+					% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(2.^(1:length(kv_string))));
+					ikvmax	= size(OSMDATA.(fn_keyval),1);
+					if ikvmax==0
+						ikv		= 1;
+					else
+						% The calculated number kv_no is not unique, maybe different texts have the same number!
+						ik_v	= find(OSMDATA.(fn_kv_no)==kv_no);																					% 2.101 / 327978
+						if isempty(ik_v)
+							ikv		= size(OSMDATA.(fn_keyval),1)+1;
+						else
+							ikv		= [];
+							for i_ik_v=1:length(ik_v)
+								if strcmp(kv_string,OSMDATA.(fn_keyval)(ik_v(i_ik_v),1).(fn_kv))											% 0.966 / 498575
+									% The key or value character array kv_string already exists at position ik_v(i_ik_v):
+									ikv		= ik_v(i_ik_v);
+									break
+								end
+							end
+							if isempty(ikv)
+								% At least one other character array has the same number as kv_string, kv_string is new:
+								ikv		= size(OSMDATA.(fn_keyval),1)+1;
+							end
+						end
+					end
+					if ikv>ikvmax
+						% new key string:
+						OSMDATA.(fn_keyval)(ikv,1).(fn_kv)	= kv_string;																		% 0.819 / 13648
+						OSMDATA.(fn_keyval)(ikv,1).N			= 0;
+						OSMDATA.(fn_keyval)(ikv,1).in			= [];
+						OSMDATA.(fn_keyval)(ikv,1).iw			= [];
+						OSMDATA.(fn_keyval)(ikv,1).ir			= [];
+						OSMDATA.(fn_keyval)(ikv,1).int		= [];
+						OSMDATA.(fn_keyval)(ikv,1).iwt		= [];
+						OSMDATA.(fn_keyval)(ikv,1).irt		= [];
+						OSMDATA.(fn_kv_no)(ikv,1)				= kv_no;
+					end
+					OSMDATA.(fn_keyval)(ikv,1).N				= OSMDATA.(fn_keyval)(ikv,1).N+1;											% 0.803 / 327980
+					OSMDATA.(fn_keyval)(ikv,1).(fn_inwr)	= [OSMDATA.(fn_keyval)(ikv,1).(fn_inwr)  inwr];							% 1.447 / 327980
+					OSMDATA.(fn_keyval)(ikv,1).(fn_inwrt)	= [OSMDATA.(fn_keyval)(ikv,1).(fn_inwrt) itag];							% 1.297 / 327980
+				end
+			end
+			
+		else
+			% New method:
+			
+			if OSMDATA.istag.(fn_nwr)(1,inwr)
+				for itag=1:size(OSMDATA.(fn_nwr)(1,inwr).tag,2)
+					kv_string	= OSMDATA.(fn_nwr)(1,inwr).tag(1,itag).(fn_kv);																% 0.840 / 327980
+					kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string));															% 0.135 / 327980
+					% kv_no	= length(kv_string)+10000*sum(uint64(kv_string).*uint64(1:length(kv_string)));
+					% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(10*(1:length(kv_string))));
+					% kv_no	= uint64(length(kv_string))+1000*sum(uint64(kv_string).*uint64(2.^(1:length(kv_string))));
+					if ikvmax==0
+						ikv											= 1;
+						ikvmax										= 1;
+						OSMDATA.(fn_keyval)(ikv,1).(fn_kv)	= kv_string;
+						OSMDATA.(fn_keyval)(ikv,1).N			= 0;
+						OSMDATA.(fn_keyval)(ikv,1).in			= [];
+						OSMDATA.(fn_keyval)(ikv,1).iw			= [];
+						OSMDATA.(fn_keyval)(ikv,1).ir			= [];
+						OSMDATA.(fn_keyval)(ikv,1).int		= [];
+						OSMDATA.(fn_keyval)(ikv,1).iwt		= [];
+						OSMDATA.(fn_keyval)(ikv,1).irt		= [];
+						OSMDATA.(fn_kv_no)(ikv,1)				= kv_no;
+					else
+						% The calculated number kv_no is not unique, maybe different texts have the same number!
+						[ikm1,ik_v,ikp1]		= find_sorted(OSMDATA.(fn_kv_no),kv_no,ikvmax);
+						% v		in ascending order sorted vector of numbers
+						% n		Number whose position in vector v is searched for
+						% kmax	number of elements in v
+						% km1		scalar     / empty:	index in v of the largest element <n
+						% k		Nx1 vector / empty:	all indices in v of elements =n
+						% kp1		scalar     / empty:	index in v of the smallest element >n
+						if isempty(ik_v)
+							% The number kv_no does not exist yet in OSMDATA.(fn_kv_no):
+							if isempty(ikm1)
+								% Insert the new number at the beginning:
+								OSMDATA.(fn_keyval)(2:(ikvmax+1),:)				= OSMDATA.(fn_keyval)(1:ikvmax,1);
+								OSMDATA.(fn_kv_no)(2:(ikvmax+1),:)				= OSMDATA.(fn_kv_no)(1:ikvmax,1);
+								ikv														= 1;
+							elseif isempty(ikp1)
+								% Insert the new number at the end:
+								ikv														= ikvmax+1;
+							else
+								% ik_v is empty: Insert the new number between ikm1 and ikp1:
+								OSMDATA.(fn_keyval)((ikp1+1):(ikvmax+1),:)	= OSMDATA.(fn_keyval)(ikp1:ikvmax,1);
+								OSMDATA.(fn_kv_no)((ikp1+1):(ikvmax+1),:)		= OSMDATA.(fn_kv_no)(ikp1:ikvmax,1);
+								ikv														= ikp1;
+							end
+							ikvmax										= ikvmax+1;
+							OSMDATA.(fn_keyval)(ikv,1).(fn_kv)	= kv_string;
+							OSMDATA.(fn_keyval)(ikv,1).N			= 0;
+							OSMDATA.(fn_keyval)(ikv,1).in			= [];
+							OSMDATA.(fn_keyval)(ikv,1).iw			= [];
+							OSMDATA.(fn_keyval)(ikv,1).ir			= [];
+							OSMDATA.(fn_keyval)(ikv,1).int		= [];
+							OSMDATA.(fn_keyval)(ikv,1).iwt		= [];
+							OSMDATA.(fn_keyval)(ikv,1).irt		= [];
+							OSMDATA.(fn_kv_no)(ikv,1)				= kv_no;
+						else
+							ikv		= [];
+							for i_ik_v=1:length(ik_v)
+								if strcmp(kv_string,OSMDATA.(fn_keyval)(ik_v(i_ik_v),1).(fn_kv))
+									% The key or value character array kv_string already exists at position ik_v(i_ik_v):
+									ikv		= ik_v(i_ik_v);
+									break
+								end
+							end
+							if isempty(ikv)
+								% At least one other character array has the same number as kv_string, but kv_string is new:
+								% Insert the new number before ik_v(1):
+								OSMDATA.(fn_keyval)((ik_v(1)+1):(ikvmax+1),:)	= OSMDATA.(fn_keyval)(ik_v(1):ikvmax,1);
+								OSMDATA.(fn_kv_no)((ik_v(1)+1):(ikvmax+1),:)		= OSMDATA.(fn_kv_no)(ik_v(1):ikvmax,1);
+								ikv		= ik_v(1);
+								ikvmax										= ikvmax+1;
+								OSMDATA.(fn_keyval)(ikv,1).(fn_kv)	= kv_string;
+								OSMDATA.(fn_keyval)(ikv,1).N			= 0;
+								OSMDATA.(fn_keyval)(ikv,1).in			= [];
+								OSMDATA.(fn_keyval)(ikv,1).iw			= [];
+								OSMDATA.(fn_keyval)(ikv,1).ir			= [];
+								OSMDATA.(fn_keyval)(ikv,1).int		= [];
+								OSMDATA.(fn_keyval)(ikv,1).iwt		= [];
+								OSMDATA.(fn_keyval)(ikv,1).irt		= [];
+								OSMDATA.(fn_kv_no)(ikv,1)				= kv_no;
+							end
+						end
+					end
+					OSMDATA.(fn_keyval)(ikv,1).N				= OSMDATA.(fn_keyval)(ikv,1).N+1;
+					OSMDATA.(fn_keyval)(ikv,1).(fn_inwr)	= [OSMDATA.(fn_keyval)(ikv,1).(fn_inwr)  inwr];
+					OSMDATA.(fn_keyval)(ikv,1).(fn_inwrt)	= [OSMDATA.(fn_keyval)(ikv,1).(fn_inwrt) itag];
+				end
+			end
+			
+		end
+		
 	end
 	
 	% Sort the keys/values by number:

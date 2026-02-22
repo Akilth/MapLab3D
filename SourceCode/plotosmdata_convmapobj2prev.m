@@ -3,11 +3,11 @@ function plotosmdata_convmapobj2prev
 % One map object (one row) in MAP_OBJECTS_TABLE must be selected.
 % The polygon will be converted into a preview polygon object.
 
-global GV GV_H MAP_OBJECTS
+global GV GV_H APP MAP_OBJECTS
 
 try
 	
-	% Assigne imapobj_plotno:
+	% Assign imapobj_plotno:
 	imapobj_plotno				= false(size(MAP_OBJECTS,1),1);
 	for imapobj=1:size(MAP_OBJECTS,1)
 		for r=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -33,8 +33,6 @@ try
 	lines_prev			= [];
 	poly_bgd_prev		= [];			% ud.level=0: background
 	poly_fgd_prev		= [];			% ud.level=1: foreground
-	dscr_prev			= MAP_OBJECTS(imapobj_plotno(1,1),1).dscr;
-	text_prev			= MAP_OBJECTS(imapobj_plotno(1,1),1).text;
 	for k=1:size(imapobj_plotno,1)
 		lines_prev(k,1).segm			= zeros(0,1);
 		poly_bgd_prev(k,1).poly		= polyshape();
@@ -46,8 +44,8 @@ try
 					lines_prev(k,1).segm(end+1,1).xy	= [...
 						MAP_OBJECTS(imapobj_plotno(k,1),1).h(i,1).XData(:) ...
 						MAP_OBJECTS(imapobj_plotno(k,1),1).h(i,1).YData(:)];
-					lines_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;
-					lines_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;
+					lines_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;		% character array
+					lines_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;		% cell array
 				case 'polygon'
 					% Polygon:
 					level			= 0;
@@ -56,24 +54,36 @@ try
 					end
 					if level==0
 						poly_bgd_prev(k,1).poly(i,1)	= MAP_OBJECTS(imapobj_plotno(k,1),1).h(i,1).Shape;
-						poly_bgd_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;
-						poly_bgd_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;
+						poly_bgd_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;		% character array
+						poly_bgd_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;		% cell array
 					else
 						poly_fgd_prev(k,1).poly(i,1)	= MAP_OBJECTS(imapobj_plotno(k,1),1).h(i,1).Shape;
-						poly_fgd_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;
-						poly_fgd_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;
+						poly_fgd_prev(k,1).dscr	= MAP_OBJECTS(imapobj_plotno(k,1),1).dscr;		% character array
+						poly_fgd_prev(k,1).text	= MAP_OBJECTS(imapobj_plotno(k,1),1).text;		% cell array
 					end
 			end
 		end
 	end
 	
 	% Create preview objects:
-	imapobj_new_v		= [];
+	imapobj_new_v					= [];
+	poly_bgd_prev_united.poly	= polyshape();
+	poly_fgd_prev_united.poly	= polyshape();
+	poly_bgd_prev_united.dscr	= nan;
+	poly_fgd_prev_united.dscr	= nan;
+	poly_bgd_prev_united.text	= nan;
+	poly_fgd_prev_united.text	= nan;
 	for k=1:size(imapobj_plotno,1)
 		
-		isline		= false;
-		ispoly_bgd	= false;
-		ispoly_fgd	= false;
+		isline			= false;
+		ispoly_bgd		= false;
+		ispoly_fgd		= false;
+		dscr_prev		= '';
+		dscr_prev_bgd	= '';
+		dscr_prev_fgd	= '';
+		text_prev		= {''};
+		text_prev_bgd	= {''};
+		text_prev_fgd	= {''};
 		if size(lines_prev(k,1).segm,1)>=1
 			isline		= true;
 			dscr_prev	= lines_prev(k,1).dscr;
@@ -92,6 +102,34 @@ try
 		if ispoly_bgd&&ispoly_fgd
 			dscr_prev_bgd	= sprintf('%s: background',poly_bgd_prev(k,1).dscr);
 			dscr_prev_fgd	= sprintf('%s: foreground',poly_fgd_prev(k,1).dscr);
+		end
+		if ~isnan(poly_bgd_prev_united.dscr)
+			if ~strcmp(poly_bgd_prev_united.dscr,dscr_prev_bgd)
+				poly_bgd_prev_united.dscr	= '';
+			end
+		else
+			poly_bgd_prev_united.dscr		= dscr_prev_bgd;
+		end
+		if ~isnan(poly_fgd_prev_united.dscr)
+			if ~strcmp(poly_fgd_prev_united.dscr,dscr_prev_fgd)
+				poly_fgd_prev_united.dscr	= '';
+			end
+		else
+			poly_fgd_prev_united.dscr		= dscr_prev_fgd;
+		end
+		if iscell(poly_bgd_prev_united.text)
+			if ~strcmp(poly_bgd_prev_united.text,text_prev_bgd)
+				poly_bgd_prev_united.text	= '';
+			end
+		else
+			poly_bgd_prev_united.text		= text_prev_bgd;
+		end
+		if iscell(poly_fgd_prev_united.text)
+			if ~strcmp(poly_fgd_prev_united.text,text_prev_fgd)
+				poly_fgd_prev_united.text	= '';
+			end
+		else
+			poly_fgd_prev_united.text		= text_prev_fgd;
 		end
 		
 		if isline
@@ -143,6 +181,136 @@ try
 		end
 		
 		if ispoly_bgd
+			if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+				imapobj_new		= size(MAP_OBJECTS,1)+1;
+				imapobj_new_v	= [imapobj_new_v;imapobj_new];
+				% Userdata:
+				ud					= [];
+				ud.in				= [];
+				ud.iw				= [];
+				ud.ir				= [];
+				ud.rotation		= 0;
+			end
+			% Plot the preview as polygon:
+			i_h				= 0;
+			for i=1:size(poly_bgd_prev(k,1).poly,1)
+				if numboundaries(poly_bgd_prev(k,1).poly(i,1))>0
+					if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+						ud.shape0		= poly_bgd_prev(k,1).poly(i,1);
+						i_h		= i_h+1;
+						if ~ishandle(GV_H.ax_2dmap)
+							errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
+						end
+						MAP_OBJECTS(imapobj_new,1).h(i_h,1)	= plot(GV_H.ax_2dmap,...
+							poly_bgd_prev(k,1).poly(i,1),...
+							'EdgeColor',GV.preview.EdgeColor,...
+							'FaceColor',GV.preview.FaceColor,...
+							'EdgeAlpha', GV.visibility.show.edgealpha,...
+							'FaceAlpha',GV.visibility.show.facealpha,...
+							'Visible'  ,'on',...
+							'LineStyle',GV.preview.LineStyle,...
+							'LineWidth',GV.preview.LineWidth,...
+							'UserData',ud,...
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
+					else
+						poly_bgd_prev_united.poly	= union(poly_bgd_prev_united.poly,poly_bgd_prev(k,1).poly(i,1));
+					end
+				end
+			end
+			if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+				% Save relevant data in the structure MAP_OBJECTS:
+				[xcenter,ycenter]						= centroid(poly_bgd_prev(k,1).poly);
+				MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
+				MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
+				MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev_bgd;
+				MAP_OBJECTS(imapobj_new,1).x		= xcenter;
+				MAP_OBJECTS(imapobj_new,1).y		= ycenter;
+				MAP_OBJECTS(imapobj_new,1).text	= text_prev_bgd;
+				MAP_OBJECTS(imapobj_new,1).mod	= false;
+				MAP_OBJECTS(imapobj_new,1).cncl	= 0;
+				MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
+				MAP_OBJECTS(imapobj_new,1).vis0	= 1;
+			end
+		end
+		
+		if ispoly_fgd
+			if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+				imapobj_new		= size(MAP_OBJECTS,1)+1;
+				imapobj_new_v	= [imapobj_new_v;imapobj_new];
+				% Userdata:
+				ud					= [];
+				ud.in				= [];
+				ud.iw				= [];
+				ud.ir				= [];
+				ud.rotation		= 0;
+			end
+			% Plot the preview as polygon:
+			i_h				= 0;
+			for i=1:size(poly_fgd_prev(k,1).poly,1)
+				if numboundaries(poly_fgd_prev(k,1).poly(i,1))>0
+					if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+						ud.shape0		= poly_fgd_prev(k,1).poly(i,1);
+						i_h		= i_h+1;
+						if ~ishandle(GV_H.ax_2dmap)
+							errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
+						end
+						MAP_OBJECTS(imapobj_new,1).h(i_h,1)	= plot(GV_H.ax_2dmap,...
+							poly_fgd_prev(k,1).poly(i,1),...
+							'EdgeColor',GV.preview.EdgeColor,...
+							'FaceColor',GV.preview.FaceColor,...
+							'EdgeAlpha', GV.visibility.show.edgealpha,...
+							'FaceAlpha',GV.visibility.show.facealpha,...
+							'Visible'  ,'on',...
+							'LineStyle',GV.preview.LineStyle,...
+							'LineWidth',GV.preview.LineWidth,...
+							'UserData',ud,...
+							'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
+					else
+						poly_fgd_prev_united.poly	= union(poly_fgd_prev_united.poly,poly_fgd_prev(k,1).poly(i,1));
+					end
+				end
+			end
+			if APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value
+				% Save relevant data in the structure MAP_OBJECTS:
+				[xcenter,ycenter]						= centroid(poly_fgd_prev(k,1).poly);
+				MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
+				MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
+				MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev_fgd;
+				MAP_OBJECTS(imapobj_new,1).x		= xcenter;
+				MAP_OBJECTS(imapobj_new,1).y		= ycenter;
+				MAP_OBJECTS(imapobj_new,1).text	= text_prev_fgd;
+				MAP_OBJECTS(imapobj_new,1).mod	= false;
+				MAP_OBJECTS(imapobj_new,1).cncl	= 0;
+				MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
+				MAP_OBJECTS(imapobj_new,1).vis0	= 1;
+			end
+		end
+		
+	end
+	
+	% Plot united preview polygons:
+	if    ~APP.Mod_ConvMapobjToPrev_Apart_CheckBox.Value&&(...
+			(numboundaries(poly_bgd_prev_united.poly)~=0)||...
+			(numboundaries(poly_fgd_prev_united.poly)~=0)     )
+		
+		ispoly_bgd	= false;
+		ispoly_fgd	= false;
+		if numboundaries(poly_bgd_prev_united.poly)>=1
+			ispoly_bgd		= true;
+			dscr_prev_bgd	= poly_bgd_prev_united.dscr;
+			text_prev_bgd	= poly_bgd_prev_united.text;
+		end
+		if numboundaries(poly_fgd_prev_united.poly)>=1
+			ispoly_fgd		= true;
+			dscr_prev_fgd	= poly_fgd_prev_united.dscr;
+			text_prev_fgd	= poly_fgd_prev_united.text;
+		end
+		if ispoly_bgd&&ispoly_fgd
+			dscr_prev_bgd	= sprintf('%s: background',poly_bgd_prev_united.dscr);
+			dscr_prev_fgd	= sprintf('%s: foreground',poly_fgd_prev_united.dscr);
+		end
+		
+		if ispoly_bgd
 			imapobj_new		= size(MAP_OBJECTS,1)+1;
 			imapobj_new_v	= [imapobj_new_v;imapobj_new];
 			% Userdata:
@@ -151,30 +319,24 @@ try
 			ud.iw				= [];
 			ud.ir				= [];
 			ud.rotation		= 0;
+			ud.shape0		= poly_bgd_prev_united.poly;
 			% Plot the preview as polygon:
-			i_h				= 0;
-			for i=1:size(poly_bgd_prev(k,1).poly,1)
-				if numboundaries(poly_bgd_prev(k,1).poly(i,1))>0
-					ud.shape0		= poly_bgd_prev(k,1).poly(i,1);
-					i_h		= i_h+1;
-					if ~ishandle(GV_H.ax_2dmap)
-						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
-					end
-					MAP_OBJECTS(imapobj_new,1).h(i_h,1)	= plot(GV_H.ax_2dmap,...
-						poly_bgd_prev(k,1).poly(i,1),...
-						'EdgeColor',GV.preview.EdgeColor,...
-						'FaceColor',GV.preview.FaceColor,...
-						'EdgeAlpha', GV.visibility.show.edgealpha,...
-						'FaceAlpha',GV.visibility.show.facealpha,...
-						'Visible'  ,'on',...
-						'LineStyle',GV.preview.LineStyle,...
-						'LineWidth',GV.preview.LineWidth,...
-						'UserData',ud,...
-						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
-				end
+			if ~ishandle(GV_H.ax_2dmap)
+				errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 			end
+			MAP_OBJECTS(imapobj_new,1).h	= plot(GV_H.ax_2dmap,...
+				poly_bgd_prev_united.poly,...
+				'EdgeColor',GV.preview.EdgeColor,...
+				'FaceColor',GV.preview.FaceColor,...
+				'EdgeAlpha', GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha,...
+				'Visible'  ,'on',...
+				'LineStyle',GV.preview.LineStyle,...
+				'LineWidth',GV.preview.LineWidth,...
+				'UserData',ud,...
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Save relevant data in the structure MAP_OBJECTS:
-			[xcenter,ycenter]						= centroid(poly_bgd_prev(k,1).poly);
+			[xcenter,ycenter]						= centroid(poly_bgd_prev_united.poly);
 			MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
 			MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
 			MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev_bgd;
@@ -196,30 +358,24 @@ try
 			ud.iw				= [];
 			ud.ir				= [];
 			ud.rotation		= 0;
+			ud.shape0		= poly_fgd_prev_united.poly;
 			% Plot the preview as polygon:
-			i_h				= 0;
-			for i=1:size(poly_fgd_prev(k,1).poly,1)
-				if numboundaries(poly_fgd_prev(k,1).poly(i,1))>0
-					ud.shape0		= poly_fgd_prev(k,1).poly(i,1);
-					i_h		= i_h+1;
-					if ~ishandle(GV_H.ax_2dmap)
-						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
-					end
-					MAP_OBJECTS(imapobj_new,1).h(i_h,1)	= plot(GV_H.ax_2dmap,...
-						poly_fgd_prev(k,1).poly(i,1),...
-						'EdgeColor',GV.preview.EdgeColor,...
-						'FaceColor',GV.preview.FaceColor,...
-						'EdgeAlpha', GV.visibility.show.edgealpha,...
-						'FaceAlpha',GV.visibility.show.facealpha,...
-						'Visible'  ,'on',...
-						'LineStyle',GV.preview.LineStyle,...
-						'LineWidth',GV.preview.LineWidth,...
-						'UserData',ud,...
-						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
-				end
+			if ~ishandle(GV_H.ax_2dmap)
+				errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
 			end
+			MAP_OBJECTS(imapobj_new,1).h	= plot(GV_H.ax_2dmap,...
+				poly_fgd_prev_united.poly,...
+				'EdgeColor',GV.preview.EdgeColor,...
+				'FaceColor',GV.preview.FaceColor,...
+				'EdgeAlpha', GV.visibility.show.edgealpha,...
+				'FaceAlpha',GV.visibility.show.facealpha,...
+				'Visible'  ,'on',...
+				'LineStyle',GV.preview.LineStyle,...
+				'LineWidth',GV.preview.LineWidth,...
+				'UserData',ud,...
+				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 			% Save relevant data in the structure MAP_OBJECTS:
-			[xcenter,ycenter]						= centroid(poly_fgd_prev(k,1).poly);
+			[xcenter,ycenter]						= centroid(poly_fgd_prev_united.poly);
 			MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
 			MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
 			MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev_fgd;

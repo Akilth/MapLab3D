@@ -91,7 +91,7 @@ par_bgd{3} = sampling       The ends of the lines consists of semicircles,
 global GV
 
 try
-
+	
 	% Initializations:
 	if nargin<2
 		height_image	= 10;
@@ -195,7 +195,7 @@ try
 	ymin				= -height_image/2;
 	xmax				= w_image/2;
 	ymax				= height_image/2;
-
+	
 	% Testplots:
 	if testplot==1
 		hf_testplot	= figure(100000);
@@ -255,7 +255,7 @@ try
 		hold(ha_testplot3,'on');
 		axis(ha_testplot3,'equal');
 	end
-
+	
 	% Execute bwboundaries:
 	% requirement: the boundaries have to run on the black pixels of the image.
 	% b_i: inner boundary
@@ -329,13 +329,13 @@ try
 			end
 		end
 	end
-
+	
 	% Convert pixel number to mm:
 	for i=1:length(contour_obj)
 		contour_obj{i,1}(:,1) = xmin+(contour_obj{i,1}(:,1)-1)/(nx-1)*(xmax-xmin);
 		contour_obj{i,1}(:,2) = ymin+(contour_obj{i,1}(:,2)-1)/(ny-1)*(ymax-ymin);
 	end
-
+	
 	% Convert contour to polygon:
 	if GV.warnings_off
 		warning('off','MATLAB:polyshape:repairedBySimplify');
@@ -351,7 +351,7 @@ try
 	if GV.warnings_off
 		warning('on','MATLAB:polyshape:repairedBySimplify');
 	end
-
+	
 	% Add frame:
 	poly_frame	= polyshape();
 	switch no_frame
@@ -419,7 +419,7 @@ try
 				end
 			end
 	end
-
+	
 	% Add the frame to the text and add the background:
 	% (In the case of no_bgd=5, the frame must be added after adding the background.)
 	switch no_bgd
@@ -458,14 +458,14 @@ try
 					ylim(1)-bgd_distance+bgd_radiuscorners];
 				poly_bgd	= rmholes(line2poly(x,y,{bgd_radiuscorners*2;bgd_sampling;0},1,[],[],'round'));
 			end
-
+			
 		case 3
 			% Convex hull background:
 			poly_obj		= union(poly_obj,poly_frame);
 			poly_bgd		= poly_obj;
 			poly_bgd		= convhull(poly_bgd);
 			poly_bgd		= polybuffer(poly_bgd,bgd_distance);
-
+			
 		case 4
 			% Connect all the objects with lines:
 			% Baseline (shouldn't stick out at the edges):
@@ -518,7 +518,7 @@ try
 						'LineStyle','-','LineWidth',1.5,'Marker','.','MarkerSize',25,'Color','m');
 				end
 			end
-
+			
 		case 5
 			% Connect only objects with lines, whose x-values overlap:
 			% In most cases this should result in individual letters being connected, e. g.: connect the dot on the i.
@@ -592,15 +592,15 @@ try
 			% The frame must be added at the end, otherwise there would be detected an overlap with the letters:
 			poly_obj		= union(poly_obj,poly_frame);
 			poly_bgd		= union(poly_bgd,poly_frame);
-
+			
 	end
 	% Intersect the objects with the background:
 	poly_obj		= intersect(poly_obj,poly_bgd);
-
+	
 	% Rotate the objects:
 	poly_obj		= rotate(poly_obj,rotation);
 	poly_bgd		= rotate(poly_bgd,rotation);
-
+	
 	% Testplots:
 	if testplot2
 		set(htestplot2_r,'XData',[],'YData',[]);
@@ -611,13 +611,37 @@ try
 		end
 	end
 	if testplot==1
-		plot(ha_testplot,poly_bgd)		% ,'LineWidth',2
-		plot(ha_testplot,poly_obj)
-		plot(ha_testplot,...
+		h_tp_poly_bgd	= plot(ha_testplot,poly_bgd)	;	% ,'LineWidth',2
+		h_tp_poly_obj	= plot(ha_testplot,poly_obj);
+		h_tp_image		= plot(ha_testplot,...
 			[xmin xmax xmax xmin xmin],...
 			[ymin ymin ymax ymax ymin],':k');
+		obj_extent_l		= xmin+(xmax-xmin)*obj_extent(1);
+		obj_extent_b		= ymin+(ymax-ymin)*obj_extent(2);
+		obj_extent_w		= (xmax-xmin)*obj_extent(3);
+		obj_extent_h		= (ymax-ymin)*obj_extent(4);
+		h_tp_obj_extent	= plot(ha_testplot,[...
+			obj_extent_l ...
+			obj_extent_l+obj_extent_w ...
+			obj_extent_l+obj_extent_w ...
+			obj_extent_l ...
+			obj_extent_l],[...
+			obj_extent_b ...
+			obj_extent_b ...
+			obj_extent_b+obj_extent_h ...
+			obj_extent_b+obj_extent_h ...
+			obj_extent_b],'--k');
+		h_tp_poly_bgd.DisplayName		= 'poly_bgd';
+		h_tp_poly_obj.DisplayName		= 'poly_obj';
+		h_tp_image.DisplayName			= 'image';
+		h_tp_obj_extent.DisplayName	= 'obj_extent';
+		legend(ha_testplot,[...
+			h_tp_poly_bgd ...
+			h_tp_poly_obj ...
+			h_tp_image ...
+			h_tp_obj_extent],'Interpreter','none');
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end
@@ -635,21 +659,21 @@ function [b_i,b_o]=move_the_contour_outwards(b,smoothing,nx,ny,...
 % b_o:		outer contour
 
 try
-
+	
 	tol_mm		= 1e-8;					% Paths are rounded to this tolerance in order to avoid rounding errors.
 	logtol		= -8;
-
+	
 	% testplots:
 	if testplot1
 		fprintf(1,'\nk=%g: size(b{k},1)=%8.0f',k,size(b,1));
 	end
-
+	
 	% Ignore a single pixel:
 	b_i_c	= [];
 	if size(b,1)>3
 		b_i_c	= b(:,2)+1i*b(:,1);		% Represent points as a complex number.
 	end
-
+	
 	% Delete points with reversal of direction:
 	if testplot1&&(length(b_i_c)>=3)&&((ktest==k)||(ktest==-1))
 		hl_bic	= plot(ha_testplot1,real(b_i_c)   ,imag(b_i_c)   ,'m','LineWidth',1,'LineStyle',':','Marker','.');
@@ -687,13 +711,13 @@ try
 		end
 		set(hl_bic,'XData',real(b_i_c),'YData',imag(b_i_c));
 	end
-
+	
 	% Delete duplicate points in b_i_c:
 	if length(b_i_c)>=3
 		i_v	= vindexrest(1:(length(b_i_c)+1),length(b_i_c));
 		b_i_c(abs(diff(b_i_c(i_v)))<tol_mm)	= [];
 	end
-
+	
 	% Create outline b_o_c:
 	b_o_c	= [];
 	if length(b_i_c)>=3
@@ -745,17 +769,17 @@ try
 			set_breakpoint=1;
 		end
 	end
-
+	
 	% Smoothing:
 	if (length(b_i_c)>=3)&&(smoothing==1)
 		b_i_c	= b_smoothing(b_i_c,nx,ny,testplot2,ha_testplot2,xmin,xmax,ymin,ymax);
 		b_o_c	= b_smoothing(b_o_c,nx,ny,testplot2,ha_testplot2,xmin,xmax,ymin,ymax);
 	end
-
+	
 	% Delete duplicate points:
 	b_i_c	= unique(b_i_c,'stable');
 	b_o_c	= unique(b_o_c,'stable');
-
+	
 	% Assign results:
 	if length(b_i_c)>=3
 		b_i	= round([real(b_i_c) imag(b_i_c)],-logtol);
@@ -767,14 +791,14 @@ try
 	if testplot1
 		fprintf(1,' ,  size(b_i,1)=%8.0f ,  size(b_o,1)=%8.0f\n',size(b_i,1),size(b_o,1));
 	end
-
+	
 	% Testplots:
 	if testplot1&&(length(b_i_c)>=3)&&(length(b_o_c)>=3)&&((ktest==k)||(ktest==-1))
 		plot(ha_testplot1,real(b_i_c),imag(b_i_c),'m','LineWidth',1,'LineStyle','-' ,'Marker','o');
 		plot(ha_testplot1,real(b_o_c),imag(b_o_c),'c','LineWidth',1,'LineStyle','--','Marker','s');
 		set_breakpoint=1;
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end
@@ -785,22 +809,22 @@ end
 function b_c = b_smoothing(b_c,nx,ny,testplot2,ha_testplot2,xmin,xmax,ymin,ymax)
 
 try
-
+	
 	logtol				= -8;
 	no_smoothing_1		= 2;		% 2
-
+	
 	switch no_smoothing_1
 		case 1
-
+			
 			% smooths the complex data in b_c with a moving average over 3 values:
 			zmax	= length(b_c);
 			zm1_v	= vindexrest( 0:(zmax-1),zmax);
 			z_v	= vindexrest( 1:(zmax  ),zmax);
 			zp1_v	= vindexrest( 2:(zmax+1),zmax);
 			b_c(z_v)	= mean([b_c(zm1_v) b_c(z_v) b_c(zp1_v)],2);
-
+			
 		case 2
-
+			
 			% smooths the complex data in b_c with a moving average over 5 values:
 			zmax	= length(b_c);
 			zm2_v	= vindexrest(-1:(zmax-2),zmax);
@@ -809,9 +833,9 @@ try
 			zp1_v	= vindexrest( 2:(zmax+1),zmax);
 			zp2_v	= vindexrest( 3:(zmax+2),zmax);
 			b_c(z_v)	= mean([b_c(zm2_v) b_c(zm1_v) b_c(z_v) b_c(zp1_v) b_c(zp2_v)],2);
-
+			
 		case 3
-
+			
 			% smooths the complex data in b_c by deleting the corner point of 90 ° corners:
 			zmax	= length(b_c);
 			zm2_v	= vindexrest(-1:(zmax-2),zmax);
@@ -836,13 +860,13 @@ try
 				~( imag(b_c(z_v))==ny            );
 			% Erase corners:
 			b_c(z_loeschen)		= [];
-
+			
 	end
-
+	
 	no_smoothing_2		= 4;
 	switch no_smoothing_2
 		case 1
-
+			
 			% Reduce the number of points by deleting the middle point of three points that lie on a line.
 			% The corner points remain.
 			zmax			= length(b_c);
@@ -852,9 +876,9 @@ try
 			dbm1_v		= b_c(z_v)-b_c(zm1_v);
 			dbp1_v		= b_c(zp1_v)-b_c(z_v);
 			b_c(round(dbm1_v,-logtol)==round(dbp1_v,-logtol))	= [];
-
+			
 		case 2
-
+			
 			% Reduce the number of points by deleting the middle point of three points that lie on a line.
 			% The corner points remain.
 			zmax			= length(b_c);
@@ -864,13 +888,13 @@ try
 			dbm1_v		= b_c(z_v)-b_c(zm1_v);
 			dbp1_v		= b_c(zp1_v)-b_c(z_v);
 			b_c(round(dbm1_v,-logtol)==round(dbp1_v,-logtol))	= [];
-
+			
 			% Delete every second point:
 			zmax			= length(b_c);
 			b_c(1:2:zmax)	= [];
-
+			
 		case 3
-
+			
 			% Reduce the number of points by deleting the middle point of three points that lie on a line.
 			% The corner points remain.
 			zmax			= length(b_c);
@@ -880,9 +904,9 @@ try
 			dbm1_v		= b_c(z_v)-b_c(zm1_v);
 			dbp1_v		= b_c(zp1_v)-b_c(z_v);
 			b_c(round(dbm1_v,-logtol)==round(dbp1_v,-logtol))	= [];
-
+			
 			b_c_orig		= b_c;
-
+			
 			if testplot2
 				% invert y-axis:
 				b_c_x_pixel	=      real(b_c);
@@ -892,14 +916,14 @@ try
 				b_c_y_mm	= ymin+(b_c_y_pixel-1)/(ny-1)*(ymax-ymin);
 				plot(ha_testplot2,b_c_x_mm,b_c_y_mm,'LineStyle','-' ,'Marker','.','Color','b');
 			end
-
+			
 			% Reduce the number of points by deleting the middle point of three points if
 			% the deviation x is less than tol:
 			tol		= 0.25;					% unit(tol) = pixel !   Draft: 0.5, fine: 0.25
 			zmax		= length(b_c);
 			zmax_old	= zmax+1;
 			while zmax<zmax_old
-
+				
 				%                    + b_c(z)
 				%                   /^
 				%                  / |
@@ -907,9 +931,9 @@ try
 				%                /   |
 				%               /    v
 				%     b_c(zm1) +------------------+ b_c(zp1)
-
+				
 				zmax_old	= zmax;
-
+				
 				z_v		= vindexrest(1:2:zmax,zmax);
 				zm1_v		= vindexrest(z_v-1,zmax);
 				zp1_v		= vindexrest(z_v+1,zmax);
@@ -928,7 +952,7 @@ try
 					break
 				end
 				zmax		= length(b_c);
-
+				
 				z_v		= vindexrest(2:2:zmax,zmax);
 				zm1_v		= vindexrest(z_v-1,zmax);
 				zp1_v		= vindexrest(z_v+1,zmax);
@@ -947,16 +971,16 @@ try
 					break
 				end
 				zmax		= length(b_c);
-
+				
 			end
-
+			
 		case 4
-
+			
 			% Do not delete a point, if the ratio of the distance to the the point before and after ist greater
 			% than dbp1_dbm1_ratio_max.
 			% This maintains the direction of long straight lines (for example, the sides of an "I" remain straight).
 			dbp1_dbm1_ratio_max	= 6;					% !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+			
 			% Reduce the number of points by deleting the middle point of three points that lie on a line.
 			% The corner points remain.
 			zmax			= length(b_c);
@@ -966,9 +990,9 @@ try
 			dbm1_v		= b_c(z_v)-b_c(zm1_v);
 			dbp1_v		= b_c(zp1_v)-b_c(z_v);
 			b_c(round(dbm1_v,-logtol)==round(dbp1_v,-logtol))	= [];
-
+			
 			b_c_orig		= b_c;
-
+			
 			% Testing:
 			testing_case4	= false;
 			if testing_case4
@@ -980,7 +1004,7 @@ try
 				axis equal
 				setbreakpoint1	= 1;
 			end
-
+			
 			if testplot2
 				% invert y-axis:
 				b_c_x_pixel	=      real(b_c);
@@ -990,14 +1014,14 @@ try
 				b_c_y_mm	= ymin+(b_c_y_pixel-1)/(ny-1)*(ymax-ymin);
 				plot(ha_testplot2,b_c_x_mm,b_c_y_mm,'LineWidth',1,'LineStyle','-' ,'Marker','.','Color','b');
 			end
-
+			
 			% Reduce the number of points by deleting the middle point of three points if
 			% the deviation x is less than tol:
 			tol		= 0.35;					% unit(tol) = pixel !   Draft: 0.5, fine: 0.25 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			zmax		= length(b_c);
 			zmax_old	= zmax+1;
 			while zmax<zmax_old
-
+				
 				%                    + b_c(z)
 				%                   /^
 				%                  / |
@@ -1005,9 +1029,9 @@ try
 				%                /   |
 				%               /    v
 				%     b_c(zm1) +------------------+ b_c(zp1)
-
+				
 				zmax_old	= zmax;
-
+				
 				% deviation of the line to the middle point:
 				z_v		= vindexrest(1:2:zmax,zmax);
 				zm1_v		= vindexrest(z_v-1,zmax);
@@ -1017,7 +1041,7 @@ try
 				phi		= angle(dbm1_v)-angle(dbm1p1_v);
 				x			= abs(dbm1_v).*sin(phi);
 				z_delete	= z_v(abs(x)<tol);
-
+				
 				% Do not delete a point, if the ratio of the distance to the the point before and after ist greater
 				% than dbp1_dbm1_ratio_max:
 				zm1_delete	= vindexrest(z_delete-1,zmax);
@@ -1035,7 +1059,7 @@ try
 						'LineWidth',1.5,'LineStyle','none' ,'Marker','x','Color','c');
 					setbreakpoint1	= 1;
 				end
-
+				
 				if length(find(z_delete))<=(length(b_c)-4)
 					% delete points:
 					b_c(z_delete)		= [];
@@ -1045,7 +1069,7 @@ try
 					break
 				end
 				zmax		= length(b_c);
-
+				
 				% deviation of the line to the middle point:
 				z_v		= vindexrest(2:2:zmax,zmax);
 				zm1_v		= vindexrest(z_v-1,zmax);
@@ -1055,7 +1079,7 @@ try
 				phi		= angle(dbm1_v)-angle(dbm1p1_v);
 				x			= abs(dbm1_v).*sin(phi);
 				z_delete	= z_v(abs(x)<tol);
-
+				
 				% Do not delete a point, if the ratio of the distance to the the point before and after ist greater
 				% than dbp1_dbm1_ratio_max:
 				zm1_delete	= vindexrest(z_delete-1,zmax);
@@ -1068,7 +1092,7 @@ try
 					(dbp1_dbm1_ratio_v>dbp1_dbm1_ratio_max)|...
 					(dbm1_dbp1_ratio_v>dbp1_dbm1_ratio_max);
 				z_delete(zpm1_delete_not)		= [];
-
+				
 				if length(find(z_delete))<=(length(b_c)-4)
 					% delete points:
 					b_c(z_delete)		= [];
@@ -1078,11 +1102,11 @@ try
 					break
 				end
 				zmax		= length(b_c);
-
+				
 			end
-
+			
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end
@@ -1093,7 +1117,7 @@ function [poly_bgd,conn_lines]=connect_regions(poly_bgd,bgd_linewidth,bgd_sampli
 % Connect individual objects/regions
 
 try
-
+	
 	conn_lines			= polyshape();
 	poly_bgd				= sortregions(poly_bgd,'area','descend');
 	poly_bgd_regions	= regions(poly_bgd);
@@ -1156,7 +1180,7 @@ try
 		poly_bgd					= union(poly_bgd,conn_line);
 		conn_lines				= union(conn_lines,conn_line);
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

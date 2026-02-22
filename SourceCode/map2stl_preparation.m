@@ -463,11 +463,11 @@ try
 								obj_all.poly(iobj2),...					% poly2 (Subtrahend)
 								~...											% dbuffer
 								]=subtract_dside(...
+								obj_all.poly(iobj1),...					% poly1
+								obj_all.poly(iobj2),...					% poly2 (Subtrahend)
 								PP_local,...								% PP_local
 								obj_all.colno(iobj1),...				% colno1
-								obj_all.colno(iobj2),...				% colno2
-								obj_all.poly(iobj1),...					% poly1
-								obj_all.poly(iobj2));					% poly2 (Subtrahend)
+								obj_all.colno(iobj2));					% colno2
 							
 							% % old:
 							% % See also plotosmdata_simplify.m
@@ -986,6 +986,10 @@ try
 			PRINTDATA.obj_union_equalcolors(colno,1)	= polyshape();
 		end
 	end
+	
+	% PRINTDATA.obj_union_equalcolors_0:
+	% Possibility to reset_uec all changes to PRINTDATA.obj_union_equalcolors:
+	PRINTDATA.obj_union_equalcolors_0	= PRINTDATA.obj_union_equalcolors;
 	
 	% After calculation of PRINTDATA.obj_union_equalcolors:
 	% Set the selectable color numbers for creating cutting lines.
@@ -1534,11 +1538,11 @@ try
 										obj_reg.poly(iobj1),...					% poly2 (Subtrahend)
 										~...											% dbuffer
 										]=subtract_dside(...
+										obj_reg.poly(iobj2),...					% poly1
+										obj_reg.poly(iobj1),...					% poly2 (Subtrahend)
 										PP_local,...								% PP_local
 										colno1,...									% colno1
-										colno2,...									% colno2
-										obj_reg.poly(iobj2),...					% poly1
-										obj_reg.poly(iobj1));					% poly2 (Subtrahend)
+										colno2);										% colno2
 									
 									% % old:
 									% % Two non-stand alone colors do not have to overlap:
@@ -2105,7 +2109,7 @@ try
 		end
 		
 		% Save testdata for testing the function map2stl_preparation_zbot.m:
-		save_testdata	= true;
+		save_testdata	= false;
 		stop_here		= false;
 		if ~isdeployed&&save_testdata
 			C=who;

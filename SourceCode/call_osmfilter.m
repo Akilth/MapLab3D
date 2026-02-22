@@ -174,6 +174,7 @@ try
 	for r=1:size(tag,1)
 		% r: row number: the criteria of all rows are combined by a logical AND.
 		filter_r_str	= '';
+		or_str			= '';
 		for c=1:size(tag,2)
 			% c: column number: the criteria of all columns of one row are combined by a logical OR.
 			key	= tag(r,c).k;
@@ -206,15 +207,12 @@ try
 					op2	= op1;
 			end
 			% Filter string:
-			if c==1
-				or_str	= '';
-			else
-				or_str	= ' or ';
-			end
 			if ~isempty(key)&&~isempty(val)
 				filter_r_str	= sprintf('%s%s%s%s%s',filter_r_str,or_str,key,op2,val);
+				or_str			= ' or ';
 			elseif ~isempty(key)
 				filter_r_str	= sprintf('%s%s%s=',filter_r_str,or_str,key);
+				or_str			= ' or ';
 			elseif ~isempty(val)
 				error_str	= sprintf([...
 					'Row = %g\n',...

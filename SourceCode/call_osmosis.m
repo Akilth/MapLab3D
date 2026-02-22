@@ -38,7 +38,7 @@ try
 	lonmin_txt			= 'Longitude of the left edge of the bounding box (default -180°)';
 	lonmax_txt			= 'Longitude of the right edge of the bounding box (default 180°)';
 	latmin_txt			= 'Latitude of the bottom edge of the bounding box (default -90°)';
-	latmax_txt			= 'Latitude of the top edge of the bounding box (default 90°)     ';
+	latmax_txt			= 'Latitude of the top edge of the bounding box (default 90°)    ';
 	
 	% Display state:
 	t_start_statebusy		= clock;

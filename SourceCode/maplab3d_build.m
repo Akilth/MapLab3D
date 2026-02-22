@@ -17,8 +17,14 @@ packageOpts	= [];
 %		-	project.projectname		My Project 1
 %		-	project.filename			MP1
 %		-	project.scale				100.000
-% -	Reset Columns DATASET_2 (My Project 1) and DATASET_3 (My Project 2)
+% -	Reset Columns DATASET_2 (My Project 1) up to DATASET_4 (My Project 3)
+% -	"name" keys to filter by:
+%		name
+%		alt_name
+%		short_name
 % -	Hide rows with Excel formulas
+% -	Clear the other sheets
+
 
 % Set current version number in:
 % -	MapLab3D_ProjectParameters_x_x_x_x.xlsx						and
@@ -40,6 +46,8 @@ packageOpts	= [];
 
 % Run this file.
 
+% Source Control:				Add untracked files to Source Control
+%									Commit
 % Matlab Branch Manager:	Commit and push changes in development
 %									Set main as HEAD
 %									Merge development with main (development does not exist any more)

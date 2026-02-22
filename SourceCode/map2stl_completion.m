@@ -368,15 +368,18 @@ try
 		% Files:
 		
 		% file rank for sorting:
-		% rank: [files.i_colprio_stal files.i_tile files.fileno files.i_colprio_nonstal]
-		i_colprio_nonstal_max	= 10^ceil(log10(max(files.i_colprio_nonstal)));
-		fileno_max					= 10^ceil(log10(max(files.fileno)));
-		i_tile_max					= 10^ceil(log10(max(files.i_tile)));
+		i_file_v						= (1:size(files.i_tile,1))';
+		exp_i_tile					= max(1,ceil(log10(max(files.i_tile))));
+		exp_fileno					= max(1,ceil(log10(max(files.fileno))));
+		exp_i_colprio_nonstal	= max(1,ceil(log10(max(files.i_colprio_nonstal))));
+		exp_i_file					= max(1,ceil(log10(max(i_file_v))));
 		rank							= ...
-			files.i_colprio_nonstal + ...
-			files.fileno            *(i_colprio_nonstal_max) + ...
-			files.i_tile            *(i_colprio_nonstal_max*fileno_max) + ...
-			files.i_colprio_stal    *(i_colprio_nonstal_max*fileno_max*i_tile_max);
+			i_file_v                                                                  + ...
+			files.i_colprio_nonstal *10^(exp_i_file)                                  + ...
+			files.fileno            *10^(exp_i_file+exp_i_colprio_nonstal)            + ...
+			files.i_tile            *10^(exp_i_file+exp_i_colprio_nonstal+exp_fileno) + ...
+			files.i_colprio_stal    *10^(exp_i_file+exp_i_colprio_nonstal+exp_fileno+exp_i_tile);
+		% [files.i_colprio_stal files.i_tile files.fileno files.i_colprio_nonstal i_file_v rank]
 		
 		% Add data to text_str:
 		text_str					= sprintf('%s\n',text_str);

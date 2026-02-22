@@ -18,30 +18,53 @@ try
 	% -	the last left-clicked point was different to the actual clicked intersection point
 	% -	the clicked object is different to the last clicked object
 	if isprop(clicked_object,'ContextMenu')
-		if    (event_data.IntersectionPoint(1,1)<GV.fig_2dmap_cm.lc_xmin)||...		% x_ip
-				(event_data.IntersectionPoint(1,1)>GV.fig_2dmap_cm.lc_xmax)||...
-				(event_data.IntersectionPoint(1,2)<GV.fig_2dmap_cm.lc_ymin)||...		% y_ip
-				(event_data.IntersectionPoint(1,2)>GV.fig_2dmap_cm.lc_ymax)||...
-				~isequal(clicked_object,GV.fig_2dmap_cm.clicked_object)
-			GV.fig_2dmap_cm.lc_xmin						= 1;
-			GV.fig_2dmap_cm.lc_xmax						= -1;
-			GV.fig_2dmap_cm.lc_ymin						= 1;
-			GV.fig_2dmap_cm.lc_ymax						= -1;
-			GV.fig_2dmap_cm.clicked_object			= [];
-			GV.fig_2dmap_cm.poly_outside_spec		= polyshape();
-			GV.fig_2dmap_cm.poly_dzmax					= polyshape();
+		if    (event_data.IntersectionPoint(1,1)<GV_H.fig_2dmap_cm.lc_xmin)||...		% x_ip
+				(event_data.IntersectionPoint(1,1)>GV_H.fig_2dmap_cm.lc_xmax)||...
+				(event_data.IntersectionPoint(1,2)<GV_H.fig_2dmap_cm.lc_ymin)||...		% y_ip
+				(event_data.IntersectionPoint(1,2)>GV_H.fig_2dmap_cm.lc_ymax)||...
+				~isequal(clicked_object,GV_H.fig_2dmap_cm.clicked_object)
+			GV_H.fig_2dmap_cm.lc_xmin					= 1;
+			GV_H.fig_2dmap_cm.lc_xmax					= -1;
+			GV_H.fig_2dmap_cm.lc_ymin					= 1;
+			GV_H.fig_2dmap_cm.lc_ymax					= -1;
+			GV_H.fig_2dmap_cm.clicked_object			= [];
+			GV_H.fig_2dmap_cm.poly_outside_spec		= polyshape();
+			GV_H.fig_2dmap_cm.poly_dzmax				= polyshape();
 			delete(clicked_object.ContextMenu);
 		end
 	end
 	
+	% Get the index imapobj of the clicked object:
 	imapobj				= [];
 	cancelsearching	= false;
-	for i=1:size(MAP_OBJECTS,1)
-		for r=1:size(MAP_OBJECTS(i,1).h,1)
-			for c=1:size(MAP_OBJECTS(i,1).h,2)
-				if isequal(clicked_object,MAP_OBJECTS(i,1).h(r,c))
-					% if MAP_OBJECTS(imapobj,1).h(r,c).Selected
-					imapobj				= i;
+	switch clicked_object.Type
+		case 'polygon'
+			xmin		= min(clicked_object.Shape.Vertices(:,1));
+			xmax		= max(clicked_object.Shape.Vertices(:,1));
+			ymin		= min(clicked_object.Shape.Vertices(:,2));
+			ymax		= max(clicked_object.Shape.Vertices(:,2));
+		case 'line'
+			xmin		= min(clicked_object.XData);
+			xmax		= max(clicked_object.XData);
+			ymin		= min(clicked_object.YData);
+			ymax		= max(clicked_object.YData);
+		otherwise
+			cancelsearching	= true;
+	end
+	if ~cancelsearching
+		x_center_v			= [MAP_OBJECTS.x]';
+		y_center_v			= [MAP_OBJECTS.y]';
+		imapobj_logical_v	= (...
+			(x_center_v>xmin)&...
+			(x_center_v<xmax)&...
+			(y_center_v>ymin)&...
+			(y_center_v<ymax)    );
+		imapobj_v			= find(imapobj_logical_v);
+		for i_imapobj=1:size(imapobj_v,1)
+			for i=1:size(MAP_OBJECTS(imapobj_v(i_imapobj,1),1).h,1)
+				if isequal(clicked_object,MAP_OBJECTS(imapobj_v(i_imapobj,1),1).h(i,1))
+					% if MAP_OBJECTS(imapobj,1).h(i,1).Selected
+					imapobj				= imapobj_v(i_imapobj,1);
 					cancelsearching	= true;
 					break
 				end
@@ -50,8 +73,28 @@ try
 				break
 			end
 		end
-		if cancelsearching
-			break
+	end
+	if isempty(imapobj)
+		% Old method (slower):
+		imapobj				= [];
+		cancelsearching	= false;
+		for i=1:size(MAP_OBJECTS,1)
+			for r=1:size(MAP_OBJECTS(i,1).h,1)
+				for c=1:size(MAP_OBJECTS(i,1).h,2)
+					if isequal(clicked_object,MAP_OBJECTS(i,1).h(r,c))
+						% if MAP_OBJECTS(imapobj,1).h(r,c).Selected
+						imapobj				= i;
+						cancelsearching	= true;
+						break
+					end
+				end
+				if cancelsearching
+					break
+				end
+			end
+			if cancelsearching
+				break
+			end
 		end
 	end
 	
@@ -165,35 +208,35 @@ try
 			% Left-click:
 			% If there is no context menu or the wrong context menu:
 			% Update the context menu, so it will be displayed at the second click:
-			[  GV.fig_2dmap_cm.poly_outside_spec,...
-				GV.fig_2dmap_cm.poly_dzmax,...
-				GV.fig_2dmap_cm.xy_liwimin,...
-				GV.fig_2dmap_cm.xy_liwimax]=...
+			[  GV_H.fig_2dmap_cm.poly_outside_spec,...
+				GV_H.fig_2dmap_cm.poly_dzmax,...
+				GV_H.fig_2dmap_cm.xy_liwimin,...
+				GV_H.fig_2dmap_cm.xy_liwimax]=...
 				create_contextmenu_mapobjects(imapobj,clicked_object,event_data.IntersectionPoint);		% without animations
 			% Tolerance window around the intersection point:
-			GV.fig_2dmap_cm.lc_xmin		= GV_H.ax_2dmap.XLim(1)+1/mx*(x_ip_pixel-tol_pixel-GV_H.ax_2dmap.Position(1));
-			GV.fig_2dmap_cm.lc_xmax		= GV_H.ax_2dmap.XLim(1)+1/mx*(x_ip_pixel+tol_pixel-GV_H.ax_2dmap.Position(1));
-			GV.fig_2dmap_cm.lc_ymin		= GV_H.ax_2dmap.YLim(1)+1/my*(y_ip_pixel-tol_pixel-GV_H.ax_2dmap.Position(2));
-			GV.fig_2dmap_cm.lc_ymax		= GV_H.ax_2dmap.YLim(1)+1/my*(y_ip_pixel+tol_pixel-GV_H.ax_2dmap.Position(2));
-			GV.fig_2dmap_cm.clicked_object	= clicked_object;
+			GV_H.fig_2dmap_cm.lc_xmin		= GV_H.ax_2dmap.XLim(1)+1/mx*(x_ip_pixel-tol_pixel-GV_H.ax_2dmap.Position(1));
+			GV_H.fig_2dmap_cm.lc_xmax		= GV_H.ax_2dmap.XLim(1)+1/mx*(x_ip_pixel+tol_pixel-GV_H.ax_2dmap.Position(1));
+			GV_H.fig_2dmap_cm.lc_ymin		= GV_H.ax_2dmap.YLim(1)+1/my*(y_ip_pixel-tol_pixel-GV_H.ax_2dmap.Position(2));
+			GV_H.fig_2dmap_cm.lc_ymax		= GV_H.ax_2dmap.YLim(1)+1/my*(y_ip_pixel+tol_pixel-GV_H.ax_2dmap.Position(2));
+			GV_H.fig_2dmap_cm.clicked_object	= clicked_object;
 			
 		case 3
 			% Right-click:
 			if isprop(clicked_object,'ContextMenu')
-				if    (event_data.IntersectionPoint(1,1)>GV.fig_2dmap_cm.lc_xmin)&&...		% x_ip
-						(event_data.IntersectionPoint(1,1)<GV.fig_2dmap_cm.lc_xmax)&&...
-						(event_data.IntersectionPoint(1,2)>GV.fig_2dmap_cm.lc_ymin)&&...		% y_ip
-						(event_data.IntersectionPoint(1,2)<GV.fig_2dmap_cm.lc_ymax)&&...
-						isequal(clicked_object,GV.fig_2dmap_cm.clicked_object)
+				if    (event_data.IntersectionPoint(1,1)>GV_H.fig_2dmap_cm.lc_xmin)&&...		% x_ip
+						(event_data.IntersectionPoint(1,1)<GV_H.fig_2dmap_cm.lc_xmax)&&...
+						(event_data.IntersectionPoint(1,2)>GV_H.fig_2dmap_cm.lc_ymin)&&...		% y_ip
+						(event_data.IntersectionPoint(1,2)<GV_H.fig_2dmap_cm.lc_ymax)&&...
+						isequal(clicked_object,GV_H.fig_2dmap_cm.clicked_object)
 					
 					htemp		= [];
 					i_htemp	= 0;
-					if    (size(GV.fig_2dmap_cm.xy_liwimin,1)>0)&&...
-							(size(GV.fig_2dmap_cm.xy_liwimax,1)>0)
+					if    (size(GV_H.fig_2dmap_cm.xy_liwimin,1)>0)&&...
+							(size(GV_H.fig_2dmap_cm.xy_liwimax,1)>0)
 						% Colors see also create_contextmenu_mapobjects (change line width).
 						i_htemp	= i_htemp+1;
 						htemp(i_htemp)	= plot(GV_H.ax_2dmap,...
-							GV.fig_2dmap_cm.xy_liwimax(:,1),GV.fig_2dmap_cm.xy_liwimax(:,2),...
+							GV_H.fig_2dmap_cm.xy_liwimax(:,1),GV_H.fig_2dmap_cm.xy_liwimax(:,2),...
 							'Color'     ,[1 0 1]*0.5,...
 							'Visible'   ,'on',...
 							'LineStyle' ,'none',...
@@ -204,7 +247,7 @@ try
 							'UserData',[]);
 						i_htemp	= i_htemp+1;
 						htemp(i_htemp)	= plot(GV_H.ax_2dmap,...
-							GV.fig_2dmap_cm.xy_liwimin(1,1),GV.fig_2dmap_cm.xy_liwimin(1,2),...
+							GV_H.fig_2dmap_cm.xy_liwimin(1,1),GV_H.fig_2dmap_cm.xy_liwimin(1,2),...
 							'Color'     ,[0 1 1]*0.5,...
 							'Visible'   ,'on',...
 							'LineStyle' ,'none',...
@@ -214,9 +257,9 @@ try
 							'DisplayName','minimum line width',...
 							'UserData',[]);
 					else
-						if numboundaries(GV.fig_2dmap_cm.poly_outside_spec)>0
+						if numboundaries(GV_H.fig_2dmap_cm.poly_outside_spec)>0
 							i_htemp	= i_htemp+1;
-							htemp(i_htemp)	= plot(GV_H.ax_2dmap,GV.fig_2dmap_cm.poly_outside_spec,...
+							htemp(i_htemp)	= plot(GV_H.ax_2dmap,GV_H.fig_2dmap_cm.poly_outside_spec,...
 								'EdgeColor','r',...
 								'FaceColor','r',...
 								'EdgeAlpha', GV.visibility.show.edgealpha,...
@@ -227,9 +270,9 @@ try
 								'DisplayName','Size out of specification',...
 								'UserData',[]);
 						end
-						if numboundaries(GV.fig_2dmap_cm.poly_dzmax)>0
+						if numboundaries(GV_H.fig_2dmap_cm.poly_dzmax)>0
 							i_htemp	= i_htemp+1;
-							htemp(i_htemp)	= plot(GV_H.ax_2dmap,GV.fig_2dmap_cm.poly_dzmax,...
+							htemp(i_htemp)	= plot(GV_H.ax_2dmap,GV_H.fig_2dmap_cm.poly_dzmax,...
 								'EdgeColor','m',...
 								'FaceColor','m',...
 								'EdgeAlpha', GV.visibility.show.edgealpha,...
@@ -278,10 +321,69 @@ try
 			ax_2dmap_zoominbutton_bgdcolor;
 			
 		else
-			% Do not zoom in:
+			% Do not zoom in: Select map objects inside the box:
 			
 			if strcmp(APP.Mod_LiReVe_ButtonGroup.SelectedObject.Text,'Off')
-				% Create preview lines is switched off: do nothing
+				% Create preview lines is switched off: select objects inside the box:
+				xmin					= min(x1,x2);
+				xmax					= max(x1,x2);
+				ymin					= min(y1,y2);
+				ymax					= max(y1,y2);
+				x_center_v			= [MAP_OBJECTS.x]';
+				y_center_v			= [MAP_OBJECTS.y]';
+				imapobj_logical_v	= (...
+					(x_center_v>xmin)&...
+					(x_center_v<xmax)&...
+					(y_center_v>ymin)&...
+					(y_center_v<ymax)    );
+				imapobj_v			= find(imapobj_logical_v);
+				for i_imapobj=1:size(imapobj_v,1)
+					imapobj			= imapobj_v(i_imapobj,1);
+					for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+						if ~MAP_OBJECTS(imapobj,1).h(i,1).Visible
+							% The map object is not visible:
+							imapobj_logical_v(imapobj,1)	= false;
+							% fprintf(1,'exclude: %g  -  %s  -  %s  -  %s\n',imapobj,...
+							% 	MAP_OBJECTS(imapobj,1).dscr,MAP_OBJECTS(imapobj,1).text{1,1},MAP_OBJECTS(imapobj,1).disp);
+							break
+						end
+						if strcmp(MAP_OBJECTS(imapobj,1).h(i,1).Type,'line')
+							if    any(MAP_OBJECTS(imapobj,1).h(i,1).XData<xmin)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).XData>xmax)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).YData<ymin)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).YData>ymax)
+								imapobj_logical_v(imapobj,1)	= false;
+								% fprintf(1,'exclude: %g  -  %s  -  %s  -  %s\n',imapobj,...
+								% 	MAP_OBJECTS(imapobj,1).dscr,MAP_OBJECTS(imapobj,1).text{1,1},MAP_OBJECTS(imapobj,1).disp);
+								break
+							end
+						elseif strcmp(MAP_OBJECTS(imapobj,1).h(i,1).Type,'polygon')
+							% % % [xi_v,yi_v]	= boundary(MAP_OBJECTS(imapobj,1).h(i,1).Shape);
+							if    any(MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1)<xmin)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,1)>xmax)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2)<ymin)||...
+									any(MAP_OBJECTS(imapobj,1).h(i,1).Shape.Vertices(:,2)>ymax)
+								imapobj_logical_v(imapobj,1)	= false;
+								% fprintf(1,'exclude: %g  -  %s  -  %s  -  %s\n',imapobj,...
+								% 	MAP_OBJECTS(imapobj,1).dscr,MAP_OBJECTS(imapobj,1).text{1,1},MAP_OBJECTS(imapobj,1).disp);
+								break
+							end
+						end
+					end
+				end
+				imapobj_v			= find(imapobj_logical_v);
+				% The map objects imapobj_v are completely inside the box:
+				if ~isempty(imapobj_v)
+					% Deselect all:
+					plot_modify('deselect',-1,0);
+					% Select the objects inside the box:
+					plot_modify('select',imapobj_v,0);
+					% for i_imapobj=1:size(imapobj_v,1)
+					% 	imapobj			= imapobj_v(i_imapobj,1);
+					% 	fprintf(1,'include: %g  -  %s  -  %s  -  %s\n',imapobj,...
+					% 		MAP_OBJECTS(imapobj,1).dscr,MAP_OBJECTS(imapobj,1).text{1,1},MAP_OBJECTS(imapobj,1).disp);
+					% end
+				end
 				
 			else
 				
@@ -449,8 +551,10 @@ try
 						if strcmp(MAP_OBJECTS(imapobj,1).h.Type,'line')
 							x_mapobj				= MAP_OBJECTS(imapobj,1).h.XData';
 							y_mapobj				= MAP_OBJECTS(imapobj,1).h.YData';
+							poly_is_closed		= false;
 						elseif strcmp(MAP_OBJECTS(imapobj,1).h.Type,'polygon')
 							[x_mapobj,y_mapobj]	= boundary(MAP_OBJECTS(imapobj,1).h.Shape);
+							poly_is_closed		= true;
 						else
 							errormessage;
 						end
@@ -465,7 +569,8 @@ try
 							x_mapobj_pixel,...		% vertices x
 							y_mapobj_pixel,...		% vertices y
 							x_ip_pixel,...				% query point x
-							y_ip_pixel);				% query point y
+							y_ip_pixel,...				% query point y
+							poly_is_closed);			% poly_is_closed
 						d_first_pixel		= sqrt(...								% distance to the first point of the line segment
 							(vx_dmin_pixel-x_mapobj_pixel(i_dmin))^2+...
 							(vy_dmin_pixel-y_mapobj_pixel(i_dmin))^2    );

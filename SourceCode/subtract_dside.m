@@ -1,17 +1,26 @@
-function [poly1,poly2,dbuffer]=subtract_dside(PP_local,colno1,colno2,poly1,poly2)
+function [...
+	poly1,...
+	poly2,...
+	dbuffer...
+	]=subtract_dside(...
+	poly1,...
+	poly2,...
+	PP_local,...
+	colno1,...
+	colno2)
 % Cut polygon object 1 by polygon object 2 taking into account the parameter PP_local.colorspec.d_side
 % (Horizontal distance between the sides of this color and neighboring parts)
 % Syntax:
-% 1)	[poly1,poly2,~]=subtract_dside(PP_local,colno1,colno2,poly1,poly2)
-%				poly1	= poly1-(poly2 increased by dbuffer)
-%				poly2	= poly2-(poly1 increased by dbuffer)
-% 2)	[~,~,dbuffer]=subtract_dside(PP_local,colno1,colno2)
-%				returns only dbuffer
+% 1)	[poly1,poly2,~]=subtract_dside(poly1,poly2,PP_local,colno1,colno2)
+%		1. step: poly1	= poly1-(poly2 increased by dbuffer)
+%		2. step: poly2	= poly2-(poly1 increased by dbuffer)
+% 2)	[~,~,dbuffer]=subtract_dside([],[],PP_local,colno1,colno2)
+%		returns only dbuffer
 
 global GV
 
 % d_side: horizontal distance between the sides of neighboring parts:
-method_1	= 3;
+method_1	= 4;
 switch method_1
 	case 1
 		% was used in plotosmdata_simplify.m:
@@ -50,13 +59,44 @@ switch method_1
 			% No distinction should be made here as to which objects the objects with colno1=0 lie over:
 			d_side		= max([PP_local.colorspec(:).d_side]);
 		end
+	case 4
+		if colno1>0
+			colprio1	= PP_local.color(colno1,1).prio;
+		else
+			colprio1	= -1;
+		end
+		if colno2>0
+			colprio2	= PP_local.color(colno2,1).prio;
+		else
+			colprio2	= -1;
+		end
+		% In map2stl_topside_triangulation.m, obj_bot_bh.poly(iobj) is calculated with d_side of the respective color.
+		% These areas are then subtracted from each other  ==>  Use d_side of the subtrahend (poly2):
+		if colno2>0
+			icolspec2	= PP_local.color(colno2).spec;
+			d_side		= PP_local.colorspec(icolspec2).d_side;
+		else
+			% The subtrahend (poly2) is transparent:
+			% The subtracted object takes on the color of the object below it, which is unknown here.
+			% No distinction should be made here as to which objects the objects with colno2=0 lie over:
+			d_side		= max([PP_local.colorspec(:).d_side]);
+		end
+		% The object with the higher color priority cuts a hole in the object with the lower color priority.
+		% However, it is possible that when editing the map manually, the color priority of poly1 (minuend) is higher
+		% than that of poly2 (subtrahend). In this case, the column width d_side of poly1 is still used in "Create map".
+		% ==>
+		% If the color priority of poly1 (minuend) is greater than that of poly2 (subtrahend):
+		% Use the column width d_side of poly1 (minuend):
+		if colprio1>colprio2
+			icolspec1	= PP_local.color(colno1).spec;
+			d_side		= max(d_side,PP_local.colorspec(icolspec1).d_side);
+		end
 end
 
 % Objects buffered by the horizontal distance between neighboring parts:
 % +2*GV.tol_1: so that no overlap is detected when calculating z_bot in map2stl.m:
-% +GV.plotosmdata_simplify.dmin_changeresolution*1.01:
-% the outline is changed when reducing the resolution (see below)
-method_2	= 1;
+% +GV.plotosmdata_simplify.dmin_changeresolution*1.01: the outline is changed when reducing the resolution
+method_2	= 3;
 switch method_2
 	case 1
 		% was used in plotosmdata_simplify.m:
@@ -64,8 +104,11 @@ switch method_2
 	case 2
 		% was used in map2stl_preparation.m:
 		dbuffer			= d_side*1.01+2*GV.tol_1+GV.plotosmdata_simplify.dmin_changeresolution*1.01;
+	case 3
+		% Test:
+		dbuffer			= d_side*1.01+2*GV.tol_1+GV.plotosmdata_simplify.dmin_changeresolution*2.01;
 end
-if nargin==3
+if isempty(poly1)||isempty(poly2)
 	poly1		= polyshape();
 	poly2		= polyshape();
 	return

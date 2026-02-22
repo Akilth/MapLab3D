@@ -96,7 +96,7 @@ try
 		% testplot_xylimits(4,1)		= 74;				% ymax
 		try
 			
-			% Calculation of PRINTDATA.obj_union_equalcolors:
+			% Calculation of PRINTDATA.obj_union_equalcolors and PRINTDATA.obj_union_equalcolors_0:
 			[  ~,...									% obj
 				~,...									% obj_top_reg
 				~,...									% obj_reg
@@ -151,10 +151,6 @@ try
 			% Execution of set_previewtype_dropdown(1): Set the selectable color numbers for creating cutting lines.
 			% After modification of PRINTDATA.obj_union_equalcolors, otherwise the legend would be also selectable!
 			set_previewtype_dropdown(1);
-			
-			% PRINTDATA.obj_union_equalcolors_0:
-			% Possibility to reset_uec all changes to PRINTDATA.obj_union_equalcolors:
-			PRINTDATA.obj_union_equalcolors_0	= PRINTDATA.obj_union_equalcolors;
 			
 		catch ME
 			% The global variables defined in the function must also be defined globally outside:

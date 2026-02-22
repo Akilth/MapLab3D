@@ -97,8 +97,10 @@ try
 
 				% Other points on connways_eqtags_xy with a minimum distance of dist_betw_refpoints:
 				if dist_betw_refpoints>0
-					sidelength							= 2;		% sidelength=radius*phi, n*phi=2*pi
-					n_poly_dist_betw_symbols		= max(3,ceil(2*pi*dist_betw_refpoints/sidelength));
+					% sidelength						= 2;			% sidelength=radius*phi, n*phi=2*pi
+					% n_poly_dist_betw_symbols		= max(3,ceil(2*pi*dist_betw_refpoints/sidelength));
+					% A high number n_poly_dist_betw_symbols can lead to high computation times!
+					n_poly_dist_betw_symbols		= 24;			% steps of 15°
 					center_poly_dist_betw_symbols	= pos_refpoints(end,:);
 					radius_poly_dist_betw_symbols	= dist_betw_refpoints;
 					poly_dist_betw_symbols			= nsidedpoly(n_poly_dist_betw_symbols,...

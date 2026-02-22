@@ -70,7 +70,9 @@ try
 	end
 
 	APP.PreviewdescriptionEditField.Value	= filterstring;
-	drawnow;
+	% Execution times when loading a large project:
+	% drawnow nocallbacks;		% 68.161s
+	pause(0.001);					% 0.024s
 
 catch ME
 	errormessage('',ME);

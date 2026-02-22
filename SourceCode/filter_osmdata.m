@@ -380,7 +380,7 @@ try
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data: tag_incl %g/%g',...
 								msg,ik,size(OSMDATA.keys,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.keys(ik,1).k,...
@@ -514,7 +514,7 @@ try
 						if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data %g/%g',msg,ik,size(OSMDATA.keys,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.keys(ik,1).k,...
@@ -539,7 +539,7 @@ try
 						if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data %g/%g',msg,iv,size(OSMDATA.values,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.values(iv,1).v,...
@@ -611,7 +611,7 @@ try
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data: tag_excl %g/%g',...
 								msg,ik,size(OSMDATA.keys,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.keys(ik,1).k,...
@@ -730,7 +730,7 @@ try
 						if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data %g/%g',msg,ik,size(OSMDATA.keys,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.keys(ik,1).k,...
@@ -755,7 +755,7 @@ try
 						if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
 							WAITBAR.t1	= clock;
 							set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data %g/%g',msg,iv,size(OSMDATA.values,1)));
-							drawnow;
+							pause(0.001);
 						end
 					end
 					out=regexpi(OSMDATA.values(iv,1).v,...
@@ -823,7 +823,7 @@ try
 	irmax		= length(obj_ir);
 	imax		= inmax+iwmax+irmax;
 	
-	% Create an empty table:
+	% Create table:
 	varNames	= {...
 		'No',...				% itable
 		'ID',...				% id
@@ -837,154 +837,492 @@ try
 		'Diag',...			% diag_mm
 		'Length',...		% length_mm
 		'Area'};				% area_mm2
-	columns_tags0			= length(varNames);
-	for it=1:OSMDATA.no_tags
-		varNames{1,end+1}	= sprintf('Key%1.0f',it);
-		varNames{1,end+1}	= sprintf('Val%1.0f',it);
-	end
-	varTypes	= {...
-		'double',...		% itable
-		'uint64',...		% id
-		'string',...		% type
-		'double',...		% object number
-		'double',...		% no_nodes
-		'double',...		% no_ways
-		'double',...		% no_relations
-		'double',...		% dx_mm
-		'double',...		% dy_mm
-		'double',...		% diag_mm
-		'double',...		% length_mm
-		'double'};			% area_mm2
-	for it=1:OSMDATA.no_tags
-		varTypes{1,end+1}	= 'string';
-		varTypes{1,end+1}	= 'string';
-	end
-	sz							= [imax length(varNames)];
-	OSMDATA_TABLE			= table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
-	% Replace <missing> by "":
-	for c=1:width(OSMDATA_TABLE)
-		if strcmp(varTypes(1,c),'string')
-			OSMDATA_TABLE.(c)(:)	= "";
-		end
-	end
-	OSMDATA_TABLE_INWR	= zeros(imax,1);
-	
-	% Nodes:
-	for i=1:length(obj_in)
-		% Waitbar:
-		if ~isempty(msg)
-			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-				WAITBAR.t1	= clock;
-				set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
-					msg,i,imax));
-				drawnow;
+	% 1: First initialize the table, then enter each element individually.
+	% 2: First assign values to individual variables, then create the table from them: faster.
+	% 3: Same as 2, less memory usage.
+	method_create_table	= 3;
+	switch method_create_table
+		
+		% -------------------------------------------------------------------------------------------------------------
+		% First initialize the table, then enter each element individually:
+		case 1
+			
+			% Create an empty table:
+			columns_tags0			= length(varNames);
+			for it=1:OSMDATA.no_tags
+				varNames{1,end+1}	= sprintf('Key%1.0f',it);
+				varNames{1,end+1}	= sprintf('Val%1.0f',it);
 			end
-		end
-		in												= obj_in(i);
-		itable										= i;
-		OSMDATA_TABLE_INWR(itable,1)			= in;
-		OSMDATA_TABLE.No(itable,1)				= itable;
-		OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.node(1,in);
-		OSMDATA_TABLE.Type{itable,1}			= 'node';
-		OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.node(1,in);
-		OSMDATA_TABLE.NoN(itable,1)			= 1;
-		% OSMDATA_TABLE.NoW(itable,1)			= 0;
-		% OSMDATA_TABLE.NoR(itable,1)			= 0;
-		% OSMDATA_TABLE.Dimx(itable,1)		= 0;
-		% OSMDATA_TABLE.Dimy(itable,1)		= 0;
-		% OSMDATA_TABLE.Diag(itable,1)		= 0;
-		% OSMDATA_TABLE.Length(itable,1)		= 0;
-		% OSMDATA_TABLE.Area(itable,1)		= 0;
-		if ~ismissing(OSMDATA.node(1,in).tag(1,1))
-			for int=1:OSMDATA.no_tags
-				if int<=size(OSMDATA.node(1,in).tag,2)
-					OSMDATA_TABLE.(columns_tags0+2*int-1){itable,1}	= OSMDATA.node(1,in).tag(1,int).k;
-					OSMDATA_TABLE.(columns_tags0+2*int  ){itable,1}	= OSMDATA.node(1,in).tag(1,int).v;
-				else
-					break
+			varTypes	= {...
+				'double',...		% itable
+				'uint64',...		% id
+				'string',...		% type
+				'double',...		% object number
+				'double',...		% no_nodes
+				'double',...		% no_ways
+				'double',...		% no_relations
+				'double',...		% dx_mm
+				'double',...		% dy_mm
+				'double',...		% diag_mm
+				'double',...		% length_mm
+				'double'};			% area_mm2
+			for it=1:OSMDATA.no_tags
+				varTypes{1,end+1}	= 'string';
+				varTypes{1,end+1}	= 'string';
+			end
+			sz							= [imax length(varNames)];
+			OSMDATA_TABLE			= table('Size',sz,'VariableTypes',varTypes,'VariableNames',varNames);
+			% Replace <missing> by "":
+			for c=1:width(OSMDATA_TABLE)
+				if strcmp(varTypes(1,c),'string')
+					OSMDATA_TABLE.(c)(:)	= "";
 				end
 			end
-		end
-	end
-	
-	% Ways:
-	for i=1:length(obj_iw)
-		% Waitbar:
-		if ~isempty(msg)
-			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-				WAITBAR.t1	= clock;
-				set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
-					msg,inmax+i,imax));
-				drawnow;
-			end
-		end
-		iw												= obj_iw(i);
-		itable										= i+inmax;
-		OSMDATA_TABLE_INWR(itable,1)			= iw;
-		OSMDATA_TABLE.No(itable,1)				= itable;
-		OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.way(1,iw);
-		OSMDATA_TABLE.Type{itable,1}			= 'way';
-		OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.way(1,iw);
-		OSMDATA_TABLE.NoN(itable,1)			= OSMDATA.way(1,iw).no_nodes;
-		OSMDATA_TABLE.NoW(itable,1)			= 1;
-		% OSMDATA_TABLE.NoR(itable,1)			= 0;
-		OSMDATA_TABLE.Dimx(itable,1)			= OSMDATA.way_xmax_mm(1,iw)-OSMDATA.way_xmin_mm(1,iw);
-		OSMDATA_TABLE.Dimy(itable,1)			= OSMDATA.way_ymax_mm(1,iw)-OSMDATA.way_ymin_mm(1,iw);
-		OSMDATA_TABLE.Diag(itable,1)			= sqrt(...
-			OSMDATA_TABLE.Dimx(itable,1)^2+...
-			OSMDATA_TABLE.Dimy(itable,1)^2    );
-		OSMDATA_TABLE.Length(itable,1)		= OSMDATA.way(1,iw).length_mm;
-		OSMDATA_TABLE.Area(itable,1)			= OSMDATA.way(1,iw).area_mm2;
-		if ~ismissing(OSMDATA.way(1,iw).tag(1,1))
-			for iwt=1:OSMDATA.no_tags
-				if iwt<=size(OSMDATA.way(1,iw).tag,2)
-					OSMDATA_TABLE.(columns_tags0+2*iwt-1){itable,1}	= OSMDATA.way(1,iw).tag(1,iwt).k;
-					OSMDATA_TABLE.(columns_tags0+2*iwt  ){itable,1}	= OSMDATA.way(1,iw).tag(1,iwt).v;
-				else
-					break
+			OSMDATA_TABLE_INWR	= zeros(imax,1);
+			
+			% Nodes:
+			for i=1:length(obj_in)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,i,imax));
+						pause(0.001);
+					end
+				end
+				in												= obj_in(i);
+				itable										= i;
+				OSMDATA_TABLE_INWR(itable,1)			= in;
+				OSMDATA_TABLE.No(itable,1)				= itable;
+				OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.node(1,in);
+				OSMDATA_TABLE.Type{itable,1}			= 'node';
+				OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.node(1,in);
+				OSMDATA_TABLE.NoN(itable,1)			= 1;
+				% OSMDATA_TABLE.NoW(itable,1)			= 0;
+				% OSMDATA_TABLE.NoR(itable,1)			= 0;
+				% OSMDATA_TABLE.Dimx(itable,1)		= 0;
+				% OSMDATA_TABLE.Dimy(itable,1)		= 0;
+				% OSMDATA_TABLE.Diag(itable,1)		= 0;
+				% OSMDATA_TABLE.Length(itable,1)		= 0;
+				% OSMDATA_TABLE.Area(itable,1)		= 0;
+				if ~ismissing(OSMDATA.node(1,in).tag(1,1))
+					for int=1:OSMDATA.no_tags
+						if int<=size(OSMDATA.node(1,in).tag,2)
+							OSMDATA_TABLE.(columns_tags0+2*int-1){itable,1}	= OSMDATA.node(1,in).tag(1,int).k;
+							OSMDATA_TABLE.(columns_tags0+2*int  ){itable,1}	= OSMDATA.node(1,in).tag(1,int).v;
+						else
+							break
+						end
+					end
 				end
 			end
-		end
-	end
-	
-	% Relations:
-	for i=1:length(obj_ir)
-		% Waitbar:
-		if ~isempty(msg)
-			if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
-				WAITBAR.t1	= clock;
-				set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
-					msg,inmax+iwmax+i,imax));
-				drawnow;
-			end
-		end
-		ir												= obj_ir(i);
-		itable										= i+inmax+iwmax;
-		OSMDATA_TABLE_INWR(itable,1)			= ir;
-		OSMDATA_TABLE.No(itable,1)				= itable;
-		OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.relation(1,ir);
-		OSMDATA_TABLE.Type{itable,1}			= 'relation';
-		OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.relation(1,ir);
-		OSMDATA_TABLE.NoN(itable,1)			= OSMDATA.relation(1,ir).no_nodes;
-		OSMDATA_TABLE.NoW(itable,1)			= OSMDATA.relation(1,ir).no_ways;
-		OSMDATA_TABLE.NoR(itable,1)			= OSMDATA.relation(1,ir).no_relations;
-		OSMDATA_TABLE.Dimx(itable,1)			= OSMDATA.relation_xmax_mm(1,ir)-OSMDATA.relation_xmin_mm(1,ir);
-		OSMDATA_TABLE.Dimy(itable,1)			= OSMDATA.relation_ymax_mm(1,ir)-OSMDATA.relation_ymin_mm(1,ir);
-		OSMDATA_TABLE.Diag(itable,1)			= sqrt(...
-			OSMDATA_TABLE.Dimx(itable,1)^2+...
-			OSMDATA_TABLE.Dimy(itable,1)^2    );
-		OSMDATA_TABLE.Length(itable,1)		= OSMDATA.relation(1,ir).length_mm;
-		OSMDATA_TABLE.Area(itable,1)			= OSMDATA.relation(1,ir).area_mm2;
-		if ~ismissing(OSMDATA.relation(1,ir).tag(1,1))
-			for irt=1:OSMDATA.no_tags
-				if irt<=size(OSMDATA.relation(1,ir).tag,2)
-					OSMDATA_TABLE.(columns_tags0+2*irt-1){itable,1}	= OSMDATA.relation(1,ir).tag(1,irt).k;
-					OSMDATA_TABLE.(columns_tags0+2*irt  ){itable,1}	= OSMDATA.relation(1,ir).tag(1,irt).v;
-				else
-					break
+			
+			% Ways:
+			for i=1:length(obj_iw)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+i,imax));
+						pause(0.001);
+					end
+				end
+				iw												= obj_iw(i);
+				itable										= i+inmax;
+				OSMDATA_TABLE_INWR(itable,1)			= iw;
+				OSMDATA_TABLE.No(itable,1)				= itable;
+				OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.way(1,iw);
+				OSMDATA_TABLE.Type{itable,1}			= 'way';
+				OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.way(1,iw);
+				OSMDATA_TABLE.NoN(itable,1)			= OSMDATA.way(1,iw).no_nodes;
+				OSMDATA_TABLE.NoW(itable,1)			= 1;
+				% OSMDATA_TABLE.NoR(itable,1)			= 0;
+				OSMDATA_TABLE.Dimx(itable,1)			= OSMDATA.way_xmax_mm(1,iw)-OSMDATA.way_xmin_mm(1,iw);
+				OSMDATA_TABLE.Dimy(itable,1)			= OSMDATA.way_ymax_mm(1,iw)-OSMDATA.way_ymin_mm(1,iw);
+				OSMDATA_TABLE.Diag(itable,1)			= sqrt(...
+					OSMDATA_TABLE.Dimx(itable,1)^2+...
+					OSMDATA_TABLE.Dimy(itable,1)^2    );
+				OSMDATA_TABLE.Length(itable,1)		= OSMDATA.way(1,iw).length_mm;
+				OSMDATA_TABLE.Area(itable,1)			= OSMDATA.way(1,iw).area_mm2;
+				if ~ismissing(OSMDATA.way(1,iw).tag(1,1))
+					for iwt=1:OSMDATA.no_tags
+						if iwt<=size(OSMDATA.way(1,iw).tag,2)
+							OSMDATA_TABLE.(columns_tags0+2*iwt-1){itable,1}	= OSMDATA.way(1,iw).tag(1,iwt).k;
+							OSMDATA_TABLE.(columns_tags0+2*iwt  ){itable,1}	= OSMDATA.way(1,iw).tag(1,iwt).v;
+						else
+							break
+						end
+					end
 				end
 			end
-		end
+			
+			% Relations:
+			for i=1:length(obj_ir)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+iwmax+i,imax));
+						pause(0.001);
+					end
+				end
+				ir												= obj_ir(i);
+				itable										= i+inmax+iwmax;
+				OSMDATA_TABLE_INWR(itable,1)			= ir;
+				OSMDATA_TABLE.No(itable,1)				= itable;
+				OSMDATA_TABLE.ID(itable,1)				= OSMDATA.id.relation(1,ir);
+				OSMDATA_TABLE.Type{itable,1}			= 'relation';
+				OSMDATA_TABLE.ObjNo(itable,1)			= OSMDATA.iobj.relation(1,ir);
+				OSMDATA_TABLE.NoN(itable,1)			= OSMDATA.relation(1,ir).no_nodes;
+				OSMDATA_TABLE.NoW(itable,1)			= OSMDATA.relation(1,ir).no_ways;
+				OSMDATA_TABLE.NoR(itable,1)			= OSMDATA.relation(1,ir).no_relations;
+				OSMDATA_TABLE.Dimx(itable,1)			= OSMDATA.relation_xmax_mm(1,ir)-OSMDATA.relation_xmin_mm(1,ir);
+				OSMDATA_TABLE.Dimy(itable,1)			= OSMDATA.relation_ymax_mm(1,ir)-OSMDATA.relation_ymin_mm(1,ir);
+				OSMDATA_TABLE.Diag(itable,1)			= sqrt(...
+					OSMDATA_TABLE.Dimx(itable,1)^2+...
+					OSMDATA_TABLE.Dimy(itable,1)^2    );
+				OSMDATA_TABLE.Length(itable,1)		= OSMDATA.relation(1,ir).length_mm;
+				OSMDATA_TABLE.Area(itable,1)			= OSMDATA.relation(1,ir).area_mm2;
+				if ~ismissing(OSMDATA.relation(1,ir).tag(1,1))
+					for irt=1:OSMDATA.no_tags
+						if irt<=size(OSMDATA.relation(1,ir).tag,2)
+							OSMDATA_TABLE.(columns_tags0+2*irt-1){itable,1}	= OSMDATA.relation(1,ir).tag(1,irt).k;
+							OSMDATA_TABLE.(columns_tags0+2*irt  ){itable,1}	= OSMDATA.relation(1,ir).tag(1,irt).v;
+						else
+							break
+						end
+					end
+				end
+			end
+			
+			
+			% -------------------------------------------------------------------------------------------------------------
+			% First assign values to individual variables, then create the table from them:
+		case 2
+			
+			% Initializations:
+			OSMDATA_TABLE_INWR	= zeros(imax,1);
+			No							= zeros(imax,1);							% itable
+			ID							= uint64(zeros(imax,1));				% id
+			Type						= strings(imax,1);						% type
+			ObjNo						= zeros(imax,1);							% object number
+			NoN						= zeros(imax,1);							% no_nodes
+			NoW						= zeros(imax,1);							% no_ways
+			NoR						= zeros(imax,1);							% no_relations
+			Dimx						= zeros(imax,1);							% dx_mm
+			Dimy						= zeros(imax,1);							% dy_mm
+			Diag						= zeros(imax,1);							% diag_mm
+			Length					= zeros(imax,1);							% length_mm
+			Area						= zeros(imax,1);							% area_mm2
+			key_m						= strings(imax,OSMDATA.no_tags);
+			val_m						= strings(imax,OSMDATA.no_tags);
+			itmax						= 0;
+			
+			% Nodes:
+			for i=1:length(obj_in)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,i,imax));
+						pause(0.001);
+					end
+				end
+				in										= obj_in(i);
+				itable								= i;
+				OSMDATA_TABLE_INWR(itable,1)	= in;
+				No(itable,1)						= itable;
+				ID(itable,1)						= OSMDATA.id.node(1,in);
+				Type(itable,1)						= "node";
+				ObjNo(itable,1)					= OSMDATA.iobj.node(1,in);
+				NoN(itable,1)						= 1;
+				NoW(itable,1)						= 0;
+				NoR(itable,1)						= 0;
+				Dimx(itable,1)						= 0;
+				Dimy(itable,1)						= 0;
+				Diag(itable,1)						= 0;
+				Length(itable,1)					= 0;
+				Area(itable,1)						= 0;
+				if ~ismissing(OSMDATA.node(1,in).tag(1,1))
+					for int=1:OSMDATA.no_tags
+						if int<=size(OSMDATA.node(1,in).tag,2)
+							if int>itmax
+								itmax=int;
+							end
+							key_m(itable,int)=string(OSMDATA.node(1,in).tag(1,int).k);
+							val_m(itable,int)=string(OSMDATA.node(1,in).tag(1,int).v);
+						else
+							break
+						end
+					end
+				end
+			end
+			
+			% Ways:
+			for i=1:length(obj_iw)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+i,imax));
+						pause(0.001);
+					end
+				end
+				iw										= obj_iw(i);
+				itable								= i+inmax;
+				OSMDATA_TABLE_INWR(itable,1)	= iw;
+				No(itable,1)						= itable;
+				ID(itable,1)						= OSMDATA.id.way(1,iw);
+				Type(itable,1)						= "way";
+				ObjNo(itable,1)					= OSMDATA.iobj.way(1,iw);
+				NoN(itable,1)						= OSMDATA.way(1,iw).no_nodes;
+				NoW(itable,1)						= 1;
+				NoR(itable,1)						= 0;
+				Dimx(itable,1)						= OSMDATA.way_xmax_mm(1,iw)-OSMDATA.way_xmin_mm(1,iw);
+				Dimy(itable,1)						= OSMDATA.way_ymax_mm(1,iw)-OSMDATA.way_ymin_mm(1,iw);
+				Diag(itable,1)						= sqrt(Dimx(itable,1)^2+Dimy(itable,1)^2);
+				Length(itable,1)					= OSMDATA.way(1,iw).length_mm;
+				Area(itable,1)						= OSMDATA.way(1,iw).area_mm2;
+				if ~ismissing(OSMDATA.way(1,iw).tag(1,1))
+					for iwt=1:OSMDATA.no_tags
+						if iwt<=size(OSMDATA.way(1,iw).tag,2)
+							if iwt>itmax
+								itmax=iwt;
+							end
+							key_m(itable,iwt)=string(OSMDATA.way(1,iw).tag(1,iwt).k);
+							val_m(itable,iwt)=string(OSMDATA.way(1,iw).tag(1,iwt).v);
+						else
+							break
+						end
+					end
+				end
+			end
+			
+			% Relations:
+			for i=1:length(obj_ir)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+iwmax+i,imax));
+						pause(0.001);
+					end
+				end
+				ir										= obj_ir(i);
+				itable								= i+inmax+iwmax;
+				OSMDATA_TABLE_INWR(itable,1)	= ir;
+				No(itable,1)						= itable;
+				ID(itable,1)						= OSMDATA.id.relation(1,ir);
+				Type(itable,1)						= "relation";
+				ObjNo(itable,1)					= OSMDATA.iobj.relation(1,ir);
+				NoN(itable,1)						= OSMDATA.relation(1,ir).no_nodes;
+				NoW(itable,1)						= OSMDATA.relation(1,ir).no_ways;
+				NoR(itable,1)						= OSMDATA.relation(1,ir).no_relations;
+				Dimx(itable,1)						= OSMDATA.relation_xmax_mm(1,ir)-OSMDATA.relation_xmin_mm(1,ir);
+				Dimy(itable,1)						= OSMDATA.relation_ymax_mm(1,ir)-OSMDATA.relation_ymin_mm(1,ir);
+				Diag(itable,1)						= sqrt(Dimx(itable,1)^2+Dimy(itable,1)^2);
+				Length(itable,1)					= OSMDATA.relation(1,ir).length_mm;
+				Area(itable,1)						= OSMDATA.relation(1,ir).area_mm2;
+				if ~ismissing(OSMDATA.relation(1,ir).tag(1,1))
+					for irt=1:OSMDATA.no_tags
+						if irt<=size(OSMDATA.relation(1,ir).tag,2)
+							if irt>itmax
+								itmax=irt;
+							end
+							key_m(itable,irt)=string(OSMDATA.relation(1,ir).tag(1,irt).k);
+							val_m(itable,irt)=string(OSMDATA.relation(1,ir).tag(1,irt).v);
+						else
+							break
+						end
+					end
+				end
+			end
+			
+			% Create table from variables:
+			for it=1:itmax
+				eval(sprintf('Key%1.0f=key_m(:,it);',it));
+				eval(sprintf('Val%1.0f=val_m(:,it);',it));
+			end
+			command='OSMDATA_TABLE=table(No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area';
+			for it=1:itmax
+				command		= sprintf('%s,Key%1.0f,Val%1.0f',command,it,it);
+			end
+			command		= sprintf('%s);',command);
+			eval(command);
+			
+			
+			% -------------------------------------------------------------------------------------------------------------
+			% Same as 2, less memory usage:
+		case 3
+			
+			% Create an empty table OSMDATA_TABLE:
+			[No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=init_colvar_local(...
+				0,OSMDATA.no_tags);
+			i_part		= 0;
+			init			= true;
+			extend_table_local(...
+				No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,OSMDATA.no_tags,i_part,init);
+			
+			% Initializations:
+			% Germany puzzle: OSMDATA.no_tags=491
+			% key_m=strings(2000,500);   -->   54MB in memory for an empty string matrix!
+			% key_m, val_m and single columns in extend_table_local   -->   4*54MB (if empty)
+			imax_part	= 2000;
+			i_part		= 0;
+			[No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=init_colvar_local(...
+				imax_part,OSMDATA.no_tags);
+			OSMDATA_TABLE_INWR	= zeros(imax,1);
+			
+			% Nodes:
+			for i=1:length(obj_in)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,i,imax));
+						pause(0.001);
+					end
+				end
+				i_part								= i_part+1;
+				in										= obj_in(i);
+				itable								= i;
+				OSMDATA_TABLE_INWR(itable,1)	= in;
+				No(i_part,1)						= itable;
+				ID(i_part,1)						= OSMDATA.id.node(1,in);
+				Type(i_part,1)						= "node";
+				ObjNo(i_part,1)					= OSMDATA.iobj.node(1,in);
+				NoN(i_part,1)						= 1;
+				NoW(i_part,1)						= 0;
+				NoR(i_part,1)						= 0;
+				Dimx(i_part,1)						= 0;
+				Dimy(i_part,1)						= 0;
+				Diag(i_part,1)						= 0;
+				Length(i_part,1)					= 0;
+				Area(i_part,1)						= 0;
+				if ~ismissing(OSMDATA.node(1,in).tag(1,1))
+					for int=1:OSMDATA.no_tags
+						if int<=size(OSMDATA.node(1,in).tag,2)
+							key_m(i_part,int)=string(OSMDATA.node(1,in).tag(1,int).k);
+							val_m(i_part,int)=string(OSMDATA.node(1,in).tag(1,int).v);
+						else
+							break
+						end
+					end
+				end
+				if i_part>=imax_part
+					extend_table_local(...
+						No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,OSMDATA.no_tags,i_part);
+					[No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=init_colvar_local(...
+						imax_part,OSMDATA.no_tags);
+					i_part	= 0;
+				end
+			end
+			
+			% Ways:
+			for i=1:length(obj_iw)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+i,imax));
+						pause(0.001);
+					end
+				end
+				i_part								= i_part+1;
+				iw										= obj_iw(i);
+				itable								= i+inmax;
+				OSMDATA_TABLE_INWR(itable,1)	= iw;
+				No(i_part,1)						= itable;
+				ID(i_part,1)						= OSMDATA.id.way(1,iw);
+				Type(i_part,1)						= "way";
+				ObjNo(i_part,1)					= OSMDATA.iobj.way(1,iw);
+				NoN(i_part,1)						= OSMDATA.way(1,iw).no_nodes;
+				NoW(i_part,1)						= 1;
+				NoR(i_part,1)						= 0;
+				Dimx(i_part,1)						= OSMDATA.way_xmax_mm(1,iw)-OSMDATA.way_xmin_mm(1,iw);
+				Dimy(i_part,1)						= OSMDATA.way_ymax_mm(1,iw)-OSMDATA.way_ymin_mm(1,iw);
+				Diag(i_part,1)						= sqrt(Dimx(i_part,1)^2+Dimy(i_part,1)^2);
+				Length(i_part,1)					= OSMDATA.way(1,iw).length_mm;
+				Area(i_part,1)						= OSMDATA.way(1,iw).area_mm2;
+				if ~ismissing(OSMDATA.way(1,iw).tag(1,1))
+					for iwt=1:OSMDATA.no_tags
+						if iwt<=size(OSMDATA.way(1,iw).tag,2)
+							key_m(i_part,iwt)=string(OSMDATA.way(1,iw).tag(1,iwt).k);
+							val_m(i_part,iwt)=string(OSMDATA.way(1,iw).tag(1,iwt).v);
+						else
+							break
+						end
+					end
+				end
+				if i_part>=imax_part
+					extend_table_local(...
+						No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,OSMDATA.no_tags,i_part);
+					[No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=init_colvar_local(...
+						imax_part,OSMDATA.no_tags);
+					i_part	= 0;
+				end
+			end
+			
+			% Relations:
+			for i=1:length(obj_ir)
+				% Waitbar:
+				if ~isempty(msg)
+					if etime(clock,WAITBAR.t1)>=GV.waitbar_dtupdate
+						WAITBAR.t1	= clock;
+						set(GV_H.text_waitbar,'String',sprintf('%s Filter OSM-data, assign results: No %g/%g',...
+							msg,inmax+iwmax+i,imax));
+						pause(0.001);
+					end
+				end
+				i_part								= i_part+1;
+				ir										= obj_ir(i);
+				itable								= i+inmax+iwmax;
+				OSMDATA_TABLE_INWR(itable,1)	= ir;
+				No(i_part,1)						= itable;
+				ID(i_part,1)						= OSMDATA.id.relation(1,ir);
+				Type(i_part,1)						= "relation";
+				ObjNo(i_part,1)					= OSMDATA.iobj.relation(1,ir);
+				NoN(i_part,1)						= OSMDATA.relation(1,ir).no_nodes;
+				NoW(i_part,1)						= OSMDATA.relation(1,ir).no_ways;
+				NoR(i_part,1)						= OSMDATA.relation(1,ir).no_relations;
+				Dimx(i_part,1)						= OSMDATA.relation_xmax_mm(1,ir)-OSMDATA.relation_xmin_mm(1,ir);
+				Dimy(i_part,1)						= OSMDATA.relation_ymax_mm(1,ir)-OSMDATA.relation_ymin_mm(1,ir);
+				Diag(i_part,1)						= sqrt(Dimx(i_part,1)^2+Dimy(i_part,1)^2);
+				Length(i_part,1)					= OSMDATA.relation(1,ir).length_mm;
+				Area(i_part,1)						= OSMDATA.relation(1,ir).area_mm2;
+				if ~ismissing(OSMDATA.relation(1,ir).tag(1,1))
+					for irt=1:OSMDATA.no_tags
+						if irt<=size(OSMDATA.relation(1,ir).tag,2)
+							key_m(i_part,irt)=string(OSMDATA.relation(1,ir).tag(1,irt).k);
+							val_m(i_part,irt)=string(OSMDATA.relation(1,ir).tag(1,irt).v);
+						else
+							break
+						end
+					end
+				end
+				if i_part>=imax_part
+					extend_table_local(...
+						No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,OSMDATA.no_tags,i_part);
+					[No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=init_colvar_local(...
+						imax_part,OSMDATA.no_tags);
+					i_part	= 0;
+				end
+			end
+			
+			% Add last part to the table:
+			if i_part>0
+				extend_table_local(...
+					No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,OSMDATA.no_tags,i_part);
+			end
+			
 	end
 	
 	% Additional include filters:
@@ -1112,7 +1450,7 @@ try
 	OSMDATA_TABLE(r_table_filtercrit,:)			= [];
 	OSMDATA_TABLE_INWR(r_table_filtercrit,:)	= [];
 	
-	% Sort the elements by length in descending order. 
+	% Sort the elements by length in descending order.
 	OSMDATA_TABLE_No		= OSMDATA_TABLE.No;
 	[~,isort]				= sort(OSMDATA_TABLE.Length,'descend');
 	OSMDATA_TABLE			= OSMDATA_TABLE(isort,:);
@@ -1156,7 +1494,10 @@ try
 					sprintf('Filter results (%g entries):',size(OSMDATA_TABLE,1));
 			end
 		end
-		drawnow;
+		% Execution times when loading a large project:
+		% drawnow;						% 266.75s
+		% drawnow nocallbacks;		% 303.594s
+		pause(0.001);					% <0.2s
 	end
 	% Always update the columns of the uitable, because after loading the OSM-data, the number
 	% of tags can change (OSMDATA.no_tags):
@@ -1167,4 +1508,88 @@ try
 catch ME
 	errormessage('',ME);
 end
+
+
+
+function [No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m]=...
+	init_colvar_local(imax_part,no_tags)
+% Initialization of the column variables
+
+try
+	
+	No							= zeros(imax_part,1);							% itable
+	ID							= uint64(zeros(imax_part,1));					% id
+	Type						= strings(imax_part,1);							% type
+	ObjNo						= zeros(imax_part,1);							% object number
+	NoN						= zeros(imax_part,1);							% no_nodes
+	NoW						= zeros(imax_part,1);							% no_ways
+	NoR						= zeros(imax_part,1);							% no_relations
+	Dimx						= zeros(imax_part,1);							% dx_mm
+	Dimy						= zeros(imax_part,1);							% dy_mm
+	Diag						= zeros(imax_part,1);							% diag_mm
+	Length					= zeros(imax_part,1);							% length_mm
+	Area						= zeros(imax_part,1);							% area_mm2
+	key_m						= strings(imax_part,no_tags);
+	val_m						= strings(imax_part,no_tags);
+	
+catch ME
+	errormessage('',ME);
+end
+
+
+
+
+function extend_table_local(No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area,key_m,val_m,notags,i_part,init)
+
+global OSMDATA_TABLE
+
+try
+	
+	% Create table from variables:
+	if i_part<size(No,1)
+		No			= No(1:i_part,1);
+		ID			= ID(1:i_part,1);
+		Type		= Type(1:i_part,1);
+		ObjNo		= ObjNo(1:i_part,1);
+		NoN		= NoN(1:i_part,1);
+		NoW		= NoW(1:i_part,1);
+		NoR		= NoR(1:i_part,1);
+		Dimx		= Dimx(1:i_part,1);
+		Dimy		= Dimy(1:i_part,1);
+		Diag		= Diag(1:i_part,1);
+		Length	= Length(1:i_part,1);
+		Area		= Area(1:i_part,1);
+		for it=1:notags
+			eval(sprintf('Key%1.0f=key_m(1:i_part,it);',it));
+			eval(sprintf('Val%1.0f=val_m(1:i_part,it);',it));
+		end
+	else
+		for it=1:notags
+			eval(sprintf('Key%1.0f=key_m(:,it);',it));
+			eval(sprintf('Val%1.0f=val_m(:,it);',it));
+		end
+	end
+	command='OSMDATA_TABLE_new=table(No,ID,Type,ObjNo,NoN,NoW,NoR,Dimx,Dimy,Diag,Length,Area';
+	for it=1:notags
+		command		= sprintf('%s,Key%1.0f,Val%1.0f',command,it,it);
+	end
+	command		= sprintf('%s);',command);
+	eval(command);
+	
+	% Add the new data at the end of OSMDATA_TABLE:
+	if nargin<17
+		init		= false;
+	end
+	if init
+		OSMDATA_TABLE		= OSMDATA_TABLE_new;
+	else
+		OSMDATA_TABLE		= [OSMDATA_TABLE;OSMDATA_TABLE_new];
+	end
+	
+catch ME
+	errormessage('',ME);
+end
+
+
+
 

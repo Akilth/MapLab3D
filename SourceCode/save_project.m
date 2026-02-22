@@ -8,21 +8,21 @@ function save_project(get_userinput,filename_add)
 global APP PP ELE GV GV_H MAP_OBJECTS OSMDATA VER PLOTDATA PRINTDATA
 
 try
-
+	
 	if ~isfield(GV,'pp_projectfilename')
 		return
 	end
 	if isempty(GV.pp_projectfilename)
 		return
 	end
-
+	
 	% Display state:
 	t_start_statebusy	= clock;
 	stateisbusy	= display_on_gui('state','','isbusy');
 	if ~stateisbusy
 		display_on_gui('state','Saving project ...','busy','add');
 	end
-
+	
 	% Ask for the project name:
 	if nargin<1
 		get_userinput	= 0;
@@ -49,7 +49,7 @@ try
 		% Show path and filenames:
 		display_on_gui('pathfilenames');
 	end
-
+	
 	% If the the map figure does not exist: open or clear map figure:
 	fig_2dmap_exists	= true;
 	if ~isfield(GV_H,'fig_2dmap')
@@ -70,10 +70,10 @@ try
 	if ~fig_2dmap_exists
 		create_map_figure;
 	end
-
+	
 	% Save the current date and time:
 	savetime_map			= clock;
-
+	
 	% Ad ud.imapobj and ud.issource to the userdata of the plot objects:
 	% The source plots are made visible, if the corresponding map object is selected.
 	% This makes it easier to move the texts and symbols to the right place when editing the map.
@@ -99,20 +99,20 @@ try
 			%       issource: 1 (true)
 			%        imapobj: 0
 			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-				for k=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
-					if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h)
-						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.imapobj	= imapobj;
-					end
-				end
+				MAP_OBJECTS(imapobj,1).h(i,1).UserData	= rmfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source');
 			end
 		end
 	end
-
+	
+	% % % % Disabled: it is too complicated to temporarily hide objects again if necessary:
+	% % % % Set the value of the cutting lines dropdown menu to 'None' (make the map objects visible):
+	% % % set_previewtype_dropdown(1);
+	
 	% Deselect all map objects:
 	if ~isempty(MAP_OBJECTS)
 		plot_modify('deselect',-1,0);
 	end
-
+	
 	% Rename old versions:
 	if isempty(filename_add)
 		for i=PP.general.save_n_backups:-1:0
@@ -159,28 +159,30 @@ try
 			end
 		end
 	end
-
+	
 	% Filenames:
-	[map_filename,mapdata_filename,~]	= filenames_savefiles(filename_add);
-
+	[GV.map_filename,GV.mapdata_filename,~]	= filenames_savefiles(filename_add);
+	% Show path and filenames:
+	display_on_gui('pathfilenames');
+	
 	% Save the map:
 	set(GV_H.fig_2dmap,'UserData',struct(...
 		'PP',PP,...			% necessary for map2stl.m
 		'ELE',ELE,...		% necessary for map2stl.m
 		'ver_map',VER,...
 		'savetime_map',savetime_map));
-	savefig(GV_H.fig_2dmap,[GV.projectdirectory map_filename]);
-
+	savefig(GV_H.fig_2dmap,[GV.projectdirectory GV.map_filename]);
+	
 	% Save the map data:
 	GV_savedata				= GV;
 	ver_mapdata				= VER;					% Save the version number
 	savetime_mapdata		= savetime_map;		% Save the current date and time
-	save([GV.projectdirectory mapdata_filename],...
+	save([GV.projectdirectory GV.mapdata_filename],...
 		'OSMDATA','MAP_OBJECTS','GV_savedata','PLOTDATA','PRINTDATA','ver_mapdata','savetime_mapdata');
-
+	
 	% The map has been saved:
 	GV.map_is_saved		= 1;
-
+	
 	% Execution time:
 	t_end_statebusy					= clock;
 	dt_statebusy						= etime(t_end_statebusy,t_start_statebusy);
@@ -192,14 +194,14 @@ try
 		GV.exec_time.save_project.dt			= dt_statebusy;
 		GV.exec_time.save_project.dt_str		= dt_statebusy_str;
 	end
-
+	
 	% Display state:
 	if ~stateisbusy
 		display_on_gui('state',...
 			sprintf('Saving project ... done (%s).',dt_statebusy_str),...
 			'notbusy','replace');
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

@@ -1,5 +1,5 @@
 function [poly_bgd,poly_obj,ud_bgd,ud_obj,pos_refpoints]=symboleqtags2poly(...
-	iobj,isym,tag_symbol,itable_v,connways_eqtags,obj_purpose)
+	iobj,isym,tag_symbol,connways_eqtags,obj_purpose)
 % Calculates the positions of the symbols. The unit of the values of the polygon is mm.
 % poly_bgd						N*1 polyshape object of the symbol background.
 % poly_obj						N*1 polyshape object of the symbol.
@@ -24,16 +24,15 @@ function [poly_bgd,poly_obj,ud_bgd,ud_obj,pos_refpoints]=symboleqtags2poly(...
 % isym							index in SY
 % tag_symbol					character array: tag of the symbol: symbol_key=symbol_value
 %									For example: 'generator:method=wind_turbine'
-% itable_v						vector of indices in OSMDATA_TABLE
 % connways_eqtags				structure with the coordinates of all nodes, ways and relations with equal tags
 %									(see connect_ways)
 % obj_purpose					cell array: information about the usage of the object
 %									(see get_pp_mapobjsettings.m)
 
-global PP OSMDATA OSMDATA_TABLE OSMDATA_TABLE_INWR SY
+global PP OSMDATA SY
 
 try
-
+	
 	% Testplot:
 	testplot	= 0;
 	ha			= [];
@@ -70,33 +69,54 @@ try
 		title_str	= sprintf('%s=%s',SY(isym).k,SY(isym).v);
 		title(ha,title_str,'Interpreter','none');
 	end
-
+	
 	% Assign the indices in the OSM data:
+	% see connect_ways:
+	% connways_eqtags.nodes.in							nodes: index in OSMDATA.node
+	% connways_eqtags.nodes.ir							nodes: index in OSMDATA.relation (0: no relation)
+	% connways_eqtags.lines(k_line,1).iw_v			lines: indices in OSMDATA.way
+	% connways_eqtags.lines(k_line,1).ir			lines: index in OSMDATA.relation (0: no relation)
+	%																	 Lines with different indices ir will not get connected.
+	% connways_eqtags.areas(k_area,1).iw_v			areas: indices in OSMDATA.way
+	% connways_eqtags.areas(k_area,1).ir			areas: index in OSMDATA.relation (0: no relation)
 	in_v			= [];
 	iw_v			= [];
 	ir_v			= [];
-	if ~isempty(itable_v)
-		if ~isempty(OSMDATA_TABLE)
-			for i=1:length(itable_v)
-				itable	= itable_v(i);
-				itable	= max(0,round(itable));
-				if itable>=1
-					if height(OSMDATA_TABLE)>=itable
-						% index in OSMDATA.node/OSMDATA.way/OSMDATA.relation:
-						switch OSMDATA_TABLE.Type(itable)						% type: 'node'/'way'/'relation'
-							case 'node'
-								in_v	= [in_v;OSMDATA_TABLE_INWR(itable)];
-							case 'way'
-								iw_v	= [iw_v;OSMDATA_TABLE_INWR(itable)];
-							case 'relation'
-								ir_v	= [ir_v;OSMDATA_TABLE_INWR(itable)];
-						end
-					end
-				end
+	if isfield(connways_eqtags,'nodes')
+		if isfield(connways_eqtags.nodes,'in')
+			in_v	= [in_v;connways_eqtags.nodes.in];
+		end
+		if isfield(connways_eqtags.nodes,'ir')
+			ir_v	= [ir_v;connways_eqtags.nodes.ir];
+		end
+	end
+	if isfield(connways_eqtags,'lines')
+		for k_line=1:size(connways_eqtags.lines,1)
+			if isfield(connways_eqtags.lines(k_line,1),'iw_v')
+				iw_v	= [iw_v;connways_eqtags.lines(k_line,1).iw_v];
+			end
+			if isfield(connways_eqtags.lines(k_line,1),'ir')
+				ir_v	= [ir_v;connways_eqtags.lines(k_line,1).ir];
 			end
 		end
 	end
-
+	if isfield(connways_eqtags,'areas')
+		for k_area=1:size(connways_eqtags.areas,1)
+			if isfield(connways_eqtags.areas(k_area,1),'iw_v')
+				iw_v	= [iw_v;connways_eqtags.areas(k_area,1).iw_v];
+			end
+			if isfield(connways_eqtags.areas(k_area,1),'ir')
+				ir_v	= [ir_v;connways_eqtags.areas(k_area,1).ir];
+			end
+		end
+	end
+	in_v(in_v==0,:)		= [];
+	iw_v(iw_v==0,:)		= [];
+	ir_v(ir_v==0,:)		= [];
+	in_v						= unique(in_v);
+	iw_v						= unique(iw_v);
+	ir_v						= unique(ir_v);
+	
 	% Assign the symbol and scale-up:
 	poly0_bgd	= SY(isym).poly_bgd;
 	poly0_sym	= SY(isym).poly_sym;
@@ -140,10 +160,10 @@ try
 			poly0_sym			= scale(poly0_sym,scaleupfactor,[x y]);
 		end
 	end
-
+	
 	% Referencepoints of the symbol (all positions where to print the symbol):
 	pos_refpoints		= getdata_refpoints(iobj,connways_eqtags,'symbol',testplot,ha);
-
+	
 	% Translate the symbol to all reference points:
 	poly_bgd	= polyshape();
 	poly_obj	= polyshape();
@@ -151,7 +171,7 @@ try
 		poly_bgd(i,1)	= translate(poly0_bgd,pos_refpoints(i,1),pos_refpoints(i,2));
 		poly_obj(i,1)	= translate(poly0_sym,pos_refpoints(i,1),pos_refpoints(i,2));
 	end
-
+	
 	% Userdata:
 	[userdata_pp,~,errortext]	= get_pp_mapobjsettings(...
 		iobj,...														% iobj
@@ -160,7 +180,7 @@ try
 	if ~isempty(errortext)
 		errormessage(errortext);
 	end
-
+	
 	% Assign output arguments: symbol:
 	ud_obj.color_no		= userdata_pp.color_no_fgd;
 	ud_obj.color_no_pp	= userdata_pp.color_no_fgd;
@@ -179,7 +199,7 @@ try
 	for i=2:size(pos_refpoints,1)
 		ud_obj(i,1)			= ud_obj(1,1);
 	end
-
+	
 	% Assign output arguments: background:
 	% The object priority of the background MUST:
 	% 1) be smaller the the object priority of the foreground AND
@@ -202,7 +222,7 @@ try
 	for i=2:size(pos_refpoints,1)
 		ud_bgd(i,1)			= ud_bgd(1,1);
 	end
-
+	
 	% Testplot:
 	if testplot==1
 		for i=1:size(pos_refpoints,1)
@@ -213,7 +233,7 @@ try
 		end
 		set_breakpoint=1;
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

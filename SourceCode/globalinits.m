@@ -132,7 +132,7 @@ try
 	PP												= [];
 	
 	% Test samples:
-	GV.testsample_no_max							= 35;		% before set_settings('init') !
+	GV.testsample_no_max						= 35;		% before set_settings('init') !
 	
 	% Initialize SETTINGS:
 	set_settings('init');
@@ -335,13 +335,13 @@ try
 	end
 	
 	% Settings for the 2d map context menu (funktion ButtonDownFcn_ax_2dmap):
-	GV.fig_2dmap_cm.lc_xmin						= 1;
-	GV.fig_2dmap_cm.lc_xmax						= -1;
-	GV.fig_2dmap_cm.lc_ymin						= 1;
-	GV.fig_2dmap_cm.lc_ymax						= -1;
-	GV.fig_2dmap_cm.clicked_object			= [];
-	GV.fig_2dmap_cm.poly_outside_spec		= polyshape();
-	GV.fig_2dmap_cm.poly_dzmax					= polyshape();
+	GV_H.fig_2dmap_cm.lc_xmin					= 1;
+	GV_H.fig_2dmap_cm.lc_xmax					= -1;
+	GV_H.fig_2dmap_cm.lc_ymin					= 1;
+	GV_H.fig_2dmap_cm.lc_ymax					= -1;
+	GV_H.fig_2dmap_cm.clicked_object			= [];
+	GV_H.fig_2dmap_cm.poly_outside_spec		= polyshape();
+	GV_H.fig_2dmap_cm.poly_dzmax				= polyshape();
 	
 	% Legend: background z-value:
 	GV.legend_z_topside_bgd						= 0;

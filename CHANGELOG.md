@@ -14,7 +14,23 @@ the project parameters may need to be edited.
 
 ### Known issues
 
-- Sometimes a text map object is significantly too large. This error can be fixed by changing the text or the font (open the context menu by left-clicking and then right-clicking on the text object).
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+
+## [1.1.0.0 Public Beta] - 2025-08-28
+
+### Known issues
+
+- Sometimes a text map object is significantly too large. This error can be fixed by changing the text or the font 
+(open the context menu by left-clicking and then right-clicking on the text object).
+
+- This version is not suitable for large maps with many map objects, e.g., a map of an entire state. 
+It may happen that a saved project can no longer be loaded.
 
 ### Added
 
@@ -23,7 +39,8 @@ the project parameters may need to be edited.
 - If all parts of a color assigned to the same tile are larger than the project parameters 
 colorspec.cut_into_pieces.maxdimx and
 colorspec.cut_into_pieces.maxdimy, 
-they are split into different files. This allows printing without having to move the parts on the printing plate. This may be necessary for multi-material printing.
+they are split into different files. This allows printing without having to move the parts on the printing plate. 
+This may be necessary for multi-material printing.
 
 - "Menu: Extra - Convert georaster data":
 If a bounding box is extracted and the source data is in .mat format, only the relevant files are loaded based on 
@@ -37,17 +54,21 @@ The recommended procedure is as follows:
 This allows the creation of a complete mat file with elevation data if GeoTIFF files of areas above sea level are 
 missing.
 
+- With the setting "Tab: Edit map - Advanced - Preview (L/P) - Off," multiple objects can be selected by 
+clicking and dragging with the mouse (instead of clicking on the objects individually).
+
 - 2D map context menu (left-click on a map object with a right-click at the same position): 
 The context menu of a map object now also displays the IDs and tags of the associated OSM objects.
 
 - Button "Tab: Edit map - Basic - Select" now also selects preview lines and preview polygons.
 
-- The context menu for map objects now also displays up to a certain maximum number the tags of the nodes, ways, 
-and relations that have been included in the map object. 
-
 - Added button "Tab: Edit map - Basic - Change text/tag"
 
-- Added button "Tab: Edit map - Basic - Hide all"
+- Added button "Tab: Edit map - Basic - Hide all" and "Restore"
+
+- Added button "Tab: Edit map - Basic - Set Dimensions"
+
+- Added Menu item "Menu: Extra - Save Errorlog"
 
 ### Changed
 
@@ -80,6 +101,8 @@ unreadable. In this case, the text is now dark and therefore readable.
 - "Menu: Create map": Fixed crash in case a relation contains no data.
 
 - "Tab: Filter OSM-data - Copy table to clipboard": Crash fixed
+
+- Display of the path and file name of the saved project is now updated each time you save.
 
 ## [1.0.0.3 Public Beta] - 2025-08-28
 

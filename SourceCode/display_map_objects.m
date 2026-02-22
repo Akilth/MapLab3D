@@ -50,6 +50,17 @@ try
 	else
 		create_MAP_OBJECTS_TABLE	= true;
 	end
+	
+	imapobj_max		= size(MAP_OBJECTS,1);
+	if create_MAP_OBJECTS_TABLE
+		% Create MAP_OBJECTS_TABLE:
+		imapobj_v	= 1:imapobj_max;
+	else
+		imapobj_v	= imapobj;
+	end
+	
+	
+	
 	% old:
 	% ColumnNames	= {...
 	% 	'PlotNo',...		% imapobj
@@ -120,12 +131,8 @@ try
 	MAP_OBJECTS_TABLE_1row	= table('Size',[1 length(VarNames)],'VariableTypes',VarTypes,'VariableNames',VarNames);
 	if create_MAP_OBJECTS_TABLE
 		% Create MAP_OBJECTS_TABLE:
-		imapobj_max			= size(MAP_OBJECTS,1);
 		sz						= [imapobj_max length(VarNames)];
 		MAP_OBJECTS_TABLE	= table('Size',sz,'VariableTypes',VarTypes,'VariableNames',VarNames);
-		imapobj_v	= 1:imapobj_max;
-	else
-		imapobj_v	= imapobj;
 	end
 
 	% Assign the data to MAP_OBJECTS_TABLE:
@@ -330,7 +337,7 @@ try
 
 		end
 		GV_H.map_objects_table.ColumnWidth	= 'fit';
-		drawnow;
+		pause(0.001);
 	end
 	GV_H.map_objects_table.ColumnName	= ColumnNames;
 

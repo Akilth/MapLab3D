@@ -1,5 +1,5 @@
 function [poly_bgd,poly_obj,poly_lrp,ud_bgd,ud_obj,ud_lrp,pos_refpoints]=texteqtags2poly(...
-	iobj,iteqt,itable_v,text_eqtags,connways_eqtags,text_symb,chstsettings,userdata_pp,textpar_pp,obj_purpose)
+	iobj,iteqt,text_eqtags,connways_eqtags,text_symb,chstsettings,userdata_pp,textpar_pp,obj_purpose)
 % Converts the text strings given in text_eqtags to a polygon. The unit of the values of the polygon is mm.
 % poly_bgd				N*1 polyshape object of the text background.
 %							If there is no visible background, poly_bgd and poly_obj are equal.
@@ -32,8 +32,6 @@ function [poly_bgd,poly_obj,poly_lrp,ud_bgd,ud_obj,ud_lrp,pos_refpoints]=texteqt
 % iteqt					index in PLOTDATA.obj(iobj,1).text_eqtags, where text_eqtags is saved.
 %							iteqt=[]: the text is not included in PLOTDATA.obj(iobj,1).text_eqtags and
 %							the field iteqt is not save in ud_bgd, ud_obj, ud_lrp (texts of the legend)
-% itable_v				vector of indices in OSMDATA_TABLE
-%							itable_v=[]: The table data is not saved in ud_bgd, ud_obj, ud_lrp (texts of the legend)
 % text_eqtags			cell array of strings. Every row of the cell array is one line of the output text.
 % connways_eqtags		structure with the coordinates of all nodes, ways and relations with equal tags
 %							(see connect_ways)
@@ -53,10 +51,10 @@ function [poly_bgd,poly_obj,poly_lrp,ud_bgd,ud_obj,ud_lrp,pos_refpoints]=texteqt
 % obj_purpose			cell array: information about the usage of the object
 %							(see get_pp_mapobjsettings.m)
 
-global PP OSMDATA GV OSMDATA_TABLE OSMDATA_TABLE_INWR
+global PP OSMDATA GV
 
 try
-
+	
 	% Testplot:
 	testplot	= 0;
 	ha			= [];
@@ -100,7 +98,7 @@ try
 		end
 		title(ha,title_str,'Interpreter','none');
 	end
-
+	
 	% Create empty polygons:
 	poly0_obj		= polyshape();
 	poly0_bgd		= polyshape();
@@ -108,33 +106,54 @@ try
 	poly_obj			= polyshape();
 	poly_bgd			= polyshape();
 	poly_lrp			= polyshape();
-
+	
 	% Assign the indices in the OSM data:
+	% see connect_ways:
+	% connways_eqtags.nodes.in							nodes: index in OSMDATA.node
+	% connways_eqtags.nodes.ir							nodes: index in OSMDATA.relation (0: no relation)
+	% connways_eqtags.lines(k_line,1).iw_v			lines: indices in OSMDATA.way
+	% connways_eqtags.lines(k_line,1).ir			lines: index in OSMDATA.relation (0: no relation)
+	%																	 Lines with different indices ir will not get connected.
+	% connways_eqtags.areas(k_area,1).iw_v			areas: indices in OSMDATA.way
+	% connways_eqtags.areas(k_area,1).ir			areas: index in OSMDATA.relation (0: no relation)
 	in_v			= [];
 	iw_v			= [];
 	ir_v			= [];
-	if ~isempty(itable_v)
-		if ~isempty(OSMDATA_TABLE)
-			for i=1:length(itable_v)
-				itable	= itable_v(i);
-				itable	= max(0,round(itable));
-				if itable>=1
-					if height(OSMDATA_TABLE)>=itable
-						% index in OSMDATA.node/OSMDATA.way/OSMDATA.relation:
-						switch OSMDATA_TABLE.Type(itable)						% type: 'node'/'way'/'relation'
-							case 'node'
-								in_v	= [in_v;OSMDATA_TABLE_INWR(itable)];
-							case 'way'
-								iw_v	= [iw_v;OSMDATA_TABLE_INWR(itable)];
-							case 'relation'
-								ir_v	= [ir_v;OSMDATA_TABLE_INWR(itable)];
-						end
-					end
-				end
+	if isfield(connways_eqtags,'nodes')
+		if isfield(connways_eqtags.nodes,'in')
+			in_v	= [in_v;connways_eqtags.nodes.in];
+		end
+		if isfield(connways_eqtags.nodes,'ir')
+			ir_v	= [ir_v;connways_eqtags.nodes.ir];
+		end
+	end
+	if isfield(connways_eqtags,'lines')
+		for k_line=1:size(connways_eqtags.lines,1)
+			if isfield(connways_eqtags.lines(k_line,1),'iw_v')
+				iw_v	= [iw_v;connways_eqtags.lines(k_line,1).iw_v];
+			end
+			if isfield(connways_eqtags.lines(k_line,1),'ir')
+				ir_v	= [ir_v;connways_eqtags.lines(k_line,1).ir];
 			end
 		end
 	end
-
+	if isfield(connways_eqtags,'areas')
+		for k_area=1:size(connways_eqtags.areas,1)
+			if isfield(connways_eqtags.areas(k_area,1),'iw_v')
+				iw_v	= [iw_v;connways_eqtags.areas(k_area,1).iw_v];
+			end
+			if isfield(connways_eqtags.areas(k_area,1),'ir')
+				ir_v	= [ir_v;connways_eqtags.areas(k_area,1).ir];
+			end
+		end
+	end
+	in_v(in_v==0,:)		= [];
+	iw_v(iw_v==0,:)		= [];
+	ir_v(ir_v==0,:)		= [];
+	in_v						= unique(in_v);
+	iw_v						= unique(iw_v);
+	ir_v						= unique(ir_v);
+	
 	% Text-settings:
 	chstno				= textpar_pp.charstyle_no;
 	text_namevalue		= {...
@@ -155,7 +174,7 @@ try
 				text_eqtags_uplo{i,1}	= text_eqtags{i,1};
 		end
 	end
-
+	
 	% Convert to polygon: i in poly0_bgd, poly0_obj is the text line number
 	for i=1:size(text_eqtags,1)
 		[poly0_bgd(i,1),...								% poly_bgd
@@ -171,9 +190,11 @@ try
 			chstsettings.par_frame,...					% par_frame
 			chstsettings.no_bgd,...						% no_bgd
 			chstsettings.par_bgd,...					% par_bgd
-			text_namevalue);								% text_namevalue
+			text_namevalue,...							% text_namevalue
+			iobj,...
+			iteqt);
 	end
-
+	
 	% Line spacing:
 	switch textpar_pp.verticalalignment
 		case {'top','cap'}
@@ -198,7 +219,7 @@ try
 				poly0_obj(i,1)	= translate(poly0_obj(i,1),0,dy);
 			end
 	end
-
+	
 	% Font widening:
 	if chstsettings.fontwidening~=0
 		fontwidening	= max(0,chstsettings.fontwidening);
@@ -235,16 +256,16 @@ try
 			poly0_bgd(i,1)		= union(poly0_bgd(i,1),poly0_obj(i,1));
 		end
 	end
-
+	
 	% Rotation:
 	if textpar_pp.rotation~=0
 		poly0_obj	= rotate(poly0_obj,textpar_pp.rotation);
 		poly0_bgd	= rotate(poly0_bgd,textpar_pp.rotation);
 	end
-
+	
 	% Referencepoints of the text (all positions where to print the text):
 	pos_refpoints_0	= getdata_refpoints(iobj,connways_eqtags,text_symb,testplot,ha);
-
+	
 	% Distance to the reference point:
 	switch textpar_pp.verticalalignment
 		case {'top','cap'}
@@ -270,7 +291,7 @@ try
 		otherwise
 			% 'center'
 	end
-
+	
 	% Connection line to the reference point:
 	if textpar_pp.line2refpoint_display~=0
 		if PP.obj(iobj).symbolpar.display~=0
@@ -296,7 +317,7 @@ try
 			end
 		end
 	end
-
+	
 	% Translate the text to all reference points pos_refpoints_0:
 	% Each line of text should be a separate plot object, so the size of poly_bgd and pos_refpoints must be equal:
 	ipoly		= 0;
@@ -315,7 +336,7 @@ try
 			pos_refpoints(ipoly,:)	= [pos_refpoints_0(irp,1) pos_refpoints_0(irp,2)];
 		end
 	end
-
+	
 	% Assign output arguments: text:
 	ud_obj_0.color_no			= userdata_pp.color_no_fgd;
 	ud_obj_0.color_no_pp		= userdata_pp.color_no_fgd;
@@ -343,7 +364,7 @@ try
 	for irp=2:size(pos_refpoints_0,1)
 		ud_obj	= [ud_obj;ud_obj_0];
 	end
-
+	
 	% Assign output arguments: background:
 	% The object priority of the background MUST:
 	% 1) be smaller the the object priority of the foreground AND
@@ -375,7 +396,7 @@ try
 	for irp=2:size(pos_refpoints_0,1)
 		ud_bgd	= [ud_bgd;ud_bgd_0];
 	end
-
+	
 	% Assign output arguments: connection line to the reference point:
 	% The object priority of the background MUST:
 	% 1) be smaller the the object priority of the foreground AND
@@ -407,7 +428,7 @@ try
 	for irp=2:size(pos_refpoints_0,1)
 		ud_lrp	= [ud_lrp;ud_lrp_0];
 	end
-
+	
 	% Testplot:
 	if testplot==1
 		for irp=1:size(pos_refpoints_0,1)
@@ -419,7 +440,7 @@ try
 		plot(ha,poly_lrp);
 		set_breakpoint=1;
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

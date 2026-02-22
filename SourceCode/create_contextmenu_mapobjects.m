@@ -654,9 +654,9 @@ try
 	if iobj>0
 		separator		= 'on';
 		if    isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'linelength')
-				uimenu(hcmenu,...
-					'Label',sprintf('Line length = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.linelength),...
-					'Separator',separator);
+			uimenu(hcmenu,...
+				'Label',sprintf('Line length = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.linelength),...
+				'Separator',separator);
 			separator		= 'off';
 		end
 		if PP.obj(iobj).linestyle==3
@@ -673,6 +673,24 @@ try
 					'ForegroundColor',[1 0 1]*0.5);
 				uimenu(hcmenu,'Label','Change line width',...
 					'MenuSelectedFcn',@(src,event)plot_modify('change_liwi',imapobj));
+			end
+		else
+			if (PP.obj(iobj).display_as_line~=0)&&strcmp(MAP_OBJECTS(imapobj,1).disp,'line')
+				[~,~,~,~,...
+					liwi_min,...								% constant line width or minimum line width
+					liwi_max,...								% constant line width or maximum line width
+					~,~,~...
+					]	= line2poly(...
+					[],...										% x
+					[],...										% y
+					PP.obj(iobj).linepar,...				% par
+					PP.obj(iobj).linestyle,...				% style
+					iobj);										% iobj
+				liwi_str		= sprintf('Line width = %gmm',liwi_min);
+				if abs(liwi_min-liwi_max)>GV.tol_1
+					liwi_str		= sprintf('%s .. %gmm',liwi_str,liwi_max);
+				end
+				uimenu(hcmenu,'Label',liwi_str,'Separator',separator);
 			end
 		end
 	end

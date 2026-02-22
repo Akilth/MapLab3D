@@ -12,15 +12,19 @@ function returnvalue=display_on_gui(object,text,value,par)
 global APP GV APP_UIOBJECTS
 
 try
-
+	
 	if isempty(APP)||isempty(GV)
 		return
 	end
-
+	
 	if nargin<4
 		par	= '';
 	end
-
+	
+	if nargin>=2
+		text	= sprintf('%s: %s',datetime('now','Format','yyyy-MMM-dd HH.mm.ss'),text);
+	end
+	
 	switch object
 		case 'state'
 			rmax_LogTextArea	= 50;
@@ -52,7 +56,7 @@ try
 							end
 							APP.LogTextArea.Value{1,1}			= text;
 					end
-					drawnow;
+					pause(0.001);
 				case 'notbusy'
 					% Display number and PlotNo of selected map objects:
 					display_on_gui_selectedmapobjects;
@@ -82,16 +86,18 @@ try
 							end
 							APP.LogTextArea.Value{1,1}			= text;
 					end
-					drawnow;
+					% Execution times when loading a large project:
+					% drawnow;						% 59.459s
+					pause(0.001);					% s
 				case 'isbusy'
 					if isequal(APP.StateTextArea.BackgroundColor,[1 0 0])
 						returnvalue	= true;
 					else
 						returnvalue	= false;
 					end
-
+					
 			end
-
+			
 		case 'pathfilenames'
 			if isfield(GV,'pp_pathfilename')
 				if isfield(GV,'varname_dataset_no')
@@ -119,10 +125,12 @@ try
 			if isfield(GV,'ele_pathname')
 				APP.pathnameELEDataTextArea.Value				= {GV.ele_pathname};
 			end
-			drawnow;
-
+			% Execution times when loading a large project:
+			% drawnow;						% 57.448s
+			pause(0.001);					% 0.006s
+			
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

@@ -9,11 +9,11 @@ function load_project(map_pathname,map_filename)
 global APP GV GV_H PP ELE MAP_OBJECTS OSMDATA VER PLOTDATA PRINTDATA SETTINGS
 
 try
-
+	
 	% Display state:
 	t_start_statebusy	= clock;
 	display_on_gui('state','Loading project ...','busy','add');
-
+	
 	% Ask for the map to be loaded:
 	if nargin==0
 		if ~isfield(GV,'projectdirectory')
@@ -55,7 +55,7 @@ try
 			errormessage(errortext)
 		end
 	end
-
+	
 	% Check the file extension:
 	k					= find(map_filename=='.');
 	if isempty(k)
@@ -79,7 +79,7 @@ try
 		errormessage(errortext)
 	end
 	mapdata_filename	= [map_filename_withoutext 'DATA.mat'];
-
+	
 	% Check whether the corresponding mapdata file exists:
 	if exist([map_pathname mapdata_filename],'file')~=2
 		errortext	= sprintf([...
@@ -89,11 +89,13 @@ try
 			'%s.'],mapdata_filename,map_pathname);
 		errormessage(errortext)
 	end
-
-	% Display message:
-	set(GV_H.text_waitbar,'String',sprintf('Loading project. This may take some time ... '));
-
+	
+	
 	% Load the map data file:
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAPDATA.mat. This may take some time ... '));
+	% drawnow nocallbacks;
+	pause(0.001);					% s
 	mapdata	= load([map_pathname mapdata_filename],'-mat',...
 		'OSMDATA',...
 		'MAP_OBJECTS',...
@@ -116,13 +118,22 @@ try
 			'does not contain the required data.'],mapdata_filename);
 		errormessage(errortext)
 	end
-
+	
 	% Open the figure:
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAP.fig. This may take some time ... '));
+	% drawnow nocallbacks;
+	pause(0.001);					% s
 	hf_map_new		= openfig([map_pathname map_filename],'invisible');
 	figure_theme(hf_map_new,'set',[],'light');
 	set(hf_map_new,'WindowStyle','normal');		% open in a standalone window (not docked)
 	set(hf_map_new,'Tag','maplab3d_figure');
-
+	
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Initializations. This may take some time ... '));
+	% drawnow nocallbacks;
+	pause(0.001);					% s
+	
 	% Check wether the figure contains the required userdata:
 	ud_map_new		= hf_map_new.UserData;
 	% cameratoolbar disabled, because it changes the axis position:
@@ -144,7 +155,7 @@ try
 			'does not contain the required data.'],map_filename);
 		errormessage(errortext)
 	end
-
+	
 	% Check whether the two files have been saved at the same time:
 	if ~isequal(ud_map_new.savetime_map,mapdata.savetime_mapdata)
 		close(hf_map_new);
@@ -155,7 +166,7 @@ try
 			'were saved is not identical.'],map_filename,mapdata_filename);
 		errormessage(errortext)
 	end
-
+	
 	% Check whether the two files have been saved with the same version number:
 	if    ~isequal([ud_map_new.ver_map.no1  ud_map_new.ver_map.no2 ],[VER.no1 VER.no2])||...
 			~isequal([mapdata.ver_mapdata.no1 mapdata.ver_mapdata.no2],[VER.no1 VER.no2])
@@ -170,12 +181,12 @@ try
 			VER.no1,VER.no2);
 		errormessage(errortext)
 	end
-
+	
 	% Load the project:
-
+	
 	% Initializations:
 	globalinits;
-
+	
 	% Assign the global variables:
 	OSMDATA		= mapdata.OSMDATA;
 	MAP_OBJECTS	= mapdata.MAP_OBJECTS;
@@ -183,16 +194,17 @@ try
 	PLOTDATA		= mapdata.PLOTDATA;
 	PRINTDATA	= mapdata.PRINTDATA;
 	clear mapdata
-
+	
 	% Set OSMDATA_TABLE, I_OSMDATA_TABLE_TEMPPREV by updating the table:
-	filter_osmdata(1);
-
+	% Already executed in globalinits: deactivated:
+	% filter_osmdata(1);
+	
 	% PP:
 	PP												= ud_map_new.PP;
-
+	
 	% ELE:
 	ELE											= ud_map_new.ELE;
-
+	
 	% GV:
 	GV.projectdirectory						= map_pathname;
 	GV.map_filename							= map_filename;
@@ -200,15 +212,15 @@ try
 	GV.map_is_saved							= 1;
 	GV.no_selected_plotobjects				= 0;
 	GV.selected_plotobjects					= [];
-
+	
 	% GV.projectdirectory maybe has been changed: Begin a new diary file:
 	start_diary(GV.projectdirectory);
-
+	
 	% Create projectdirectory for the STL-files:
 	testsample_no								= 0;
 	[GV.projectdirectory_stl,GV.projectdirectory_stl_repaired]	= ...
 		get_projectdirectory_stl(GV.projectdirectory,testsample_no);
-
+	
 	% Do not overwrite these fields of GV:
 	fieldnames_no	= {...
 		'projectdirectory';...
@@ -223,8 +235,9 @@ try
 		'selbyfilt';...
 		'symbols_pathfilename';...
 		'symbolsdirectory';...
-		'projectdirectory_ts'};
-
+		'projectdirectory_ts';...
+		'timer_activated'};
+	
 	% Assign the other fields of GV:
 	fn_sd			= fieldnames(GV_savedata);
 	for ifn_sd=1:size(fn_sd,1)
@@ -239,7 +252,7 @@ try
 			GV.(fn_sd{ifn_sd,1})		= GV_savedata.(fn_sd{ifn_sd,1});
 		end
 	end
-
+	
 	% Set menu checkboxes:
 	if isempty(GV.iobj_testplot_simplify_v)
 		APP.CreatemapSettingsShowTestplotsMenu.Checked='off';
@@ -251,21 +264,31 @@ try
 	else
 		APP.MapEdit_SimplifyMapSettings_ShowTestplots_Menu.Checked='on';
 	end
-
+	
 	% Set the visibility of the map objects table:
 	show_mapobjectstable('update');
-
+	
 	% Set variable elements of GV.tooltips after loading a project:
 	set_tooltips('set_variable_tooltips');
-
+	
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Assign map objects. This may take some time ... '));
+	% Execution times when loading a large project:
+	% drawnow nocallbacks;		% 499.351s
+	pause(0.001);					% 0.084s
+	
 	% GV_H.fig_2dmap:
 	if isfield(GV_H,'fig_2dmap')
 		if ishandle(GV_H.fig_2dmap)
 			close(GV_H.fig_2dmap);
+			% Test:
+			while ishandle(GV_H.fig_2dmap)
+				pause(0.05);
+			end
 		end
 	end
 	GV_H.fig_2dmap						= hf_map_new;
-
+	
 	% GV_H.ax_2dmap:
 	hc	= GV_H.fig_2dmap.Children;
 	for i=1:length(hc)
@@ -275,7 +298,16 @@ try
 			errormessage;
 		end
 	end
-
+	
+	% Settings for the 2d map context menu (funktion ButtonDownFcn_ax_2dmap):
+	GV_H.fig_2dmap_cm.lc_xmin					= 1;
+	GV_H.fig_2dmap_cm.lc_xmax					= -1;
+	GV_H.fig_2dmap_cm.lc_ymin					= 1;
+	GV_H.fig_2dmap_cm.lc_ymax					= -1;
+	GV_H.fig_2dmap_cm.clicked_object			= [];
+	GV_H.fig_2dmap_cm.poly_outside_spec		= polyshape();
+	GV_H.fig_2dmap_cm.poly_dzmax				= polyshape();
+	
 	% Handles of plot objects:
 	map_objects_source		= struct([]);
 	for imapobj=1:size(MAP_OBJECTS,1)
@@ -286,21 +318,21 @@ try
 	i_delete	= false(imax,1);
 	GV_H.poly_tiles	= [];
 	GV_H.poly_tileno	= [];
-
+	
 	% Assign the children handles only once: much faster!
 	GV_H_ax_2dmap_Children		= GV_H.ax_2dmap.Children;
-
+	
 	for i=1:imax
 		% The following commands have a long computation time inside the for-loop:
 		% -	if isfield(GV_H.ax_2dmap.Children(i).UserData,'imapobj')
 		% -	if isfield(GV_H.ax_2dmap.Children(i).UserData,'issource')
 		% -	if ~GV_H.ax_2dmap.Children(i).UserData.issource
-
+		
 		GV_H_ax_2dmap_Children_i		= GV_H_ax_2dmap_Children(i);
 		Children_i_assigned				= false;
-
+		
 		if isfield(GV_H_ax_2dmap_Children_i.UserData,'imapobj')
-
+			
 			% MAP_OBJECTS.h:
 			if ~isfield(GV_H_ax_2dmap_Children_i.UserData,'issource')
 				errormessage;
@@ -327,57 +359,57 @@ try
 						[map_objects_source(imapobj,1).source_h;GV_H_ax_2dmap_Children_i];
 				end
 			end
-
+			
 		elseif isfield(GV_H_ax_2dmap_Children_i.UserData,'tile_no')
 			tile_no												= GV_H_ax_2dmap_Children_i.UserData.tile_no;
-
+			
 			% GV_H.poly_frame:
 			if tile_no==-3
 				GV_H.poly_frame								= GV_H_ax_2dmap_Children_i;
 				Children_i_assigned							= true;
 			end
-
+			
 			% GV_H.poly_map_printout_obj_limits:
 			if tile_no==-2
 				GV_H.poly_map_printout_obj_limits		= GV_H_ax_2dmap_Children_i;
 				Children_i_assigned							= true;
 			end
-
+			
 			% GV_H.poly_limits_osmdata:
 			if tile_no==-1
 				GV_H.poly_limits_osmdata					= GV_H_ax_2dmap_Children_i;
 				Children_i_assigned							= true;
 			end
-
+			
 			% GV_H.poly_map_printout:
 			if tile_no==0
 				GV_H.poly_map_printout						= GV_H_ax_2dmap_Children_i;
 				Children_i_assigned							= true;
 			end
-
+			
 			% GV_H.poly_tiles:
 			if tile_no>0
 				GV_H.poly_tiles{tile_no,1}					= GV_H_ax_2dmap_Children_i;
 				Children_i_assigned							= true;
 			end
-
+			
 		elseif isfield(GV_H_ax_2dmap_Children_i.UserData,'tile_no_text')
 			tile_no											= GV_H_ax_2dmap_Children_i.UserData.tile_no_text;
-
+			
 			% GV_H.poly_tileno:
 			GV_H.poly_tileno{tile_no,1}				= GV_H_ax_2dmap_Children_i;
 			Children_i_assigned							= true;
-
+			
 		else
 			% temporary preview objects:
 			i_delete(i,1)									= true;
 			Children_i_assigned							= true;
 		end
-
+		
 		if ~Children_i_assigned
 			test=1;
 		end
-
+		
 	end
 	% Assign the source plots:
 	for imapobj=1:size(MAP_OBJECTS,1)
@@ -389,7 +421,7 @@ try
 	end
 	% Delete temporary preview objects:
 	delete(GV_H.ax_2dmap.Children(i_delete));
-
+	
 	% Delete empty map objects:
 	% This should should not happen. However, in the event of incorrect data, a crash is prevented.
 	imapobj_delete	= false(size(MAP_OBJECTS,1),1);
@@ -399,34 +431,44 @@ try
 		end
 	end
 	MAP_OBJECTS(imapobj_delete,:)	= [];
-
+	
 	% Set the axis position:
 	SizeChangedFcn_fig_2dmap([],[],1,1);
-
+	
 	% After assignment of GV_H.fig_2dmap and GV_H.ax_2dmap and the plot objects GV_H....:
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Make the map visible. This may take some time ... '));
+	% Execution times when loading a large project:
+	% drawnow nocallbacks;		% 68.418s
+	pause(0.001);					% s
 	GV_H.fig_2dmap.Visible			= 'on';
-
+	
+	% Display message:
+	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Last steps. This may take some time ... '));
+	% drawnow nocallbacks;
+	pause(0.001);					% s
+	
 	% Initialize the include and exclude tags table:
 	set_inclexcltags_table('reset');
-
+	
 	% Set the object numbers dropdown menu:
 	set_inclexcltags_table('init_objno_dropdown');
-
+	
 	% Set the value of the cutting lines dropdown menu to 'None' (make the map objects visible):
 	set_previewtype_dropdown(1);
-
+	
 	% MAP_OBJECTS_TABLE:
 	display_map_objects;
-
+	
 	% Display the paths and filenames:
 	display_on_gui('pathfilenames');
-
+	
 	% Udate the legend:
 	create_legend_mapfigure;
-
+	
 	% Update the lon,lat-x,y-calculator settings:
 	calculator_latlonxy_reset;			% lon,lat-x,y-calculator reset
-
+	
 	% Check if the project parameter file exists on the saved path:
 	if exist(GV.pp_pathfilename,'file')~=2
 		if isfield(GV_H.warndlg,'load_project')
@@ -443,7 +485,7 @@ try
 			'Reload the project parameters.'],GV.pp_pathfilename),'Warning');
 		GV_H.warndlg.load_project.Tag	= 'maplab3d_figure';
 	end
-
+	
 	% Execution time:
 	t_end_statebusy					= clock;
 	dt_statebusy						= etime(t_end_statebusy,t_start_statebusy);
@@ -455,13 +497,13 @@ try
 		GV.exec_time.load_project.dt			= dt_statebusy;
 		GV.exec_time.load_project.dt_str		= dt_statebusy_str;
 	end
-
+	
 	% Display state:
 	set(GV_H.text_waitbar,'String','');
 	display_on_gui('state',...
 		sprintf('Loading project ... done (%s).',dt_statebusy_str),...
 		'notbusy','replace');
-
+	
 catch ME
 	errormessage('',ME);
 end

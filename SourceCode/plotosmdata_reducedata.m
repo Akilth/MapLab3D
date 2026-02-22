@@ -929,7 +929,8 @@ try
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,1),...	% query points x
-												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2));		% query points y
+												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2),...	% query points y
+												false);																		% poly_is_closed
 											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
 											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
 										end
@@ -938,7 +939,8 @@ try
 												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,1),...	% query points x
-												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2));		% query points y
+												PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(:,2),...	% query points y
+												false);																		% poly_is_closed
 											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
 											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
 										end
@@ -1019,7 +1021,8 @@ try
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.lines(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,1),...	% query points x
-												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2));		% query points y
+												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2),...	% query points y
+												false);																		% poly_is_closed
 											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
 											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
 										end
@@ -1028,7 +1031,8 @@ try
 												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,1),...			% vertices x
 												PLOTDATA.obj(iobj,1).connways.areas(k,:).xy(:,2),...			% vertices y
 												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,1),...	% query points x
-												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2));		% query points y
+												PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(:,2),...	% query points y
+												false);																		% poly_is_closed
 											dist_is_smaller_v	= (mindistance_k_v<mindistance_v);
 											mindistance_v(dist_is_smaller_v)		= mindistance_k_v(dist_is_smaller_v);
 										end

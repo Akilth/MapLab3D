@@ -1,4 +1,4 @@
-function [id_sym_node_cv,id_sym_way_cv]=plotosmdata_getdata_symbols(...
+function [id_sym_node_cv,id_sym_way_cv,notisempty_sym_v]=plotosmdata_getdata_symbols(...
 	iobj,...
 	itable_obj_eqtags_ioeqt,...		% Vektor of indices in OSMDATA_TABLE to be considered
 	force_keep_data,...
@@ -14,7 +14,7 @@ function [id_sym_node_cv,id_sym_way_cv]=plotosmdata_getdata_symbols(...
 	msg)
 % Collect the data of all symbols
 % Used in plotosmdata_getdata
-% 
+%
 % Note on the use of connect_ways in this function:
 % The structures calculated with connect_ways are only used to calculate the reference points in symboleqtags2poly.m.
 % Therefore, it is not necessary to pass the values in, iw_v, and ir when calling connect_ways.
@@ -24,10 +24,11 @@ global GV PP PLOTDATA OSMDATA_TABLE OSMDATA_TABLE_INWR OSMDATA
 
 try
 	
+	notisempty_sym_v	= false(size(itable_symbol_eqtags,1),1);
 	for iseqt=1:length(itable_symbol_eqtags)
-		connways_eqtags	= connect_ways([]);
 		create_map_log_firstline	= false;
-		iseqt_has_data		= false;
+		iseqt_has_relations			= false;
+		iseqt_has_nodesways			= false;
 		if ~isempty(itable_symbol_eqtags{1,1})
 			
 			% Read the OSM-data:
@@ -40,6 +41,9 @@ try
 					itable							= itable_symbol_eqtags{iseqt,1}(i_itable,1);
 					if any(itable==itable_obj_eqtags_ioeqt)
 						if strcmp(OSMDATA_TABLE.Type(itable),'relation')
+							if ~iseqt_has_relations
+								connways_eqtags	= connect_ways([]);
+							end
 							[~,~,~,connways_eqtags,~,id_sym_node_cv{iseqt,1},id_sym_way_cv{iseqt,1}] = getdata_relation(...
 								OSMDATA_TABLE_INWR(itable),...		% ir
 								connways_eqtags,...						% connways
@@ -49,7 +53,7 @@ try
 								[],...										% in_relation_v
 								id_sym_node_cv{iseqt,1},...			% id_sym_node_cv
 								id_sym_way_cv{iseqt,1});				% id_sym_way_cv
-							iseqt_has_data		= true;
+							iseqt_has_relations		= true;
 						end
 					end
 				end
@@ -69,16 +73,22 @@ try
 									x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
 									y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
 									if ~isnan(x)&&~isnan(y)
+										if ~iseqt_has_relations&&~iseqt_has_nodesways
+											connways_eqtags	= connect_ways([]);
+										end
 										connways_eqtags		= connect_ways(connways_eqtags,[],x,y,...
 											iobj,itable,PLOTDATA.obj(iobj,1).linewidth,1);
 										if ~GV.get_nodes_ways_repeatedly_symbols
 											id_sym_node_cv{iseqt,1}(end+1,1)	= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
 										end
+										iseqt_has_nodesways		= true;
 									end
-									iseqt_has_data		= true;
 								end
 							case 'way'
 								if ~any(OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable))==id_sym_way_cv{iseqt,1})
+									if ~iseqt_has_relations&&~iseqt_has_nodesways
+										connways_eqtags	= connect_ways([]);
+									end
 									x	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).x_mm;
 									y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 									[xc,yc]	= polysplit(x,y);
@@ -97,25 +107,28 @@ try
 											end
 										end
 									end
-									iseqt_has_data		= true;
+									iseqt_has_nodesways		= true;
 								end
 						end
 					end
 				end
 				% Connect the ways:
-				connways_eqtags		= connect_ways_longest_line(...
-					connways_eqtags,...	% connways
-					ways,...										% ways
-					iobj,...										% iobj
-					[],...										% lino
-					PLOTDATA.obj(iobj,1).linewidth,...	% liwi
-					1,...											% l2a
-					1,...											% s
-					1,...											% lino_new_min
-					GV.tol_1);									% tol
+				if iseqt_has_nodesways
+					connways_eqtags		= connect_ways_longest_line(...
+						connways_eqtags,...	% connways
+						ways,...										% ways
+						iobj,...										% iobj
+						[],...										% lino
+						PLOTDATA.obj(iobj,1).linewidth,...	% liwi
+						1,...											% l2a
+						1,...											% s
+						1,...											% lino_new_min
+						GV.tol_1);									% tol
+				end
 			end
 			
-			if iseqt_has_data
+			if iseqt_has_relations||iseqt_has_nodesways
+				notisempty_sym_v(iseqt,1)		= true;
 				
 				% Filter small objects out:
 				% After that, connways_eqtags_filt contains only objects that fulfill the conditions.
@@ -167,7 +180,6 @@ try
 							filter_nla_separatly,...
 							obj_eqtags_ioeqt,...
 							isym_symbol_eqtags(iseqt,1),...
-							itable_symbol_eqtags{iseqt,1},...
 							connways_eqtags_select,...
 							text_tag_symbol_eqtags{iseqt,1},...
 							msg);
@@ -187,7 +199,6 @@ try
 							filter_nla_separatly,...
 							obj_eqtags_ioeqt,...
 							isym_symbol_eqtags(iseqt,1),...
-							itable_symbol_eqtags{iseqt,1},...
 							connways_eqtags_filt,...
 							text_tag_symbol_eqtags{iseqt,1},...
 							msg);
@@ -219,7 +230,6 @@ try
 								filter_nla_separatly,...
 								obj_eqtags_ioeqt,...
 								isym_symbol_eqtags(iseqt,1),...
-								itable_symbol_eqtags{iseqt,1},...
 								connways_eqtags_select,...
 								text_tag_symbol_eqtags{iseqt,1},...
 								msg);
@@ -247,7 +257,6 @@ try
 								filter_nla_separatly,...
 								obj_eqtags_ioeqt,...
 								isym_symbol_eqtags(iseqt,1),...
-								itable_symbol_eqtags{iseqt,1},...
 								connways_eqtags_select,...
 								text_tag_symbol_eqtags{iseqt,1},...
 								msg);
@@ -274,7 +283,6 @@ function create_map_log_firstline=call_symboleqtags2poly(...
 	filter_nla_separatly,...
 	obj_eqtags_ioeqt,...
 	isym_symbol_eqtags_iseqt,...			% isym_symbol_eqtags(iseqt,1)
-	itable_symbol_eqtags_iseqt,...		% itable_symbol_eqtags{iseqt,1}
 	connways_eqtags_select,...
 	text_tag_symbol_eqtags_iseqt,...
 	msg)
@@ -294,7 +302,6 @@ try
 		iobj,...
 		isym_symbol_eqtags_iseqt,...
 		PLOTDATA.obj(iobj,1).symb_eqtags{iseqt,1},...
-		itable_symbol_eqtags_iseqt,...
 		connways_eqtags_select,...
 		obj_purpose);
 	

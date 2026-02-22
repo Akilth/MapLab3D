@@ -26,7 +26,7 @@ export_stl			= true;
 % Der Gebäude-Grundriss kann von anderen Kartenobjekten beschnitten sein, z. B. wenn eine Straße mit 
 % höherer Priorität neben dem Gebäude verläuft. Dies kann hier simuliert werden, indem eine Linie durch die Mitte
 % des Grundrisses gelegt und vom Grundriss subtrahiert wird (true/false)
-trim_base_area		= false;
+trim_base_area		= true;
 poly_outline_map	= trim_base_area;
 
 % Links:

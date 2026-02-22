@@ -43,7 +43,7 @@ try
 	imapobj_v	= unique(imapobj_v);
 	if isempty(imapobj_v)
 		errormessage(sprintf(['Error:\n',...
-			'One object must be selected to use this function.']));
+			'At least one object must be selected to use this function.']));
 	end
 	for i_imapobj=1:length(imapobj_v)
 		imapobj	= imapobj_v(i_imapobj);
@@ -209,6 +209,11 @@ try
 							[x,y] = boundary(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib);
 							x		= x(:);
 							y		= y(:);
+							if ishole(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib)
+								role	= 'inner';
+							else
+								role	= 'outer';
+							end
 							connways_preview		= ...
 								connect_ways(...							%								Defaultvalues:
 								connways_preview,...						% connways					-
@@ -224,7 +229,7 @@ try
 								1,...											% l2a							1
 								1,...											% s							1
 								lino_new_min,...							% lino_new_min				1
-								[],...										% role						'outer'
+								role,...										% role						'inner'/'outer'
 								relid,...									% relid						uint64(0)
 								tag,...										% tag							''
 								GV.tol_1,...								% tol							GV.tol_1
@@ -268,7 +273,7 @@ try
 							1,...											% l2a							1
 							1,...											% s							1
 							lino_new_min,...							% lino_new_min				1
-							[],...										% role						'outer'
+							'outer',...									% role						'outer'
 							relid,...									% relid						uint64(0)
 							tag,...										% tag							''
 							GV.tol_1,...								% tol							GV.tol_1
@@ -437,6 +442,11 @@ try
 							[x,y] = boundary(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib);
 							x		= x(:);
 							y		= y(:);
+							if ishole(MAP_OBJECTS(imapobj,1).h(i,1).Shape,ib)
+								role	= 'inner';
+							else
+								role	= 'outer';
+							end
 							connways_preview		= ...
 								connect_ways(...							%								Defaultvalues:
 								connways_preview,...						% connways					-
@@ -452,7 +462,7 @@ try
 								1,...											% l2a							1
 								1,...											% s							1
 								1,...											% lino_new_min				1
-								'outer',...									% role						'outer'
+								role,...										% role						'inner'/'outer'
 								relid,...									% relid						uint64(0)
 								tag,...										% tag							''
 								GV.tol_1,...								% tol							GV.tol_1

@@ -50,13 +50,13 @@ else
 end
 if ~isempty(ME.message)||isequal(ME.identifier,GV.errID_general)
 	% If there is an MException object: Extend the error text using ME:
-	save_errorlog	= true;		% The evalin function takes much time: save the errorlog only at unexpected errors.
-	if save_errorlog
-		if ~isempty(ME.message)
-			errorlog0		= sprintf('Error message:\n%s\n\n',ME.message);
-		else
-			errorlog0		= '';
-		end
+	if APP.Save_ErrorLog_Menu.Checked
+		save_errorlog	= true;		% The evalin function takes much time: save the errorlog only at unexpected errors.
+	else
+		save_errorlog	= false;
+	end
+	if ~isempty(ME.message)
+		errorlog0		= sprintf('Error message:\n%s\n\n',ME.message);
 	else
 		errorlog0		= '';
 	end
@@ -100,7 +100,7 @@ if ~isempty(ME.message)||isequal(ME.identifier,GV.errID_general)
 	end
 else
 	% If there is no MException object:
-	if nargin==0
+	if (nargin==0)&&APP.Save_ErrorLog_Menu.Checked
 		% The evalin function takes much time: save the errorlog only at unexpected errors.
 		% Normally the function is called without an explanatory text in case of unknown errors.
 		save_errorlog	= true;

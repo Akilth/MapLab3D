@@ -1,4 +1,4 @@
-function [id_txt_node_cv,id_txt_way_cv]=plotosmdata_getdata_texts(...
+function [id_txt_node_cv,id_txt_way_cv,notisempty_txt_v]=plotosmdata_getdata_texts(...
 	iobj,...
 	itable_obj_eqtags_ioeqt,...		% Vektor of indices in OSMDATA_TABLE to be considered
 	force_keep_data,...
@@ -12,7 +12,7 @@ function [id_txt_node_cv,id_txt_way_cv]=plotosmdata_getdata_texts(...
 	msg)
 % Collect the data of all texts
 % Used in plotosmdata_getdata
-% 
+%
 % Note on the use of connect_ways in this function:
 % The structures calculated with connect_ways are only used to calculate the reference points in texteqtags2poly.m.
 % Therefore, it is not necessary to pass the values in, iw_v, and ir when calling connect_ways.
@@ -22,11 +22,13 @@ global GV PP PLOTDATA OSMDATA_TABLE OSMDATA_TABLE_INWR OSMDATA
 
 try
 	
+	notisempty_txt_v	= false(size(itable_text_eqtags,1),1);
 	for iteqt=1:length(itable_text_eqtags)
-		connways_eqtags	= connect_ways([]);
 		create_map_log_firstline	= false;
-		iteqt_has_data		= false;
-		if ~isequal(PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1}{1,1},'')
+		iteqt_has_relations			= false;
+		iteqt_has_nodesways			= false;
+		% old (slower): if ~isequal(PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1}{1,1},'')
+		if ~isempty(PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1}{1,1})
 			
 			% Read the OSM-data:
 			if GV.get_nodes_ways_repeatedly_texts
@@ -38,6 +40,9 @@ try
 					itable		= itable_text_eqtags{iteqt,1}(i_itable,1);
 					if any(itable==itable_obj_eqtags_ioeqt)
 						if strcmp(OSMDATA_TABLE.Type(itable),'relation')
+							if ~iteqt_has_relations
+								connways_eqtags	= connect_ways([]);
+							end
 							[~,~,~,connways_eqtags,~,id_txt_node_cv{iteqt,1},id_txt_way_cv{iteqt,1}] = getdata_relation(...
 								OSMDATA_TABLE_INWR(itable),...		% ir
 								connways_eqtags,...						% connways
@@ -47,7 +52,7 @@ try
 								[],...										% in_relation_v
 								id_txt_node_cv{iteqt,1},...			% id_txt_node_cv
 								id_txt_way_cv{iteqt,1});				% id_txt_way_cv
-							iteqt_has_data		= true;
+							iteqt_has_relations		= true;
 						end
 					end
 				end
@@ -67,16 +72,22 @@ try
 									x	= OSMDATA.node_x_mm(1,OSMDATA_TABLE_INWR(itable));
 									y	= OSMDATA.node_y_mm(1,OSMDATA_TABLE_INWR(itable));
 									if ~isnan(x)&&~isnan(y)
+										if ~iteqt_has_relations&&~iteqt_has_nodesways
+											connways_eqtags	= connect_ways([]);
+										end
 										connways_eqtags		= connect_ways(connways_eqtags,[],x,y,...
 											iobj,[],PLOTDATA.obj(iobj,1).linewidth,1);
 										if ~GV.get_nodes_ways_repeatedly_texts
 											id_txt_node_cv{iteqt,1}(end+1,1)		= OSMDATA.id.node(1,OSMDATA_TABLE_INWR(itable));
 										end
+										iteqt_has_nodesways		= true;
 									end
-									iteqt_has_data		= true;
 								end
 							case 'way'
 								if ~any(OSMDATA.id.way(1,OSMDATA_TABLE_INWR(itable))==id_txt_way_cv{iteqt,1})
+									if ~iteqt_has_relations&&~iteqt_has_nodesways
+										connways_eqtags	= connect_ways([]);
+									end
 									x	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).x_mm;
 									y	= OSMDATA.way(1,OSMDATA_TABLE_INWR(itable)).y_mm;
 									[xc,yc]	= polysplit(x,y);
@@ -95,25 +106,28 @@ try
 											end
 										end
 									end
-									iteqt_has_data		= true;
+									iteqt_has_nodesways		= true;
 								end
 						end
 					end
 				end
 				% Connect the ways:
-				connways_eqtags		= connect_ways_longest_line(...
-					connways_eqtags,...	% connways
-					ways,...										% ways
-					iobj,...										% iobj
-					[],...										% lino
-					PLOTDATA.obj(iobj,1).linewidth,...	% liwi
-					1,...											% l2a
-					1,...											% s
-					1,...											% lino_new_min
-					GV.tol_1);									% tol
+				if iteqt_has_nodesways
+					connways_eqtags		= connect_ways_longest_line(...
+						connways_eqtags,...	% connways
+						ways,...										% ways
+						iobj,...										% iobj
+						[],...										% lino
+						PLOTDATA.obj(iobj,1).linewidth,...	% liwi
+						1,...											% l2a
+						1,...											% s
+						1,...											% lino_new_min
+						GV.tol_1);									% tol
+				end
 			end
 			
-			if iteqt_has_data
+			if iteqt_has_relations||iteqt_has_nodesways
+				notisempty_txt_v(iteqt,1)		= true;
 				
 				% Filter small objects out:
 				% After that, connways_eqtags_filt contains only objects that fulfill the conditions.
@@ -155,7 +169,6 @@ try
 							force_keep_data,...
 							filter_nla_separatly,...
 							obj_eqtags_ioeqt,...
-							itable_text_eqtags{iteqt,1},...
 							connways_eqtags_filt,...
 							msg);
 					else
@@ -169,7 +182,6 @@ try
 								force_keep_data,...
 								filter_nla_separatly,...
 								obj_eqtags_ioeqt,...
-								itable_text_eqtags{iteqt,1},...
 								connways_eqtags_select,...
 								msg);
 						end
@@ -189,7 +201,6 @@ try
 								force_keep_data,...
 								filter_nla_separatly,...
 								obj_eqtags_ioeqt,...
-								itable_text_eqtags{iteqt,1},...
 								connways_eqtags_select,...
 								msg);
 						end
@@ -206,7 +217,6 @@ try
 								force_keep_data,...
 								filter_nla_separatly,...
 								obj_eqtags_ioeqt,...
-								itable_text_eqtags{iteqt,1},...
 								connways_eqtags_select,...
 								msg);
 						end
@@ -232,7 +242,6 @@ function  create_map_log_firstline=call_texteqtags2poly(...
 	force_keep_data,...
 	filter_nla_separatly,...
 	obj_eqtags_ioeqt,...
-	itable_text_eqtags_iteqt,...		% itable_text_eqtags{iteqt,1}
 	connways_eqtags_select,...
 	msg)
 % Create the text polygons and add the texts to PLOTDATA
@@ -262,7 +271,6 @@ try
 		pd_pos_refpoints]	= texteqtags2poly(...
 		iobj,...														% iobj
 		iteqt,...													% iteqt
-		itable_text_eqtags_iteqt,...							% itable_v
 		PLOTDATA.obj(iobj,1).text_eqtags{iteqt,1},...	% text_eqtags
 		connways_eqtags_select,...								% connways_eqtags
 		'text',...													% text_symb
