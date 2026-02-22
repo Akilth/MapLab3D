@@ -37,6 +37,7 @@ try
 	color_rgb	= PP.color(colno).rgb/255;
 	color_rgb	= color_rgb_improve(PP,color_rgb);
 
+	% tile_no = -3: Frame:
 	if isfield(GV_H,'poly_frame')
 		delete(GV_H.poly_frame);
 	end

@@ -27,7 +27,7 @@ global VER
 VER.no1		= 1;
 VER.no2		= 1;
 VER.no3		= 0;
-VER.no4		= 0;
+VER.no4		= 1;
 
 % Optional alphanumeric identifier:
 % https://de.wikipedia.org/wiki/Entwicklungsstadium_(Software)

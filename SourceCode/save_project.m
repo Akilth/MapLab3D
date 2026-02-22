@@ -99,7 +99,11 @@ try
 			%       issource: 1 (true)
 			%        imapobj: 0
 			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-				MAP_OBJECTS(imapobj,1).h(i,1).UserData	= rmfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source');
+				for k=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+					if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h)
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.imapobj	= imapobj;
+					end
+				end
 			end
 		end
 	end
