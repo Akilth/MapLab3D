@@ -10,9 +10,15 @@ the project parameters may need to be edited.
 3. Minor: Minor functional improvement that does not affect project parameters or project saves.
 4. Bug fix maintenance release number.
 
-## [Unreleased]
+## Known issues
 
-### Known issues
+- Sometimes a text map object is significantly too large. This error can be fixed by changing the text or the font 
+(open the context menu by left-clicking and then right-clicking on the text object).
+
+- This version is not suitable for large maps with many map objects, e.g., a map of an entire state. 
+It may happen that a saved project can no longer be loaded.
+
+## [Unreleased]
 
 ### Added
 
@@ -22,15 +28,13 @@ the project parameters may need to be edited.
 
 ### Fixed
 
+## [1.1.0.1 Public Beta] - 2026-02-22
+
+### Fixed
+
+- When selecting texts or symbols, the magenta-colored source data was no longer displayed.
+
 ## [1.1.0.0 Public Beta] - 2026-02-22
-
-### Known issues
-
-- Sometimes a text map object is significantly too large. This error can be fixed by changing the text or the font 
-(open the context menu by left-clicking and then right-clicking on the text object).
-
-- This version is not suitable for large maps with many map objects, e.g., a map of an entire state. 
-It may happen that a saved project can no longer be loaded.
 
 ### Added
 
