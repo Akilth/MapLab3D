@@ -51,7 +51,7 @@ try
 		'UserData'     ,ud_tile,...
 		'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
 
-	% Distance between objects and printout limits:
+	% tile_no = -2: Distance between objects and printout limits:
 	if numboundaries(GV_H.poly_map_printout.Shape)>0
 		poly_obj_limits			= GV_H.poly_map_printout.Shape;
 		dist_obj_printout			= max(0,PP.general.dist_obj_printout);

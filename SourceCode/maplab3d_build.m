@@ -12,7 +12,7 @@ packageOpts	= [];
 % --------------------------------------------------------------------------------------------------------------------
 % These steps must be performed to make a build and a new release:
 
-% Projekt parameters file:
+% Project parameters file:
 % -	Reset changes of
 %		-	project.projectname		My Project 1
 %		-	project.filename			MP1
