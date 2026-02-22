@@ -25,7 +25,6 @@ packageOpts	= [];
 % -	Hide rows with Excel formulas
 % -	Clear the other sheets
 
-
 % Set current version number in:
 % -	MapLab3D_ProjectParameters_x_x_x_x.xlsx						and
 %		MapLab3D_ProjectParameters_x_x_x_x_Reference.xlsx			and
@@ -46,10 +45,12 @@ packageOpts	= [];
 
 % Run this file.
 
+% Commit and push:
 % Source Control:				Add untracked files to Source Control
-%									Commit
-% Matlab Branch Manager:	Commit and push changes in development
-%									Set main as HEAD
+%									Commit, Message: "Version 1.1.0.0 Public Beta"
+% Matlab Branch Manager:	Make shure that HEAD is development
+%									Push changes in development
+%									Set main as HEAD: Right-click on Brachnes/main: Switch to this Branch
 %									Merge development with main (development does not exist any more)
 %									Commit and push changes in main
 
