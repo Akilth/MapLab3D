@@ -90,7 +90,7 @@ try
 		errormessage(errortext)
 	end
 	
-	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Load the map data file:
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAPDATA.mat. This may take some time ... '));
@@ -119,6 +119,7 @@ try
 		errormessage(errortext)
 	end
 	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Open the figure:
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAP.fig. This may take some time ... '));
@@ -182,6 +183,7 @@ try
 		errormessage(errortext)
 	end
 	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Load the project:
 	
 	% Initializations:
@@ -252,24 +254,9 @@ try
 			GV.(fn_sd{ifn_sd,1})		= GV_savedata.(fn_sd{ifn_sd,1});
 		end
 	end
-	
-	% Set menu checkboxes:
-	if isempty(GV.iobj_testplot_simplify_v)
-		APP.CreatemapSettingsShowTestplotsMenu.Checked='off';
-	else
-		APP.CreatemapSettingsShowTestplotsMenu.Checked='on';
-	end
-	if isempty(GV.colno_testplot_simplify_v)
-		APP.MapEdit_SimplifyMapSettings_ShowTestplots_Menu.Checked='off';
-	else
-		APP.MapEdit_SimplifyMapSettings_ShowTestplots_Menu.Checked='on';
-	end
-	
-	% Set the visibility of the map objects table:
-	show_mapobjectstable('update');
-	
-	% Set variable elements of GV.tooltips after loading a project:
-	set_tooltips('set_variable_tooltips');
+
+	% -----------------------------------------------------------------------------------------------------------------
+	% Restore the 2D map and the plot handles:
 	
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Assign map objects. This may take some time ... '));
@@ -309,100 +296,122 @@ try
 	GV_H.fig_2dmap_cm.poly_dzmax				= polyshape();
 	
 	% Handles of plot objects:
-	map_objects_source		= struct([]);
-	for imapobj=1:size(MAP_OBJECTS,1)
-		MAP_OBJECTS(imapobj,1).h					= [];
-		map_objects_source(imapobj,1).source_h	= [];
-	end
-	imax		= length(GV_H.ax_2dmap.Children);
-	i_delete	= false(imax,1);
 	GV_H.poly_tiles	= [];
 	GV_H.poly_tileno	= [];
+	GV_H.poly_contour	= [];
 	
 	% Assign the children handles only once: much faster!
-	GV_H_ax_2dmap_Children		= GV_H.ax_2dmap.Children;
-	
-	for i=1:imax
 		% The following commands have a long computation time inside the for-loop:
-		% -	if isfield(GV_H.ax_2dmap.Children(i).UserData,'imapobj')
-		% -	if isfield(GV_H.ax_2dmap.Children(i).UserData,'issource')
-		% -	if ~GV_H.ax_2dmap.Children(i).UserData.issource
-		
-		GV_H_ax_2dmap_Children_i		= GV_H_ax_2dmap_Children(i);
-		Children_i_assigned				= false;
-		
-		if isfield(GV_H_ax_2dmap_Children_i.UserData,'imapobj')
-			
-			% MAP_OBJECTS.h:
-			if ~isfield(GV_H_ax_2dmap_Children_i.UserData,'issource')
+		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'imapobj')
+		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'issource')
+		% -	if ~GV_H.ax_2dmap.Children(ic).UserData.issource
+	GV_H_ax_2dmap_Children	= GV_H.ax_2dmap.Children;
+	ic_max						= length(GV_H_ax_2dmap_Children);
+	ic_delete					= false(ic_max,1);
+	
+	
+	% Restore the map object handles (see also save_project):
+	for ic=1:ic_max
+		GV_H_ax_2dmap_Children_ic		= GV_H_ax_2dmap_Children(ic);
+		if isfield(GV_H_ax_2dmap_Children_ic.UserData,'imapobj')
+			if ~isfield(GV_H_ax_2dmap_Children_ic.UserData,'issource')
 				errormessage;
 			end
-			if ~GV_H_ax_2dmap_Children_i.UserData.issource
+			if ~GV_H_ax_2dmap_Children_ic.UserData.issource
 				% Visible plot object:
-				imapobj											= GV_H_ax_2dmap_Children_i.UserData.imapobj;
-				Children_i_assigned							= true;
-				if isempty(MAP_OBJECTS(imapobj,1).h)
-					MAP_OBJECTS(imapobj,1).h				= GV_H_ax_2dmap_Children_i;
-				else
-					MAP_OBJECTS(imapobj,1).h				= [MAP_OBJECTS(imapobj,1).h;GV_H_ax_2dmap_Children_i];
-				end
+				imapobj			= GV_H_ax_2dmap_Children_ic.UserData.imapobj;
+				i					= GV_H_ax_2dmap_Children_ic.UserData.save_project_i;
+				MAP_OBJECTS(imapobj,1).h(i,1)	= ic;
+			end
+		end
+	end
+	for imapobj=1:size(MAP_OBJECTS,1)
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			ic					= MAP_OBJECTS(imapobj,1).h(i,1);
+			if i==1
+				h				= GV_H_ax_2dmap_Children(ic);
 			else
-				% Invisible source data plot object:
+				h(end+1,1)	= GV_H_ax_2dmap_Children(ic);
+			end
+		end
+		MAP_OBJECTS(imapobj,1).h	= h;
+	end
+	
+	% Restore the other handles:
+	for ic=1:ic_max
+		GV_H_ax_2dmap_Children_ic		= GV_H_ax_2dmap_Children(ic);
+		Children_i_assigned				= false;
+		
+		if isfield(GV_H_ax_2dmap_Children_ic.UserData,'imapobj')
+			
+			% MAP_OBJECTS.h:
+			if ~GV_H_ax_2dmap_Children_ic.UserData.issource
+				% Visible plot object:
+				Children_i_assigned							= true;		% Assigned above
+			else
+				% Restore the source handles (see also save_project):
 				% The source plots are made visible, if the corresponding map object is selected.
 				% This makes it easier to move the texts and symboles to the right place when editing the map.
-				imapobj												= GV_H_ax_2dmap_Children_i.UserData.imapobj;
-				Children_i_assigned							= true;
-				if isempty(map_objects_source(imapobj,1).source_h)
-					map_objects_source(imapobj,1).source_h	= GV_H_ax_2dmap_Children_i;
-				else
-					map_objects_source(imapobj,1).source_h	= ...
-						[map_objects_source(imapobj,1).source_h;GV_H_ax_2dmap_Children_i];
+				for j=1:size(GV_H_ax_2dmap_Children_ic.UserData.imapobj,1)
+					imapobj			= GV_H_ax_2dmap_Children_ic.UserData.imapobj(j,1);
+					i					= GV_H_ax_2dmap_Children_ic.UserData.save_project_i(j,1);
+					k					= GV_H_ax_2dmap_Children_ic.UserData.save_project_k(j,1);
+					% fprintf(1,'imapobj=%g   i=%g   k=%g   j=%g\n',imapobj,i,k,j);
+					MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h	= GV_H_ax_2dmap_Children_ic;
+					Children_i_assigned						= true;
 				end
 			end
 			
-		elseif isfield(GV_H_ax_2dmap_Children_i.UserData,'tile_no')
-			tile_no												= GV_H_ax_2dmap_Children_i.UserData.tile_no;
+		elseif isfield(GV_H_ax_2dmap_Children_ic.UserData,'tile_no')
+			tile_no												= GV_H_ax_2dmap_Children_ic.UserData.tile_no;
 			
 			% GV_H.poly_frame:
 			if tile_no==-3
-				GV_H.poly_frame								= GV_H_ax_2dmap_Children_i;
+				GV_H.poly_frame								= GV_H_ax_2dmap_Children_ic;
 				Children_i_assigned							= true;
 			end
 			
 			% GV_H.poly_map_printout_obj_limits:
 			if tile_no==-2
-				GV_H.poly_map_printout_obj_limits		= GV_H_ax_2dmap_Children_i;
+				GV_H.poly_map_printout_obj_limits		= GV_H_ax_2dmap_Children_ic;
 				Children_i_assigned							= true;
 			end
 			
 			% GV_H.poly_limits_osmdata:
 			if tile_no==-1
-				GV_H.poly_limits_osmdata					= GV_H_ax_2dmap_Children_i;
+				GV_H.poly_limits_osmdata					= GV_H_ax_2dmap_Children_ic;
 				Children_i_assigned							= true;
 			end
 			
 			% GV_H.poly_map_printout:
 			if tile_no==0
-				GV_H.poly_map_printout						= GV_H_ax_2dmap_Children_i;
+				GV_H.poly_map_printout						= GV_H_ax_2dmap_Children_ic;
 				Children_i_assigned							= true;
 			end
 			
 			% GV_H.poly_tiles:
 			if tile_no>0
-				GV_H.poly_tiles{tile_no,1}					= GV_H_ax_2dmap_Children_i;
+				GV_H.poly_tiles{tile_no,1}					= GV_H_ax_2dmap_Children_ic;
 				Children_i_assigned							= true;
 			end
 			
-		elseif isfield(GV_H_ax_2dmap_Children_i.UserData,'tile_no_text')
-			tile_no											= GV_H_ax_2dmap_Children_i.UserData.tile_no_text;
+		elseif isfield(GV_H_ax_2dmap_Children_ic.UserData,'tile_no_text')
+			tile_no											= GV_H_ax_2dmap_Children_ic.UserData.tile_no_text;
 			
 			% GV_H.poly_tileno:
-			GV_H.poly_tileno{tile_no,1}				= GV_H_ax_2dmap_Children_i;
+			GV_H.poly_tileno{tile_no,1}				= GV_H_ax_2dmap_Children_ic;
+			Children_i_assigned							= true;
+			
+		elseif isfield(GV_H_ax_2dmap_Children_ic.UserData,'contour')
+			% GV_H.poly_contour{i,1}:
+			% i=1: Major contour lines
+			% i=2: Minor contour lines
+			GV_H.poly_contour{GV_H_ax_2dmap_Children_ic.UserData.contour,1}	= GV_H_ax_2dmap_Children_ic;
 			Children_i_assigned							= true;
 			
 		else
 			% temporary preview objects:
-			i_delete(i,1)									= true;
+			ic_delete(ic,1)								= true;
 			Children_i_assigned							= true;
 		end
 		
@@ -411,16 +420,16 @@ try
 		end
 		
 	end
-	% Assign the source plots:
-	for imapobj=1:size(MAP_OBJECTS,1)
-		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-			for k=1:size(map_objects_source(imapobj,1).source_h,1)
-				MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h	= map_objects_source(imapobj,1).source_h(k,1);
-			end
-		end
+	
+	% Set the "Show contour lines" menu checkbox:
+	if isempty(GV_H.poly_contour)
+		APP.View_ShowContourLines_Menu.Checked	= 'off';
+	else
+		APP.View_ShowContourLines_Menu.Checked	= 'on';
 	end
+	
 	% Delete temporary preview objects:
-	delete(GV_H.ax_2dmap.Children(i_delete));
+	delete(GV_H.ax_2dmap.Children(ic_delete));
 	
 	% Delete empty map objects:
 	% This should should not happen. However, in the event of incorrect data, a crash is prevented.
@@ -434,8 +443,8 @@ try
 	
 	% Set the axis position:
 	SizeChangedFcn_fig_2dmap([],[],1,1);
-	
-	% After assignment of GV_H.fig_2dmap and GV_H.ax_2dmap and the plot objects GV_H....:
+
+	% After assignment of GV_H.fig_2dmap and GV_H.ax_2dmap and the plot objects GV_H....: Make the 2D map visible:
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Make the map visible. This may take some time ... '));
 	% Execution times when loading a large project:
@@ -443,10 +452,31 @@ try
 	pause(0.001);					% s
 	GV_H.fig_2dmap.Visible			= 'on';
 	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Other initializations:
+	
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Last steps. This may take some time ... '));
 	% drawnow nocallbacks;
 	pause(0.001);					% s
+	
+	% Set menu checkboxes:
+	if isempty(GV.iobj_testplot_simplify_v)
+		APP.CreatemapSettingsShowTestplotsMenu.Checked='off';
+	else
+		APP.CreatemapSettingsShowTestplotsMenu.Checked='on';
+	end
+	if isempty(GV.colno_testplot_simplify_v)
+		APP.MapEdit_SimplifyMapSettings_ShowTestplots_Menu.Checked='off';
+	else
+		APP.MapEdit_SimplifyMapSettings_ShowTestplots_Menu.Checked='on';
+	end
+	
+	% Set the visibility of the map objects table:
+	show_mapobjectstable('update');
+	
+	% Set variable elements of GV.tooltips after loading a project:
+	set_tooltips('set_variable_tooltips');
 	
 	% Initialize the include and exclude tags table:
 	set_inclexcltags_table('reset');

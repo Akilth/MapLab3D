@@ -23,10 +23,16 @@ It may happen that a saved project can no longer be loaded.
 ### Added
 
 ### Changed
+- A separate source plot (displayed as a magenta line when selecting texts and symbols) is no longer created for 
+each text and symbol, but only one source plot for multiple texts and symbols with the same source data. 
+In addition, the resolution of the source plots can be reduced using the parameters obj.textpar.dmin_source and 
+obj.symbolpar.dmin_source. This reduces the memory requirements for project saving.
 
 ### Removed
 
 ### Fixed
+- If the 2D map is saved with contour lines, these will be visible again after the project is loaded. 
+The checkbox in the menu is set accordingly.
 
 ## [1.1.0.1 Public Beta] - 2026-02-22
 

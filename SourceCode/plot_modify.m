@@ -658,12 +658,14 @@ try
 						% Display the source data of the selected object, if the object is visible:
 						if MAP_OBJECTS(imapobj,1).h(i,1).Visible
 							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-								% Source plot handles:
-								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-								k_source		= ishandle(source);
-								% Make the source plots visible:
-								set(source(k_source),'Visible','on');
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h)
+									% Source plot handles:
+									source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
+									source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
+									k_source		= ishandle(source);
+									% Make the source plots visible:
+									set(source(k_source),'Visible','on');
+								end
 							end
 						end
 					end
@@ -687,12 +689,14 @@ try
 						MAP_OBJECTS(imapobj,1).h(i,1).Selected	= 'off';
 						% Hide the source data of the selected object:
 						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-							% Source plot handles:
-							source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-							source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-							k_source		= ishandle(source);
-							% Make the source plots invisible:
-							set(source(k_source),'Visible','off');
+							if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h)
+								% Source plot handles:
+								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
+								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
+								k_source		= ishandle(source);
+								% Make the source plots invisible:
+								set(source(k_source),'Visible','off');
+							end
 						end
 					end
 				end
@@ -741,10 +745,6 @@ try
 							poly			= translate(MAP_OBJECTS(imapobj,1).h(i,1).Shape,dx,dy);
 							ud				= MAP_OBJECTS(imapobj,1).h(i,1).UserData;
 							ud.shape0	= poly;
-							source		= copy_source(ud);			% Create a new source data plot
-							if ~isempty(source)
-								ud.source		= source;
-							end
 							MAP_OBJECTS(imapobj_new,1).h(i,1)	= plot(GV_H.ax_2dmap,poly,...
 								'EdgeColor',MAP_OBJECTS(imapobj,1).h(i,1).EdgeColor,...
 								'FaceColor',MAP_OBJECTS(imapobj,1).h(i,1).FaceColor,...
@@ -760,10 +760,6 @@ try
 							xy_line		= xy_line+[dx*ones(size(xy_line,1),1) dy*ones(size(xy_line,1),1)];
 							ud				= MAP_OBJECTS(imapobj,1).h(i,1).UserData;
 							ud.xy0		= xy_line;
-							source		= copy_source(ud);			% Create a new source data plot
-							if ~isempty(source)
-								ud.source		= source;
-							end
 							MAP_OBJECTS(imapobj_new,1).h(i,1)	= plot(GV_H.ax_2dmap,xy_line(:,1),xy_line(:,2),...
 								'Color'     ,MAP_OBJECTS(imapobj,1).h(i,1).Color,...
 								'LineStyle' ,MAP_OBJECTS(imapobj,1).h(i,1).LineStyle,...
@@ -982,20 +978,8 @@ try
 				end
 				iobj	= MAP_OBJECTS(imapobj).iobj;
 				
-				% Delete source data:
-				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
-					if ishandle(MAP_OBJECTS(imapobj,1).h(i,1))
-						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-							for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
-								if ishandle(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
-									% Delete source data:
-									% Every map object has its own source plot, so it can be deleted:
-									delete(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h);
-								end
-							end
-						end
-					end
-				end
+				% Do not delete source data!
+				% Abandoned source plots are deleted during save_project.
 				
 				% Check: is there another object on the map with this object number:
 				if iobj>0
@@ -1071,10 +1055,6 @@ try
 							imapobj_new_iobj	= MAP_OBJECTS(imapobj,1).iobj;
 						end
 						ud							= MAP_OBJECTS(imapobj,1).h(i,1).UserData;
-						source					= copy_source(ud);			% Create a new source data plot
-						if ~isempty(source)
-							ud.source			= source;
-						end
 						switch MAP_OBJECTS(imapobj,1).h(i,1).Type
 							case 'polygon'
 								% Plot the preview as polygon:
@@ -3061,10 +3041,6 @@ try
 								% Extend the userdata:
 								ud					= MAP_OBJECTS(imapobj,1).h(i,1).UserData;
 								ud.shape0		= poly;
-								source			= copy_source(ud);			% Create a new source data plot
-								if ~isempty(source)
-									ud.source	= source;
-								end
 								% Plot the preview as polygon:
 								if ~ishandle(GV_H.ax_2dmap)
 									errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -3281,10 +3257,6 @@ try
 							end
 							% Extend the userdata:
 							ud_1.shape0		= poly_regions_1(ir_1,1);
-							source			= copy_source(ud_1);			% Create a new source data plot
-							if ~isempty(source)
-								ud_1.source	= source;
-							end
 							% Plot the preview as polygon:
 							if ~ishandle(GV_H.ax_2dmap)
 								errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -3321,10 +3293,6 @@ try
 								ir_2				= ir_2_v(i_ir_2_v,1);
 								% Extend the userdata:
 								ud_2.shape0		= poly_regions_2(ir_2,1);
-								source			= copy_source(ud_2);			% Create a new source data plot
-								if ~isempty(source)
-									ud_2.source	= source;
-								end
 								% Plot the preview as polygon:
 								if ~ishandle(GV_H.ax_2dmap)
 									errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -3361,10 +3329,6 @@ try
 							% Extend the userdata:
 							ud					= MAP_OBJECTS(imapobj,1).h(i,1).UserData;
 							ud.shape0		= poly;
-							source			= copy_source(ud);			% Create a new source data plot
-							if ~isempty(source)
-								ud.source	= source;
-							end
 							% Plot the preview as polygon:
 							if ~ishandle(GV_H.ax_2dmap)
 								errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -4126,14 +4090,6 @@ try
 						ud_obj.chstno					= charstyle_no;
 						ud_bgd.chstsettings			= PP.charstyle(charstyle_no,1);
 						ud_obj.chstsettings			= PP.charstyle(charstyle_no,1);
-					end
-					
-					% Every text line must have it's own source plot:
-					% If a line is deleted, the source plots of the other source plots remain:
-					source			= copy_source(ud_bgd);			% Create a new source data plot
-					if ~isempty(source)
-						ud_bgd.source	= source;
-						ud_obj.source	= source;
 					end
 					
 					% Text background:

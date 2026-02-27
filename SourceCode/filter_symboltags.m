@@ -14,14 +14,57 @@ function [isym_symbol_eqtags,tag_symbol_eqtags,itable_symbol_eqtags,text_tag_sym
 % -	key_for_display:		1*K cell array:							PP.obj(iobj,1).symbolpar.key_for_display
 % -	msg:						Message, used in the waitbar
 % outputs:
-% -	isym_symbol_eqtags					N*1 vector:			symbol number isym in SY(isym,1)
-%		isym_symbol_eqtags(i,1)=isym								There are N different symbol numbers isym.
-% -	tag_symbol_eqtags						N*1 cell array:	tags with corresponding symbol
+% -	isym_symbol_eqtags						N*1 vector:			symbol number isym in SY(isym,1)
+%		isym_symbol_eqtags(iseqt,1)=isym								There are N different symbol numbers isym.
+% -	tag_symbol_eqtags							N*1 cell array:	tags with corresponding symbol
 %
-% -	itable_symbol_eqtags					N*1 cell array:	corresponding indices in OSMDATA_TABLE
-%		itable_symbol_eqtags{i,1}			vector of indices in OSMDATA_TABLE corresponding to isym_symbol_eqtags
-% -	text_tag_symbol_eqtags				N*1 cell array:
-% Example:
+% -	itable_symbol_eqtags						N*1 cell array:	corresponding indices in OSMDATA_TABLE
+%		itable_symbol_eqtags{iseqt,1}			vector of indices in OSMDATA_TABLE corresponding to isym_symbol_eqtags
+% -	text_tag_symbol_eqtags					N*1 cell array:
+% --------------------------------------------------------------------------------------------------------------------
+% Example 1:
+% i_table_plot =
+%      1
+%      2
+%      3
+%      4
+%      5
+%      6
+%      7
+%      8
+%      9
+% isym_symbol_eqtags =													-->	only N=1 symbol shapes: isym=19
+%     19
+% tag_symbol_eqtags					= 1×1 cell array				-->	= PLOTDATA.obj(iobj,1).symb_eqtags
+%     {'Puzzle_piece_handle=Diameter_1mm'}
+% tag_symbol_eqtags{1,1}			=									-->	= PLOTDATA.obj(iobj,1).symb_eqtags{1,1}
+%     'Puzzle_piece_handle=Diameter_1mm'
+% itable_symbol_eqtags				= 1×1 cell array
+%     {9×1 double}
+% itable_symbol_eqtags{1,1}		=
+%      1
+%      2
+%      3
+%      4
+%      5
+%      6
+%      7
+%      8
+%      9
+% text_tag_symbol_eqtags			= 1×1 cell array
+%     {9×2 cell}
+% text_tag_symbol_eqtags{1,1}		= 9×2 cell array
+%     {'name'   }    {'Region Rhein-Neckar'           }
+%     {'name'   }    {'Odenwald'                      }
+%     {'name'   }    {'Region Rhein-Neckar (HE)'      }
+%     {'name'   }    {'Pfälzerwald'                   }
+%     {'name:de'}    {'Spessart'                      }
+%     {'name'   }    {'Hohenlohe'                     }
+%     {'name'   }    {'Bruhrain'                      }
+%     {'name'   }    {'Bauland'                       }
+%     {'name'   }    {'Wolferstetten-Eiersheimer Höhe'}
+% --------------------------------------------------------------------------------------------------------------------
+% Example 2:
 % -	i_table_plot =
 %     [1;2;3;...]
 % -	PP.obj(iobj,1).symbolpar.key_for_display = 1×4 cell array

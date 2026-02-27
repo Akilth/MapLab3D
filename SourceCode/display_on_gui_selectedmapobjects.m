@@ -12,9 +12,13 @@ try
 	% Set GV.selected_plotobjects and GV.no_selected_plotobjects:
 	GV.selected_plotobjects	= false(size(MAP_OBJECTS,1),1);
 	for imapobj=1:size(MAP_OBJECTS,1)
-		if isvalid(MAP_OBJECTS(imapobj,1).h)
-			if MAP_OBJECTS(imapobj,1).h(1,1).Selected
-				GV.selected_plotobjects(imapobj,1)	= true;
+		if ~isempty(MAP_OBJECTS(imapobj,1).h)
+			if ~isnumeric(MAP_OBJECTS(imapobj,1).h)
+				if isvalid(MAP_OBJECTS(imapobj,1).h)
+					if MAP_OBJECTS(imapobj,1).h(1,1).Selected
+						GV.selected_plotobjects(imapobj,1)	= true;
+					end
+				end
 			end
 		end
 	end
@@ -53,27 +57,32 @@ try
 			if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'color_no')
 				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
 					colno			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.color_no;
-					icolspec		= PP.color(colno).spec;
-					d_side		= PP.colorspec(icolspec).d_side;
 					colno_v		= [colno_v;colno];
-					d_side_v		= [d_side_v;d_side];
+					if colno>0
+						icolspec		= PP.color(colno).spec;
+						d_side		= PP.colorspec(icolspec).d_side;
+						d_side_v		= [d_side_v;d_side];
+					end
 				end
 			end
 			colno_v	= unique(colno_v);
 			d_side_v	= unique(d_side_v);
 			if (length(colno_v)>=1)&&(length(colno_v)<=2)
-				if ~isequal(colno_v,0)
-					if isscalar(colno_v)
-						colno_str	= sprintf('ColNo: %g',colno_v);
-					else
-						colno_str	= sprintf('ColNo: %g, %g',colno_v(1),colno_v(2));
-					end
-					d_side		= max(d_side_v);
-					if isempty(obj_info_str)
-						obj_info_str		= sprintf('%s (d_side=%gmm)',colno_str,d_side);
-					else
-						obj_info_str		= sprintf('%s  /  %s, d_side=%gmm',obj_info_str,colno_str,d_side);
-					end
+				if isscalar(colno_v)
+					colno_str	= sprintf('ColNo: %g',colno_v);
+				else
+					colno_str	= sprintf('ColNo: %g, %g',colno_v(1),colno_v(2));
+				end
+				d_side		= max(d_side_v);
+				if isempty(d_side)
+					d_side_str	= '';
+				else
+					d_side_str	= sprintf(' (d_side=%gmm)',d_side);
+				end
+				if isempty(obj_info_str)
+					obj_info_str		= sprintf('%s%s',colno_str,d_side_str);
+				else
+					obj_info_str		= sprintf('%s  /  %s%s',obj_info_str,colno_str,d_side_str);
 				end
 			end
 		end

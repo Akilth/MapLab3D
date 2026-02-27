@@ -19,6 +19,38 @@ function [id_sym_node_cv,id_sym_way_cv,notisempty_sym_v]=plotosmdata_getdata_sym
 % The structures calculated with connect_ways are only used to calculate the reference points in symboleqtags2poly.m.
 % Therefore, it is not necessary to pass the values in, iw_v, and ir when calling connect_ways.
 % These values are calculated in symboleqtags2poly.m and added to the UserData of the map objects.
+% --------------------------------------------------------------------------------------------------------------------
+% Example:
+% isym_symbol_eqtags =														-->	only N=1 symbol shapes: isym=19
+%     19
+% PLOTDATA.obj(iobj,1).symb_eqtags			= 1×1 cell array		-->	only for "Create map" log
+%     {'Puzzle_piece_handle=Diameter_1mm'}
+% PLOTDATA.obj(iobj,1).symb_eqtags{1,1}	=
+%     'Puzzle_piece_handle=Diameter_1mm'
+% itable_symbol_eqtags							= 1×1 cell array
+%     {9×1 double}
+% itable_symbol_eqtags{1,1}					=
+%      1
+%      2
+%      3
+%      4
+%      5
+%      6
+%      7
+%      8
+%      9
+% text_tag_symbol_eqtags						= 1×1 cell array
+%     {9×2 cell}
+% text_tag_symbol_eqtags{1,1}					= 9×2 cell array
+%     {'name'   }    {'Region Rhein-Neckar'           }
+%     {'name'   }    {'Odenwald'                      }
+%     {'name'   }    {'Region Rhein-Neckar (HE)'      }
+%     {'name'   }    {'Pfälzerwald'                   }
+%     {'name:de'}    {'Spessart'                      }
+%     {'name'   }    {'Hohenlohe'                     }
+%     {'name'   }    {'Bruhrain'                      }
+%     {'name'   }    {'Bauland'                       }
+%     {'name'   }    {'Wolferstetten-Eiersheimer Höhe'}
 
 global GV PP PLOTDATA OSMDATA_TABLE OSMDATA_TABLE_INWR OSMDATA
 
@@ -26,6 +58,7 @@ try
 	
 	notisempty_sym_v	= false(size(itable_symbol_eqtags,1),1);
 	for iseqt=1:length(itable_symbol_eqtags)
+		% Process symbol shape SY(isym,1), isym=isym_symbol_eqtags(iseqt,1):
 		create_map_log_firstline	= false;
 		iseqt_has_relations			= false;
 		iseqt_has_nodesways			= false;
@@ -307,7 +340,7 @@ try
 	
 	if numboundaries(pd_poly_symb_bgd)>0
 		
-		% Add the symbols to PLOTDATA:
+		% Add the symbols and reference points to PLOTDATA:
 		PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd	= [...
 			PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd;...
 			pd_poly_symb_bgd];
@@ -320,23 +353,23 @@ try
 		PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj		= [...
 			PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj;...
 			pd_ud_symb_obj];
+		PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints	= [...
+			PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints;...
+			pd_pos_refpoints];
 		if ~isequal(...
 				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd),...
 				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_obj)    )||~isequal(...
 				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd),...
-				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_bgd)    )||~isequal(...
+				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_bgd)      )||~isequal(...
 				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd),...
-				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj)      )
+				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj)      )||~isequal(...
+				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),...
+				size(PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints,1)  )
 			errormessage;
 		end
 		
-		% Reference points:
-		PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints	= [...
-			PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints;...
-			pd_pos_refpoints];
-		
 		% Symbol description:
-		% Get itable: itable is saved as line number above:
+		% Get itable: itable is saved as line number above (column 4 in field xy):
 		itable_v	= [];
 		if ~isempty(connways_eqtags_select.nodes)
 			itable_v	= connways_eqtags_select.nodes.xy(:,4);
@@ -381,9 +414,38 @@ try
 		% Source plots:
 		% The source plots are made visible, if the corresponding text or symbol is selected.
 		% This makes it easier to move the texts and symbols to the right place when editing the map.
-		for k=1:size(pd_poly_symb_bgd,1)
-			PLOTDATA.obj(iobj,1).symb(iseqt,1).source(end+1,1).connways	= connways_eqtags_select;
+		% Downsampling of the source plots:
+		dmax				= [];
+		nmin				= [];
+		dmin_source		= PP.obj(iobj).symbolpar.dmin_source;			% minimum distance between vertices
+		if dmin_source>0
+			for k=1:size(connways_eqtags_select.areas,1)
+				[x,y]	= changeresolution_xy(...
+					connways_eqtags_select.areas(k,1).xy(:,1),...
+					connways_eqtags_select.areas(k,1).xy(:,2),dmax,dmin_source,nmin);
+				if size(x,1)>=3
+					connways_eqtags_select.areas(k,1).xy		= [x y];
+				end
+			end
+			for k=1:size(connways_eqtags_select.lines,1)
+				[x,y]	= changeresolution_xy(...
+					connways_eqtags_select.lines(k,1).xy(:,1),...
+					connways_eqtags_select.lines(k,1).xy(:,2),dmax,dmin_source,nmin);
+				connways_eqtags_select.lines(k,1).xy		= [x y];
+			end
 		end
+		% Save the source plot data:
+		if isempty(PLOTDATA.obj(iobj,1).symb(iseqt,1).source)
+			isource	= 1;
+		else
+			isource	= size(PLOTDATA.obj(iobj,1).symb(iseqt,1).source,1)+1;
+		end
+		% Indices of the source-data, same size as pd_poly_symb_bgd:
+		PLOTDATA.obj(iobj,1).symb(iseqt,1).isource				= [...
+			PLOTDATA.obj(iobj,1).symb(iseqt,1).isource;...
+			isource*ones(size(pd_poly_symb_bgd,1),1)];
+		% Source-data: Several symbols can have the same source data.
+		PLOTDATA.obj(iobj,1).symb(iseqt,1).source(isource,1).connways	= connways_eqtags_select;
 		
 		% Add the colornumber to PLOTDATA.colno_v:
 		PLOTDATA.obj(iobj,1).colno_symb_fgd	= PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj.color_no;
@@ -402,10 +464,12 @@ try
 		GV.log.create_map.text	= sprintf('%s      | %5.0f | ',GV.log.create_map.text,iseqt);
 		symb_eqtags_iseqt_1	= PLOTDATA.obj(iobj,1).symb_eqtags{iseqt,1};
 		symb_eqtags_iseqt_1	= symb_eqtags_iseqt_1(1:min(33,length(symb_eqtags_iseqt_1)));
-		GV.log.create_map.text	= sprintf('%ssymbs: ''%s''%s | ',GV.log.create_map.text,symb_eqtags_iseqt_1,blanks(33-length(symb_eqtags_iseqt_1)));
+		GV.log.create_map.text	= sprintf('%ssymbs: ''%s''%s | ',GV.log.create_map.text,...
+			symb_eqtags_iseqt_1,blanks(33-length(symb_eqtags_iseqt_1)));
 		create_map_log_firstline	= true;
 	else
-		GV.log.create_map.text	= sprintf('%s      |       |                                            | ',GV.log.create_map.text);
+		GV.log.create_map.text	= sprintf('%s      |       |                                            | ',...
+			GV.log.create_map.text);
 	end
 	connways_eqtags_filt	= connect_ways([]);
 	[~,...

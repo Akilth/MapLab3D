@@ -918,8 +918,6 @@ try
 												size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),...
 												size(PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints,1)    )||~isequal(...
 												size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),...
-												size(PLOTDATA.obj(iobj,1).text(iteqt,1).source,1)           )||~isequal(...
-												size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),...
 												size(PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_bgd,1)      )
 											errormessage;
 										end
@@ -984,7 +982,10 @@ try
 										PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_obj(~keep_symb_v,:)		= [];
 										PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp(~keep_symb_v,:)		= [];
 										PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints(~keep_symb_v,:)	= [];
-										PLOTDATA.obj(iobj,1).text(iteqt,1).source(~keep_symb_v,:)			= [];
+										PLOTDATA.obj(iobj,1).text(iteqt,1).isource(~keep_symb_v,:)			= [];
+										if isempty(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd)
+											PLOTDATA.obj(iobj,1).text(iteqt,1).source								= [];
+										end
 									end
 								end
 							end
@@ -1009,8 +1010,6 @@ try
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints,1)     )||~isequal(...
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),...
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).symbol_eqtags_text,1))||~isequal(...
-												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),...
-												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).source,1)            )||~isequal(...
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd,1),...
 												size(PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_bgd,1)       )
 											errormessage;
@@ -1066,7 +1065,10 @@ try
 										PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj(~keep_symb_v,:)				= [];
 										PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints(~keep_symb_v,:)			= [];
 										PLOTDATA.obj(iobj,1).symb(iseqt,1).symbol_eqtags_text(~keep_symb_v,:)	= [];
-										PLOTDATA.obj(iobj,1).symb(iseqt,1).source(~keep_symb_v,:)					= [];
+										PLOTDATA.obj(iobj,1).symb(iseqt,1).isource(~keep_symb_v,:)					= [];
+										if isempty(PLOTDATA.obj(iobj,1).symb(iseqt,1).poly_symb_bgd)
+											PLOTDATA.obj(iobj,1).symb(iseqt,1).source										= [];
+										end
 									end
 								end
 							end

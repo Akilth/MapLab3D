@@ -74,7 +74,38 @@ try
 	% Save the current date and time:
 	savetime_map			= clock;
 	
-	% Ad ud.imapobj and ud.issource to the userdata of the plot objects:
+	% Deselect all map objects:
+	if ~isempty(MAP_OBJECTS)
+		plot_modify('deselect',-1,0);
+	end
+	
+	% % % % Disabled: it is too complicated to temporarily hide objects again if necessary:
+	% % % % Set the value of the cutting lines dropdown menu to 'None' (make the map objects visible):
+	% % % set_previewtype_dropdown(1);
+	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Add to the userdata of all children:
+	%    ud.ismapobj
+	
+	% Assign the children handles only once: much faster!
+	GV_H_ax_2dmap_Children	= GV_H.ax_2dmap.Children;
+	ic_max						= length(GV_H_ax_2dmap_Children);
+	for ic=1:ic_max
+		% The following commands have a long computation time inside the for-loop:
+		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'imapobj')
+		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'issource')
+		% -	if ~GV_H.ax_2dmap.Children(ic).UserData.issource
+		GV_H_ax_2dmap_Children_ic							= GV_H_ax_2dmap_Children(ic);
+		GV_H_ax_2dmap_Children_ic.UserData.ismapobj	= false;
+	end
+	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Add to the userdata of the plot objects:
+	%    ud.imapobj
+	%    ud.issource
+	%    ud.save_project_i
+	%    ud.save_project_k
+	
 	% The source plots are made visible, if the corresponding map object is selected.
 	% This makes it easier to move the texts and symbols to the right place when editing the map.
 	for imapobj=1:size(MAP_OBJECTS,1)
@@ -91,8 +122,11 @@ try
 			%          level: 1
 			%         shape0: [1×1 polyshape]
 			%         source: [1×1 struct]
-			MAP_OBJECTS(imapobj,1).h(i,1).UserData.imapobj	= imapobj;
-			MAP_OBJECTS(imapobj,1).h(i,1).UserData.issource	= false;
+			MAP_OBJECTS(imapobj,1).h(i,1).UserData.imapobj				= imapobj;
+			MAP_OBJECTS(imapobj,1).h(i,1).UserData.ismapobj				= true;
+			MAP_OBJECTS(imapobj,1).h(i,1).UserData.issource				= false;
+			MAP_OBJECTS(imapobj,1).h(i,1).UserData.save_project_i		= i;
+			MAP_OBJECTS(imapobj,1).h(i,1).UserData.save_project_k		= 0;
 			% MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h: invisible source data of texts, symbols or
 			%                                                       lines with linestyle==3
 			% E.g.: MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData = struct with fields:
@@ -101,22 +135,70 @@ try
 			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
 				for k=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
 					if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h)
-						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.imapobj	= imapobj;
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.ismapobj			= true;
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.imapobj			= zeros(0,1);
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.save_project_i	= zeros(0,1);
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.save_project_k	= zeros(0,1);
+					end
+				end
+			end
+		end
+	end
+	% The source plots can belong to more than one map object:
+	for imapobj=1:size(MAP_OBJECTS,1)
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+				for k=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+					if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h)
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.imapobj(end+1,1)			= imapobj;
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.save_project_i(end+1,1)	= i;
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h.UserData.save_project_k(end+1,1)	= k;
 					end
 				end
 			end
 		end
 	end
 	
-	% % % % Disabled: it is too complicated to temporarily hide objects again if necessary:
-	% % % % Set the value of the cutting lines dropdown menu to 'None' (make the map objects visible):
-	% % % set_previewtype_dropdown(1);
+	% -----------------------------------------------------------------------------------------------------------------
+	% Delete abandoned source plots:
+	% Source plots can become orphaned if all associated text or symbols are deleted.
 	
-	% Deselect all map objects:
-	if ~isempty(MAP_OBJECTS)
-		plot_modify('deselect',-1,0);
+	ic_delete					= false(ic_max,1);
+	for ic=1:ic_max
+		GV_H_ax_2dmap_Children_ic		= GV_H_ax_2dmap_Children(ic);
+		if isfield(GV_H_ax_2dmap_Children_ic.UserData,'imapobj')
+			if ~GV_H_ax_2dmap_Children_ic.UserData.ismapobj
+				ic_delete(ic,1)	= true;
+			end
+		end
+	end
+	if any(ic_delete)
+		% Delete abandoned source plots:
+		delete(GV_H_ax_2dmap_Children(ic_delete));
+		% Assign the children handles again:
+		GV_H_ax_2dmap_Children	= GV_H.ax_2dmap.Children;
+		ic_max						= length(GV_H_ax_2dmap_Children);
+	end
+	if ~isdeployed
+		fprintf(1,'Save project: %g abandoned source plots deleted.\n',length(find(ic_delete)));
 	end
 	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Delete all handles in MAP_OBJECTS:
+	for imapobj=1:size(MAP_OBJECTS,1)
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+				for k=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+					if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h)
+						MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h	= [];
+					end
+				end
+			end
+		end
+		MAP_OBJECTS(imapobj,1).h	= [];
+	end
+	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Rename old versions:
 	if isempty(filename_add)
 		for i=PP.general.save_n_backups:-1:0
@@ -164,11 +246,13 @@ try
 		end
 	end
 	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Filenames:
 	[GV.map_filename,GV.mapdata_filename,~]	= filenames_savefiles(filename_add);
 	% Show path and filenames:
 	display_on_gui('pathfilenames');
 	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Save the map:
 	set(GV_H.fig_2dmap,'UserData',struct(...
 		'PP',PP,...			% necessary for map2stl.m
@@ -176,7 +260,9 @@ try
 		'ver_map',VER,...
 		'savetime_map',savetime_map));
 	savefig(GV_H.fig_2dmap,[GV.projectdirectory GV.map_filename]);
+	set(GV_H.fig_2dmap,'UserData',[]);
 	
+	% -----------------------------------------------------------------------------------------------------------------
 	% Save the map data:
 	GV_savedata				= GV;
 	ver_mapdata				= VER;					% Save the version number
@@ -186,6 +272,56 @@ try
 	
 	% The map has been saved:
 	GV.map_is_saved		= 1;
+	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Restore the handles (see also load_project):
+	
+	% Restore the map object handles:
+	for ic=1:ic_max
+		GV_H_ax_2dmap_Children_ic		= GV_H_ax_2dmap_Children(ic);
+		if isfield(GV_H_ax_2dmap_Children_ic.UserData,'imapobj')
+			if ~isfield(GV_H_ax_2dmap_Children_ic.UserData,'issource')
+				errormessage;
+			end
+			if ~GV_H_ax_2dmap_Children_ic.UserData.issource
+				% Visible plot object:
+				imapobj			= GV_H_ax_2dmap_Children_ic.UserData.imapobj;
+				i					= GV_H_ax_2dmap_Children_ic.UserData.save_project_i;
+				MAP_OBJECTS(imapobj,1).h(i,1)	= ic;
+			end
+		end
+	end
+	for imapobj=1:size(MAP_OBJECTS,1)
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			ic					= MAP_OBJECTS(imapobj,1).h(i,1);
+			if i==1
+				h				= GV_H_ax_2dmap_Children(ic);
+			else
+				h(end+1,1)	= GV_H_ax_2dmap_Children(ic);
+			end
+		end
+		MAP_OBJECTS(imapobj,1).h	= h;
+	end
+	
+	% Restore the source handles:
+	for ic=1:ic_max
+		GV_H_ax_2dmap_Children_ic		= GV_H_ax_2dmap_Children(ic);
+		if isfield(GV_H_ax_2dmap_Children_ic.UserData,'imapobj')
+			if GV_H_ax_2dmap_Children_ic.UserData.issource
+				% Invisible source data plot object:
+				for j=1:size(GV_H_ax_2dmap_Children_ic.UserData.imapobj,1)
+					imapobj			= GV_H_ax_2dmap_Children_ic.UserData.imapobj(j,1);
+					i					= GV_H_ax_2dmap_Children_ic.UserData.save_project_i(j,1);
+					k					= GV_H_ax_2dmap_Children_ic.UserData.save_project_k(j,1);
+					% fprintf(1,'imapobj=%g   i=%g   k=%g   j=%g\n',imapobj,i,k,j);
+					MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(k,1).h	= GV_H_ax_2dmap_Children_ic;
+				end
+			end
+		end
+	end
+	
+	% -----------------------------------------------------------------------------------------------------------------
+	% Last steps:
 	
 	% Execution time:
 	t_end_statebusy					= clock;

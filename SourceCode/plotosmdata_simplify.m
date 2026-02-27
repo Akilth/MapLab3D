@@ -1261,8 +1261,7 @@ try
 			% Delete source data:
 			% - The source plots are made visible, if the corresponding text or symbol is selected.
 			%   This makes it easier to move the texts and symbols to the right place when editing the map.
-			% - Test if there are plot objects that use the same source plots (the do not delete them)
-			%   (maybe not necessary)
+			% - Test if there are plot objects that use the same source plots (then do not delete them)
 			sourceplot_delete		= [];
 			sourceplot_notdel		= [];
 			for i=1:size(MAP_OBJECTS(imapobj,1).h,1)

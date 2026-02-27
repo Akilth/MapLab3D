@@ -281,7 +281,7 @@ try
 	
 	if numboundaries(pd_poly_text_bgd)>0
 		
-		% Add the texts to PLOTDATA:
+		% Add the texts and reference points to PLOTDATA:
 		PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd	= [...
 			PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd;...
 			pd_poly_text_bgd];
@@ -300,6 +300,9 @@ try
 		PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp		= [...
 			PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp;...
 			pd_ud_text_lrp];
+		PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints	= [...
+			PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints;...
+			pd_pos_refpoints];
 		if ~isequal(...
 				size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd),...
 				size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_obj)    )||~isequal(...
@@ -310,21 +313,47 @@ try
 				size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd),...
 				size(PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_obj)      )||~isequal(...
 				size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd),...
-				size(PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp)      )
+				size(PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp)      )||~isequal(...
+				size(PLOTDATA.obj(iobj,1).text(iteqt,1).poly_text_bgd,1),...
+				size(PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints,1)  )
 			errormessage;
 		end
-		
-		% Reference points:
-		PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints	= [...
-			PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints;...
-			pd_pos_refpoints];
 		
 		% Source plots:
 		% The source plots are made visible, if the corresponding text or symbol is selected.
 		% This makes it easier to move the texts and symbols to the right place when editing the map.
-		for k=1:size(pd_poly_text_bgd,1)
-			PLOTDATA.obj(iobj,1).text(iteqt,1).source(end+1,1).connways	= connways_eqtags_select;
+		% Downsampling of the source plots:
+		dmax				= [];
+		nmin				= [];
+		dmin_source		= PP.obj(iobj).textpar.dmin_source;			% minimum distance between vertices
+		if dmin_source>0
+			for k=1:size(connways_eqtags_select.areas,1)
+				[x,y]	= changeresolution_xy(...
+					connways_eqtags_select.areas(k,1).xy(:,1),...
+					connways_eqtags_select.areas(k,1).xy(:,2),dmax,dmin_source,nmin);
+				if size(x,1)>=3
+					connways_eqtags_select.areas(k,1).xy		= [x y];
+				end
+			end
+			for k=1:size(connways_eqtags_select.lines,1)
+				[x,y]	= changeresolution_xy(...
+					connways_eqtags_select.lines(k,1).xy(:,1),...
+					connways_eqtags_select.lines(k,1).xy(:,2),dmax,dmin_source,nmin);
+				connways_eqtags_select.lines(k,1).xy		= [x y];
+			end
 		end
+		% Save the source plot data:
+		if isempty(PLOTDATA.obj(iobj,1).text(iteqt,1).source)
+			isource	= 1;
+		else
+			isource	= size(PLOTDATA.obj(iobj,1).text(iteqt,1).source,1)+1;
+		end
+		% Indices of the source-data, same size as pd_poly_text_bgd:
+		PLOTDATA.obj(iobj,1).text(iteqt,1).isource				= [...
+			PLOTDATA.obj(iobj,1).text(iteqt,1).isource;...
+			isource*ones(size(pd_poly_text_bgd,1),1)];
+		% Source-data: Several texts can have the same source data.
+		PLOTDATA.obj(iobj,1).text(iteqt,1).source(isource,1).connways	= connways_eqtags_select;
 		
 		% Add the colornumber to PLOTDATA.colno_v:
 		PLOTDATA.obj(iobj,1).colno_text_fgd	= PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_obj.color_no;
