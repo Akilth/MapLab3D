@@ -259,7 +259,14 @@ try
 		'ELE',ELE,...		% necessary for map2stl.m
 		'ver_map',VER,...
 		'savetime_map',savetime_map));
-	savefig(GV_H.fig_2dmap,[GV.projectdirectory GV.map_filename]);
+	switch GV.openfigureformat
+		case 'fig'
+			% old: 'fig' (large figures could no longer be loaded after being saved several times, cause unknown)
+			savefig(GV_H.fig_2dmap,[GV.projectdirectory GV.map_filename]);
+		case 'mat'
+			% new: 'mat' (starting with version 1.2)
+			savefigasmat(GV_H.fig_2dmap,[GV.projectdirectory GV.map_filename]);
+	end
 	set(GV_H.fig_2dmap,'UserData',[]);
 	
 	% -----------------------------------------------------------------------------------------------------------------

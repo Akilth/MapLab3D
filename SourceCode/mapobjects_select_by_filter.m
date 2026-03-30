@@ -4,11 +4,11 @@ function mapobjects_select_by_filter
 global APP MAP_OBJECTS_TABLE MAP_OBJECTS GV GV_H
 
 try
-
+	
 	% Display state:
 	display_on_gui('state','Select map objects ...','busy','add');
 	waitbar_t1		= clock;
-
+	
 	% % % % Initializations:
 	% % % prompt{1,1}		= sprintf([...
 	% % % 	'Enter the filter criteria (empty: no criterion):\n',...
@@ -117,7 +117,7 @@ try
 	% % % 		'areas, text, symbols or preview cutting lines.']);
 	% % % 	errormessage(errortext);
 	% % % end
-
+	
 	% Get user inputs:
 	GV_H.mapobjects_select_by_filter_getuserinput	= [];
 	mapobjects_select_by_filter_getuserinput;
@@ -158,7 +158,7 @@ try
 	%                 colno_v: [0 4 9]
 	%                chstno_v: []
 	%                  isym_v: [8 19]
-
+	
 	if ~GV.selbyfilt.select
 		% Select by filter was canceled or there was an error:
 		display_on_gui('state','Select map objects ... canceled','notbusy','replace');
@@ -166,7 +166,7 @@ try
 		set(GV_H.text_waitbar,'String','');
 		return
 	end
-
+	
 	% Table to structure array:
 	if APP.ShowMapObjectsTable_Menu.Checked
 		% The map objects table is enabled:
@@ -176,11 +176,11 @@ try
 		mot		= display_map_objects;
 	end
 	map_obj_table			= table2struct(mot);
-
+	
 	imapobj_select			= true(size(map_obj_table,1),1);
 	imapobj_ambiguous_colors_v	=  [];
 	for imapobj=1:size(map_obj_table,1)
-
+		
 		% Waitbar:
 		if etime(clock,waitbar_t1)>=GV.waitbar_dtupdate
 			waitbar_t1	= clock;
@@ -188,14 +188,14 @@ try
 			set(GV_H.patch_waitbar,'XData',[0 progress progress 0]);
 			drawnow;
 		end
-
+		
 		% Object number: objno
 		if isnumeric(map_obj_table(imapobj,1).ObjNo)
 			objno				= map_obj_table(imapobj,1).ObjNo;
 		else
 			objno				= str2double(map_obj_table(imapobj,1).ObjNo);	% maybe NaN
 		end
-
+		
 		% Color number: colno
 		colno_v				= nan(size(MAP_OBJECTS(imapobj,1).h,1),1);
 		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -222,7 +222,7 @@ try
 				end
 			end
 		end
-
+		
 		% Character style number: chstno
 		% The character style number in one group is always unique.
 		if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'chstno')
@@ -230,7 +230,7 @@ try
 		else
 			chstno			= NaN;
 		end
-
+		
 		% Symbol number: isym
 		% The symbol number in one group is always unique.
 		if isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'isym')
@@ -238,19 +238,19 @@ try
 		else
 			isym			= NaN;
 		end
-
+		
 		% Visiblity:
 		vis					= map_obj_table(imapobj,1).Vis;
-
+		
 		% Object type:
 		dispas				= map_obj_table(imapobj,1).DispAs;
-
+		
 		% Description:
 		descr					= map_obj_table(imapobj,1).Description;
-
+		
 		% Text/Tag:
 		texttag				= map_obj_table(imapobj,1).Text;
-
+		
 		% Diagonal and area:
 		poly_all				= polyshape();
 		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
@@ -266,7 +266,19 @@ try
 			diag_mm			= 0;
 			area_mm2			= 0;
 		end
-
+		
+		% Line length:
+		lile_mm			= NaN;
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'linelength')
+				if isnan(lile_mm)
+					lile_mm			= MAP_OBJECTS(imapobj,1).h(i,1).UserData.linelength;
+				else
+					lile_mm			= lile_mm+MAP_OBJECTS(imapobj,1).h(i,1).UserData.linelength;
+				end
+			end
+		end
+		
 		% If the condition is not met: do not select the object:
 		if ~isempty(GV.selbyfilt.sel.iobj_v)
 			if ~any(GV.selbyfilt.sel.iobj_v==objno)
@@ -307,11 +319,6 @@ try
 				(GV.selbyfilt.sel.cuttinglines       &&strcmp(dispas,'cutting line'        ))     )
 			imapobj_select(imapobj)	= false;
 		end
-
-		if imapobj==13
-			test=1;
-		end
-
 		if ~isempty(GV.selbyfilt.sel.description)
 			out_description	= regexpi(descr,...
 				regexptranslate('wildcard',['*' GV.selbyfilt.sel.description '*']),'match');
@@ -332,9 +339,15 @@ try
 				(area_mm2<=GV.selbyfilt.sel.maxarea)     )
 			imapobj_select(imapobj)	= false;
 		end
-
+		if ~isnan(lile_mm)
+			if  ~((lile_mm >=GV.selbyfilt.sel.minlile)&&...
+					(lile_mm <=GV.selbyfilt.sel.maxlile)     )
+				imapobj_select(imapobj)	= false;
+			end
+		end
+		
 	end
-
+	
 	% Warning if grouped objects were not selected because the color numbers in the group are not unique:
 	imapobj_ambiguous_colors_v		= unique(imapobj_ambiguous_colors_v);
 	if ~isempty(imapobj_ambiguous_colors_v)
@@ -381,7 +394,7 @@ try
 		GV_H.warndlg.mapobjects_select_by_filter		= warndlg(warntext,'Warning');
 		GV_H.warndlg.mapobjects_select_by_filter.Tag	= 'maplab3d_figure';
 	end
-
+	
 	% Select the objects:
 	if GV.selbyfilt.sel.logic
 		% Select all objects, that meet these conditions
@@ -394,9 +407,9 @@ try
 	if ~isempty(imapobj_v)
 		plot_modify('select',imapobj_v,0);
 	end
-
+	
 	% Display state:
-	if length(imapobj_v)==1
+	if isscalar(imapobj_v)
 		display_on_gui('state','Select map objects ... 1 object selected','notbusy','replace');
 	else
 		display_on_gui('state',sprintf('Select map objects ... %g objects selected',length(imapobj_v)),...
@@ -404,7 +417,7 @@ try
 	end
 	set(GV_H.patch_waitbar,'XData',[0 0 0 0]);
 	% set(GV_H.text_waitbar,'String','');
-
+	
 catch ME
 	errormessage('',ME);
 end

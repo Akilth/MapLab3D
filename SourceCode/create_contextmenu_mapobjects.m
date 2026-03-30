@@ -653,7 +653,13 @@ try
 	% Line length and change line width:
 	if iobj>0
 		separator		= 'on';
-		if    isfield(MAP_OBJECTS(imapobj,1).h(1,1).UserData,'linelength')
+		lile_mm			= 0;
+		for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+			if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'linelength')
+				lile_mm			= lile_mm+MAP_OBJECTS(imapobj,1).h(i,1).UserData.linelength;
+			end
+		end
+		if lile_mm>0
 			uimenu(hcmenu,...
 				'Label',sprintf('Line length = %gmm',MAP_OBJECTS(imapobj,1).h(1,1).UserData.linelength),...
 				'Separator',separator);

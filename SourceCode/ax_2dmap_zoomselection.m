@@ -1,9 +1,9 @@
 function ax_2dmap_zoomselection
 
-global MAP_OBJECTS
+global MAP_OBJECTS GV_H
 
 try
-
+	
 	xyinit		= 1e12;
 	xmin_all		= xyinit;
 	ymin_all		= xyinit;
@@ -50,14 +50,14 @@ try
 			~isequal(ymin_all,xyinit)&&...
 			~isequal(xmax_all,-xyinit)&&...
 			~isequal(ymax_all,-xyinit)
-		K	= 0.025;			% 0.5
+		K	= 0.2;			% 0.025 / 0.5
 		x1	= xmin_all-(xmax_all-xmin_all)*K;
 		x2	= xmax_all+(xmax_all-xmin_all)*K;
 		y1	= ymin_all-(ymax_all-ymin_all)*K;
 		y2	= ymax_all+(ymax_all-ymin_all)*K;
 		ax_2dmap_zoom('set',x1,y1,x2,y2);
 	end
-
+	
 catch ME
 	errormessage('',ME);
 end

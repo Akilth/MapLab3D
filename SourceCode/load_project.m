@@ -1,14 +1,16 @@
-function load_project(map_pathname,map_filename)
+function load_project(map_pathname,filename)
 % Load project:
 % Syntax:
-% - Ask for the filename of the " - MAP.fig"-file:
+% - Ask for the filename of the " - MAP.fig"-file or " - MAP.mat"-file:
 %   load_project;
 % - Do not ask for the filename:
-%   load_project(map_pathname,map_filename);
+%   load_project(map_pathname,filename);
 
 global APP GV GV_H PP ELE MAP_OBJECTS OSMDATA VER PLOTDATA PRINTDATA SETTINGS
 
 try
+	
+	% Initializations:
 	
 	% Display state:
 	t_start_statebusy	= clock;
@@ -34,30 +36,34 @@ try
 			end
 		end
 		figure(APP.MapLab3D);	% This is a test to prevent the uiget window from being opened behind another window.
-		[map_filename,map_pathname]	= uigetfile_local('*.fig',...
-			sprintf('Select the map figure (... - v%1.0f.%1.0f - MAP.fig)',VER.no1,VER.no2),map_pathname);
+		[filename,map_pathname]	= uigetfile_local(...
+			sprintf('*.%s',GV.openfigureformat),...
+			sprintf('Select the project file (... - v%1.0f.%1.0f - MAP.%s or MAPDATA.%s)',...
+			VER.no1,VER.no2,GV.openfigureformat,GV.openfigureformat),map_pathname);
 		figure(APP.MapLab3D);	% This brings the app figure to the foreground.
-		if isequal(map_filename,0)||isequal(map_pathname,0)
+		if isequal(filename,0)||isequal(map_pathname,0)
 			display_on_gui('state',...
 				sprintf('Loading project ... canceled (%s).',dt_string(etime(clock,t_start_statebusy))),...
 				'notbusy','replace');
 			return
 		end
 	else
-		if exist([map_pathname map_filename],'file')~=2
+		if exist([map_pathname filename],'file')~=2
 			display_on_gui('state',...
 				sprintf('Loading project ... error (%s).',dt_string(etime(clock,t_start_statebusy))),...
 				'notbusy','replace');
 			errortext	= sprintf([...
 				' the file\n',...
 				'%s\n',...
-				'does not exist.'],[map_pathname map_filename]);
+				'does not exist.'],[map_pathname filename]);
 			errormessage(errortext)
 		end
 	end
 	
-	% Check the file extension:
-	k					= find(map_filename=='.');
+	% Check the file extension and assign map_filename and mapdata_filename:
+	% filename:	GV.openfigureformat='fig':		Only ...MAP.fig can be selected by the user.
+	%				GV.openfigureformat='mat':		...MAP.mat and ...MAPDATA.mat can be selected by the user.
+	k					= find(filename=='.');
 	if isempty(k)
 		display_on_gui('state',...
 			sprintf('Loading project ... done (%s).',dt_string(etime(clock,t_start_statebusy))),...
@@ -70,20 +76,90 @@ try
 			'notbusy','replace');
 		return
 	end
-	map_filename_extension	= map_filename((k(end)+1):end);
-	map_filename_withoutext	= map_filename(1:(k(end)-1));
-	if ~strcmp(map_filename_extension,'fig')
+	filename_extension	= filename((k(end)+1):end);
+	filename_withoutext	= filename(1:(k(end)-1));
+	if ~strcmp(filename_extension,GV.openfigureformat)
 		errortext	= sprintf([...
 			'The file extension .%s is not supported.\n',...
-			'The permitted file extension is: %s'],map_filename_extension,'.fig');
+			'The permitted file extension is: .%s'],filename_extension,GV.openfigureformat);
 		errormessage(errortext)
 	end
-	mapdata_filename	= [map_filename_withoutext 'DATA.mat'];
+	if strcmp(GV.openfigureformat,'fig')
+		% GV.openfigureformat='fig': Only ...MAP.fig can be selected by the user.
+		if length(filename)>=7
+			if ~strcmp(filename((end-6):end),'MAP.fig')
+				errortext	= sprintf([...
+					'You have selected the file\n',...
+					'%s\n',...
+					'You must select a file ending in ...MAP.fig.'],filename);
+				errormessage(errortext);
+			end
+		else
+			errortext	= sprintf([...
+				'You have selected the file\n',...
+				'%s\n',...
+				'You must select a file ending in ...MAP.fig.'],filename);
+			errormessage(errortext);
+		end
+		map_filename		= filename;
+		mapdata_filename	= [filename_withoutext 'DATA.mat'];
+	else
+		% GV.openfigureformat='mat': ...MAP.mat and ...MAPDATA.mat can be selected by the user.
+		if length(filename)>=11
+			if    ~strcmp(filename((end-10):end),'MAPDATA.mat')&&...
+					~strcmp(filename((end- 6):end),'MAP.mat')
+				errortext	= sprintf([...
+					'You have selected the file\n',...
+					'%s\n',...
+					'You must select a file ending in ...MAP.mat or  ...MAPDATA.mat.'],filename);
+				errormessage(errortext);
+			else
+				if strcmp(filename((end-6):end),'MAP.mat')
+					% filename='...MAP.mat' has been selected by the user:
+					map_filename						= filename;
+					mapdata_filename					= [filename_withoutext 'DATA.mat'];
+				else
+					% filename='...MAPDATA.mat' has been selected by the user:
+					mapdata_filename					= filename;
+					map_filename						= filename;
+					map_filename((end-7):(end-4))	= [];
+				end
+			end
+		elseif length(filename)>=7
+			if ~strcmp(filename((end-6):end),'MAP.mat')
+				errortext	= sprintf([...
+					'You have selected the file\n',...
+					'%s\n',...
+					'You must select a file ending in ...MAP.mat or  ...MAPDATA.mat.'],filename);
+				errormessage(errortext);
+			else
+				% filename='...MAP.mat' has been selected by the user:
+				map_filename						= filename;
+				mapdata_filename					= [filename_withoutext 'DATA.mat'];
+			end
+		else
+			errortext	= sprintf([...
+				'You have selected the file\n',...
+				'%s\n',...
+				'You must select a file ending in ...MAP.mat or  ...MAPDATA.mat.'],filename);
+			errormessage(errortext);
+		end
+	end
 	
-	% Check whether the corresponding mapdata file exists:
+	% In the case that ...MAPDATA.mat has been selected: Check whether the corresponding map file exists:
+	if exist([map_pathname map_filename],'file')~=2
+		errortext	= sprintf([...
+			'The map file\n',...
+			'%s\n',...
+			'does not exist in the path\n',...
+			'%s.'],map_filename,map_pathname);
+		errormessage(errortext)
+	end
+	
+	% In the case that ...MAP.fig or ...MAP.mat has been selected: Check whether the corresponding mapdata file exists:
 	if exist([map_pathname mapdata_filename],'file')~=2
 		errortext	= sprintf([...
-			'The corresponding map data file\n',...
+			'The map data file\n',...
 			'%s\n',...
 			'does not exist in the path\n',...
 			'%s.'],mapdata_filename,map_pathname);
@@ -122,13 +198,26 @@ try
 	% -----------------------------------------------------------------------------------------------------------------
 	% Open the figure:
 	% Display message:
-	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAP.fig. This may take some time ... '));
+	set(GV_H.text_waitbar,'String',sprintf('Loading ... - MAP.%s. This may take some time ... ',GV.openfigureformat));
 	% drawnow nocallbacks;
 	pause(0.001);					% s
-	hf_map_new		= openfig([map_pathname map_filename],'invisible');
-	figure_theme(hf_map_new,'set',[],'light');
-	set(hf_map_new,'WindowStyle','normal');		% open in a standalone window (not docked)
-	set(hf_map_new,'Tag','maplab3d_figure');
+	
+	switch GV.openfigureformat
+		case 'fig'
+			% Old method: open figure
+			hf_map_new		= openfig([map_pathname map_filename],'invisible');
+			figure_theme(hf_map_new,'set',[],'light');
+			set(hf_map_new,'WindowStyle','normal');		% open in a standalone window (not docked)
+			set(hf_map_new,'Tag','maplab3d_figure');
+		case 'mat'
+			% New method: load figure data and restore figure:
+			% Create figure:
+			create_figure_only		= true;
+			figvisible					= 'off';
+			[hf_map_new,ha_map_new]	= create_map_figure([],[],create_figure_only,figvisible);
+			% Restore figure content:
+			openfigasmat(hf_map_new,ha_map_new,[map_pathname map_filename],figvisible);
+	end
 	
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Initializations. This may take some time ... '));
@@ -136,7 +225,8 @@ try
 	pause(0.001);					% s
 	
 	% Check wether the figure contains the required userdata:
-	ud_map_new		= hf_map_new.UserData;
+	ud_map_new				= hf_map_new.UserData;
+	hf_map_new.UserData	= [];
 	% cameratoolbar disabled, because it changes the axis position:
 	% The modification of lines and polygons like "Move vertex" will not work.
 	% cameratoolbar(hf_map_new,'Show');
@@ -238,7 +328,8 @@ try
 		'symbols_pathfilename';...
 		'symbolsdirectory';...
 		'projectdirectory_ts';...
-		'timer_activated'};
+		'timer_activated';...
+		'openfigureformat'};
 	
 	% Assign the other fields of GV:
 	fn_sd			= fieldnames(GV_savedata);
@@ -254,7 +345,7 @@ try
 			GV.(fn_sd{ifn_sd,1})		= GV_savedata.(fn_sd{ifn_sd,1});
 		end
 	end
-
+	
 	% -----------------------------------------------------------------------------------------------------------------
 	% Restore the 2D map and the plot handles:
 	
@@ -301,10 +392,10 @@ try
 	GV_H.poly_contour	= [];
 	
 	% Assign the children handles only once: much faster!
-		% The following commands have a long computation time inside the for-loop:
-		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'imapobj')
-		% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'issource')
-		% -	if ~GV_H.ax_2dmap.Children(ic).UserData.issource
+	% The following commands have a long computation time inside the for-loop:
+	% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'imapobj')
+	% -	if isfield(GV_H.ax_2dmap.Children(ic).UserData,'issource')
+	% -	if ~GV_H.ax_2dmap.Children(ic).UserData.issource
 	GV_H_ax_2dmap_Children	= GV_H.ax_2dmap.Children;
 	ic_max						= length(GV_H_ax_2dmap_Children);
 	ic_delete					= false(ic_max,1);
@@ -443,7 +534,7 @@ try
 	
 	% Set the axis position:
 	SizeChangedFcn_fig_2dmap([],[],1,1);
-
+	
 	% After assignment of GV_H.fig_2dmap and GV_H.ax_2dmap and the plot objects GV_H....: Make the 2D map visible:
 	% Display message:
 	set(GV_H.text_waitbar,'String',sprintf('Loading projekt: Make the map visible. This may take some time ... '));

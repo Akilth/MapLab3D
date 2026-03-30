@@ -299,11 +299,25 @@ try
 	%------------------------------------------------------------------------------------------------------------------
 	% Open map:
 	%------------------------------------------------------------------------------------------------------------------
-	
-	hf_map			= openfig([map_pathname map_filename],'invisible');
-	figure_theme(hf_map,'set',[],'light');
-	set(hf_map,'Tag','maplab3d_figure');
-	set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+	switch GV.openfigureformat
+		case 'fig'
+			% Old method: open figure
+			hf_map			= openfig([map_pathname map_filename],'invisible');
+			figure_theme(hf_map,'set',[],'light');
+			set(hf_map,'Tag','maplab3d_figure');
+			set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+		case 'mat'
+			% New method: load figure data and restore figure:
+			% Create figure:
+			hf_map		= figure;
+			figure_theme(hf_map,'set',[],'light');
+			set(hf_map,'Tag','maplab3d_figure');
+			set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+			ha_map	= axes(hf_map);
+			% Restore figure content:
+			figvisible					= 'off';
+			openfigasmat(hf_map,ha_map,[map_pathname map_filename],figvisible);
+	end
 	
 	% Projekt parameters and elevation data:
 	fig_userdata	= get(hf_map,'UserData');

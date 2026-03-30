@@ -2193,13 +2193,20 @@ try
 		'ver_map',VER,...
 		'savetime_map',clock));
 	filename	= validfilename(filename);
-	savefig(hf_map,[GV.projectdirectory_ts{testsample_no,1} filename]);
+	switch GV.openfigureformat
+		case 'fig'
+			% old: 'fig' (large figures could no longer be loaded after being saved several times, cause unknown)
+			savefig(hf_map,[GV.projectdirectory_ts{testsample_no,1} filename]);
+		case 'mat'
+			% new: 'mat' (starting with version 1.2)
+			savefigasmat(hf_map,[GV.projectdirectory_ts{testsample_no,1} filename]);
+	end
 	
 	
 	%------------------------------------------------------------------------------------------------------------------
 	% Create the STL-file:
 	map_tile_no		= 1;
-	map_filename	= [filename '.fig'];
+	map_filename	= [filename '.' GV.openfigureformat];
 	stl_filename	= filename;					% '.stl' will be added in map2stl
 	msg				= sprintf('%s: create STL files',msg);
 	map2stl(...
@@ -2216,7 +2223,7 @@ try
 	%------------------------------------------------------------------------------------------------------------------
 	% Maybe delete the figure that contains the 2D representation:
 	if PP_ts.testsample.savefig_2d==0
-		delete([GV.projectdirectory_ts{testsample_no,1} filename '.fig']);
+		delete([GV.projectdirectory_ts{testsample_no,1} filename '.' GV.openfigureformat]);
 	end
 	
 	

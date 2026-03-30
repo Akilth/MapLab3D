@@ -523,12 +523,14 @@ try
 						% Display the source data of the selected object, if the object is selected:
 						if MAP_OBJECTS(imapobj,1).h(i,1).Selected
 							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-								% Source plot handles:
-								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-								k_source		= ishandle(source);
-								% Make the source plots visible:
-								set(source(k_source),'Visible','on');
+								for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+									if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+										if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+											% Make the source plots visible:
+											set(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h,'Visible','on');
+										end
+									end
+								end
 							end
 						end
 					end
@@ -574,12 +576,14 @@ try
 					% Display the source data of the selected object, if the object is selected:
 					if MAP_OBJECTS(imapobj,1).h(i,1).Selected
 						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-							% Source plot handles:
-							source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-							source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-							k_source		= ishandle(source);
-							% Make the source plots visible:
-							set(source(k_source),'Visible','on');
+							for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+									if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+										% Make the source plots visible:
+										set(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h,'Visible','on');
+									end
+								end
+							end
 						end
 					end
 				end
@@ -658,13 +662,13 @@ try
 						% Display the source data of the selected object, if the object is visible:
 						if MAP_OBJECTS(imapobj,1).h(i,1).Visible
 							if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h)
-									% Source plot handles:
-									source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-									source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-									k_source		= ishandle(source);
-									% Make the source plots visible:
-									set(source(k_source),'Visible','on');
+								for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+									if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+										if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+											% Make the source plots visible:
+											set(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h,'Visible','on');
+										end
+									end
 								end
 							end
 						end
@@ -689,13 +693,13 @@ try
 						MAP_OBJECTS(imapobj,1).h(i,1).Selected	= 'off';
 						% Hide the source data of the selected object:
 						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
-							if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h)
-								% Source plot handles:
-								source		= zeros(1,size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1));
-								source(1,:)	= [MAP_OBJECTS(imapobj,1).h(i,1).UserData.source.h];
-								k_source		= ishandle(source);
-								% Make the source plots invisible:
-								set(source(k_source),'Visible','off');
+							for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+									if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+										% Make the source plots invisible:
+										set(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h,'Visible','off');
+									end
+								end
 							end
 						end
 					end
@@ -950,9 +954,99 @@ try
 			
 			% User confirmation:
 			if isequal(imapobj0_v,-1)
+				imapobj_v		= unique(imapobj_v);
+				
+				% Get information about the objects to be deleted:
+				imax_objno		= 10;
+				imax_colno		= 10;
+				imax_dscr		= 10;
+				imax_text		= 10;
+				imax_disp		= 10;
+				[  quest_objno,...					% numerical array:	object number
+					quest_colno,...					% numerical array:	color number
+					quest_dscr,...						% string array:		description
+					quest_text,...						% string array:		text
+					quest_disp...						% string array:		display as
+					]=get_mapobj_information(...
+					imapobj_v,...						% vector of indices in MAP_OBJECTS
+					imax_objno+1,...					% if get_only_identical_values=false: maximum length of objno_v
+					imax_colno+1,...					% if get_only_identical_values=false: maximum length of colno_v
+					imax_dscr+1,...					% if get_only_identical_values=false: maximum length of dscr_v
+					imax_text+1,...					% if get_only_identical_values=false: maximum length of text_v
+					imax_disp+1);						% if get_only_identical_values=false: maximum length of disp_v
+				
+				% Create question:
+				if isscalar(imapobj_v)
+					question	= 'Delete one selected object?';
+				else
+					question	= sprintf('Delete %g selected objects?',length(imapobj_v));
+				end
+				% Object information: object number:
+				if ~isempty(quest_objno)
+					question			= sprintf('%s\nObjNo: %1.0f',question,quest_objno(1,1));
+					for i=2:min(size(quest_objno,1),imax_objno)
+						question			= sprintf('%s, %1.0f',question,quest_objno(i,1));
+					end
+					if size(quest_objno,1)>imax_objno
+						question			= sprintf('%s, ...',question);
+					end
+				end
+				% Object information: color number:
+				if ~isempty(quest_colno)
+					question			= sprintf('%s\nColNo: %1.0f',question,quest_colno(1,1));
+					for i=2:min(size(quest_colno,1),imax_colno)
+						question			= sprintf('%s, %1.0f',question,quest_colno(i,1));
+					end
+					if size(quest_colno,1)>imax_colno
+						question			= sprintf('%s, ...',question);
+					end
+				end
+				% Object information: description:
+				if ~isempty(quest_dscr)
+					if size(quest_dscr,1)==1
+						question			= sprintf('%s\nDescription: %s',question,quest_dscr(1,1));
+					else
+						question			= sprintf('%s\nDescription:\n-  %s',question,quest_dscr(1,1));
+					end
+					for i=2:min(size(quest_dscr,1),imax_dscr)
+						question			= sprintf('%s\n-  %s',question,quest_dscr(i,1));
+					end
+					if size(quest_dscr,1)>imax_dscr
+						question			= sprintf('%s\n- ...',question);
+					end
+				end
+				% Object information: Text/Tag:
+				if ~isempty(quest_text)
+					if size(quest_text,1)==1
+						question			= sprintf('%s\nText/Tag: %s',question,quest_text(1,1));
+					else
+						question			= sprintf('%s\nText/Tag:\n-  %s',question,quest_text(1,1));
+					end
+					for i=2:min(size(quest_text,1),imax_text)
+						question			= sprintf('%s\n-  %s',question,quest_text(i,1));
+					end
+					if size(quest_text,1)>imax_text
+						question			= sprintf('%s\n- ...',question);
+					end
+				end
+				% Object information: display as:
+				if ~isempty(quest_disp)
+					if size(quest_disp,1)==1
+						question			= sprintf('%s\nDispsAs: %s',question,quest_disp(1,1));
+					else
+						question			= sprintf('%s\nDispsAs:\n-  %s',question,quest_disp(1,1));
+					end
+					for i=2:min(size(quest_disp,1),imax_disp)
+						question			= sprintf('%s\n-  %s',question,quest_disp(i,1));
+					end
+					if size(quest_disp,1)>imax_disp
+						question			= sprintf('%s\n- ...',question);
+					end
+				end
+				
+				% Question:
 				answer	= [];
 				while isempty(answer)
-					question	= 'Delete all selected objects?';
 					answer	= questdlg_local(question,'Continue?','Continue','Cancel','Cancel');
 				end
 				if strcmp(answer,'Cancel')
@@ -961,10 +1055,11 @@ try
 					end
 					return
 				end
+				
 			end
 			
 			% Delete objects in descending order!
-			imapobj_v	= sort(unique(imapobj_v),'descend');
+			imapobj_v	= sort(imapobj_v,'descend');
 			for k=1:length(imapobj_v)
 				imapobj	= imapobj_v(k);
 				% Waitbar:
@@ -980,6 +1075,22 @@ try
 				
 				% Do not delete source data!
 				% Abandoned source plots are deleted during save_project.
+				
+				% Make source data invisible:
+				for i=1:size(MAP_OBJECTS(imapobj,1).h,1)
+					if ishandle(MAP_OBJECTS(imapobj,1).h(i,1))
+						if isfield(MAP_OBJECTS(imapobj,1).h(i,1).UserData,'source')
+							for ksource=1:size(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source,1)
+								if ~isempty(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+									if isvalid(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h)
+										% Make the source plots invisible:
+										set(MAP_OBJECTS(imapobj,1).h(i,1).UserData.source(ksource,1).h,'Visible','off');
+									end
+								end
+							end
+						end
+					end
+				end
 				
 				% Check: is there another object on the map with this object number:
 				if iobj>0
@@ -3429,11 +3540,6 @@ try
 					'The selected object PlotNo=%g is a preview object.\n',...
 					'This function cannot be applied to preview objects.'],imapobj1));
 			end
-			if strcmp(par1,'subtract_dside')&&(MAP_OBJECTS(imapobj2,1).iobj<=0)
-				errormessage(sprintf(['Error:\n',...
-					'The selected object PlotNo=%g is a preview object.\n',...
-					'This function cannot be applied to preview objects.'],imapobj2));
-			end
 			
 			% Plot the preview polygon:
 			if GV.warnings_off
@@ -3454,6 +3560,12 @@ try
 					% Object 2 possibly is a group:
 					poly		= poly0;
 					for i=1:size(MAP_OBJECTS(imapobj2,1).h,1)
+						if isfield(MAP_OBJECTS(imapobj2,1).h(i,1).UserData,'color_no')
+							colno2	= MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no;
+						else
+							% Object 2 is a preview object:
+							colno2	= MAP_OBJECTS(imapobj1,1).h(1,1).UserData.color_no;
+						end
 						[  poly,...																	% poly1
 							MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
 							~...																		% dbuffer
@@ -3462,7 +3574,7 @@ try
 							MAP_OBJECTS(imapobj2,1).h(i,1).Shape,...						% poly2 (Subtrahend)
 							PP,...																	% PP_local
 							MAP_OBJECTS(imapobj1,1).h(1,1).UserData.color_no,...		% colno1
-							MAP_OBJECTS(imapobj2,1).h(i,1).UserData.color_no);			% colno2
+							colno2);																	% colno2
 					end
 					
 					% % old:
@@ -3525,8 +3637,6 @@ try
 				errormessage(sprintf(['Error:\n',...
 					'The %s result is empty.'],par1));
 			end
-			% New line:
-			imapobj_new		= size(MAP_OBJECTS,1)+1;
 			% Extend the userdata:
 			ud					= MAP_OBJECTS(imapobj1,1).h.UserData;
 			if ~isfield(ud,'in')
@@ -3590,53 +3700,75 @@ try
 					% Do not change the text of object 1:
 					text_new		= MAP_OBJECTS(imapobj1,1).text;
 			end
-			cncl_new			= MAP_OBJECTS(imapobj1,1).cncl;
-			cnuc_new			= MAP_OBJECTS(imapobj1,1).cnuc;
-			% Plot the preview as polygon:
-			if ~ishandle(GV_H.ax_2dmap)
-				errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
-			end
-			h_poly	= plot(GV_H.ax_2dmap,poly,...
-				'EdgeColor',MAP_OBJECTS(imapobj1,1).h.EdgeColor,...
-				'FaceColor',MAP_OBJECTS(imapobj1,1).h.FaceColor,...
-				'EdgeAlpha',MAP_OBJECTS(imapobj1,1).h.EdgeAlpha,...
-				'FaceAlpha',MAP_OBJECTS(imapobj1,1).h.FaceAlpha,...
-				'Visible'  ,'on',...
-				'LineStyle',MAP_OBJECTS(imapobj1,1).h.LineStyle,...
-				'LineWidth',MAP_OBJECTS(imapobj1,1).h.LineWidth,...
-				'UserData' ,ud,...
-				'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
-			% Create/modify legend:
-			create_legend_mapfigure;
-			% Save relevant data in the structure MAP_OBJECTS:
+			% Center point:
 			[xcenter,ycenter]						= centroid(poly);
-			MAP_OBJECTS(imapobj_new,1).disp	= disp_new;
-			MAP_OBJECTS(imapobj_new,1).h		= h_poly;
-			MAP_OBJECTS(imapobj_new,1).iobj	= imapobj_new_iobj;
-			MAP_OBJECTS(imapobj_new,1).dscr	= dscr_new;
-			MAP_OBJECTS(imapobj_new,1).x		= xcenter;
-			MAP_OBJECTS(imapobj_new,1).y		= ycenter;
-			MAP_OBJECTS(imapobj_new,1).text	= text_new;
-			MAP_OBJECTS(imapobj_new,1).mod	= false;
-			MAP_OBJECTS(imapobj_new,1).cncl	= cncl_new;
-			MAP_OBJECTS(imapobj_new,1).cnuc	= cnuc_new;
-			MAP_OBJECTS(imapobj_new,1).vis0	= 1;
 			
-			% Select the new object::
-			% plot_modify('deselect',[imapobj1;imapobj2],0);
-			plot_modify('select',imapobj_new,0);
-			
-			% Delete the old objects (MAP_OBJECTS_TABLE will be updated also):
-			% plot_modify('delete',[imapobj1;imapobj2]);		% Includes also display_map_objects
-			plot_modify('delete',imapobj1);						% Includes also display_map_objects
-			
-			% Arrange imapobj_new (update MAP_OBJECTS_TABLE afterwards):
-			if APP.AutoSortNewMapObjects_Menu.Checked
-				arrange_imapobj_old	= size(MAP_OBJECTS,1);
-				arrange_imapobj_new	= min(imapobj1,size(MAP_OBJECTS,1));
-				arrange_map_objects(...
-					arrange_imapobj_new,...				% position after the arrangement
-					arrange_imapobj_old);				% position before the arrangement
+			method_object1		= 1;
+			switch method_object1
+				case 1
+					% New method: object1 is overwritten: faster
+					MAP_OBJECTS(imapobj1,1).h.Shape		= poly;
+					MAP_OBJECTS(imapobj1,1).h.UserData	= ud;
+					MAP_OBJECTS(imapobj1,1).x				= xcenter;
+					MAP_OBJECTS(imapobj1,1).y				= ycenter;
+					MAP_OBJECTS(imapobj1,1).text			= text_new;
+					MAP_OBJECTS(imapobj1,1).mod			= false;
+					plot_modify('deselect',[imapobj1;imapobj2],0);
+					
+				case 2
+					% Old method: old object1 is deleted
+					%             new object1 newly created at the end of MAP_OBJECTS overlapping all other map objects
+					
+					% New line:
+					imapobj_new		= size(MAP_OBJECTS,1)+1;
+					cncl_new			= MAP_OBJECTS(imapobj1,1).cncl;
+					cnuc_new			= MAP_OBJECTS(imapobj1,1).cnuc;
+					% Plot the preview as polygon:
+					if ~ishandle(GV_H.ax_2dmap)
+						errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
+					end
+					h_poly	= plot(GV_H.ax_2dmap,poly,...
+						'EdgeColor',MAP_OBJECTS(imapobj1,1).h.EdgeColor,...
+						'FaceColor',MAP_OBJECTS(imapobj1,1).h.FaceColor,...
+						'EdgeAlpha',MAP_OBJECTS(imapobj1,1).h.EdgeAlpha,...
+						'FaceAlpha',MAP_OBJECTS(imapobj1,1).h.FaceAlpha,...
+						'Visible'  ,'on',...
+						'LineStyle',MAP_OBJECTS(imapobj1,1).h.LineStyle,...
+						'LineWidth',MAP_OBJECTS(imapobj1,1).h.LineWidth,...
+						'UserData' ,ud,...
+						'ButtonDownFcn',GV.ax_2dmap_ButtonDownFcd);
+					% Create/modify legend:
+					create_legend_mapfigure;
+					% Save relevant data in the structure MAP_OBJECTS:
+					MAP_OBJECTS(imapobj_new,1).disp	= disp_new;
+					MAP_OBJECTS(imapobj_new,1).h		= h_poly;
+					MAP_OBJECTS(imapobj_new,1).iobj	= imapobj_new_iobj;
+					MAP_OBJECTS(imapobj_new,1).dscr	= dscr_new;
+					MAP_OBJECTS(imapobj_new,1).x		= xcenter;
+					MAP_OBJECTS(imapobj_new,1).y		= ycenter;
+					MAP_OBJECTS(imapobj_new,1).text	= text_new;
+					MAP_OBJECTS(imapobj_new,1).mod	= false;
+					MAP_OBJECTS(imapobj_new,1).cncl	= cncl_new;
+					MAP_OBJECTS(imapobj_new,1).cnuc	= cnuc_new;
+					MAP_OBJECTS(imapobj_new,1).vis0	= 1;
+					
+					% Select the new object::
+					% plot_modify('deselect',[imapobj1;imapobj2],0);
+					plot_modify('select',imapobj_new,0);
+					
+					% Delete the old objects (MAP_OBJECTS_TABLE will be updated also):
+					% plot_modify('delete',[imapobj1;imapobj2]);		% Includes also display_map_objects
+					plot_modify('delete',imapobj1);						% Includes also display_map_objects
+					
+					% Arrange imapobj_new (update MAP_OBJECTS_TABLE afterwards):
+					if APP.AutoSortNewMapObjects_Menu.Checked
+						arrange_imapobj_old	= size(MAP_OBJECTS,1);
+						arrange_imapobj_new	= min(imapobj1,size(MAP_OBJECTS,1));
+						arrange_map_objects(...
+							arrange_imapobj_new,...				% position after the arrangement
+							arrange_imapobj_old);				% position before the arrangement
+					end
+					
 			end
 			
 			% Update MAP_OBJECTS_TABLE:

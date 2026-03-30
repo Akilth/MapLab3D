@@ -254,7 +254,7 @@ try
 	imapobj_uec_v		= zeros(size(colno_uec_v,1),1);
 	for k=1:size(colno_uec_v,1)
 		imapobj_uec		= find([MAP_OBJECTS.cnuc]==colno_uec_v(k,1));
-		if length(imapobj_uec)==1
+		if isscalar(imapobj_uec)
 			imapobj_uec_v(k,1)		= imapobj_uec;
 		elseif length(imapobj_uec)>1
 			errortext			= sprintf([...
@@ -271,7 +271,7 @@ try
 		% At least one color number has no united equal colors: cancel:
 		colno_uec_v_k		= colno_uec_v(k);
 		colno_uec_v_k_str	= num2str(colno_uec_v_k(:)');
-		if length(k)==1
+		if isscalar(k)
 			warntext		= sprintf([...
 				'The color number %s has no corresponding\n',...
 				'united equal colors. The function was aborted.'],colno_uec_v_k_str);
@@ -753,7 +753,7 @@ try
 			plot_modify('delete',imapobj_prev_v(2:end));		% Includes also display_map_objects
 			imapobj_prev_v	= imapobj_prev_v(1);
 		end
-		if length(imapobj_prev_v)==1
+		if isscalar(imapobj_prev_v)
 			if    (size(MAP_OBJECTS(imapobj_prev_v,1).h,1)~=size(poly_prev,1))||...
 					(size(MAP_OBJECTS(imapobj_prev_v,1).h,2)~=size(poly_prev,2))
 				plot_modify('delete',imapobj_prev_v);		% Includes also display_map_objects
