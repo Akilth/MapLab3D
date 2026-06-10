@@ -202,7 +202,7 @@ end
 % Hinweise:	-	obj_reg.colprio(iobj)==colprio_base  -->	obj_bot_reg.dz(iobj) = obj_reg.dz(iobj)
 %					obj_reg.colprio(iobj)~=colprio_base  -->	obj_bot_reg.dz(iobj) = obj_reg.z_bot(iobj)
 %																			dz ist damit wie z_bot der ABSOLUTE z-Wert der Unterseite
-%				-	Wenn Objekte zur Unterseite gehören, sind die Werte in srftype wegen der Verundung 
+%				-	Wenn Objekte zur Unterseite gehören, sind die Werte in srftype wegen der Verundung
 %					nicht mehr gültig!
 
 % Änderung der Geländehöhe dz zuweisen:
@@ -250,14 +250,14 @@ for iobj1=2:length(obj_bot_reg.poly)
 		for iobj2=1:length(obj_bot_reg.poly)
 			if size(xlim{iobj2,1},1)>0
 				if overlaps_boundingbox(tol_1,...
-					xlim{iobj1,1}(1),...		% x1min
-					xlim{iobj1,1}(2),...		% x1max
-					ylim{iobj1,1}(1),...		% y1min
-					ylim{iobj1,1}(2),...		% y1max
-					xlim{iobj2,1}(1),...		% x2min
-					xlim{iobj2,1}(2),...		% x2max
-					ylim{iobj2,1}(1),...		% y2min
-					ylim{iobj2,1}(2))			% y2max
+						xlim{iobj1,1}(1),...		% x1min
+						xlim{iobj1,1}(2),...		% x1max
+						ylim{iobj1,1}(1),...		% y1min
+						ylim{iobj1,1}(2),...		% y1max
+						xlim{iobj2,1}(1),...		% x2min
+						xlim{iobj2,1}(2),...		% x2max
+						ylim{iobj2,1}(1),...		% y2min
+						ylim{iobj2,1}(2))			% y2max
 					% The polygons may overlap or touch:
 					if    (obj_bot_reg.colprio(iobj1)> colprio_base)        && ...		% Objekt 1: colprio >  colprio_base
 							(obj_bot_reg.colprio(iobj2)<=colprio_base)        && ...		% Objekt 2: colprio <= colprio_base
@@ -332,14 +332,14 @@ for iobj1=2:length(obj_bot_reg.poly)
 					if size(xlim{iobj1,1},1)>0
 						if size(xlim{iobj2,1},1)>0
 							if overlaps_boundingbox(tol_1,...
-								xlim{iobj1,1}(1),...		% x1min
-								xlim{iobj1,1}(2),...		% x1max
-								ylim{iobj1,1}(1),...		% y1min
-								ylim{iobj1,1}(2),...		% y1max
-								xlim{iobj2,1}(1),...		% x2min
-								xlim{iobj2,1}(2),...		% x2max
-								ylim{iobj2,1}(1),...		% y2min
-								ylim{iobj2,1}(2))			% y2max
+									xlim{iobj1,1}(1),...		% x1min
+									xlim{iobj1,1}(2),...		% x1max
+									ylim{iobj1,1}(1),...		% y1min
+									ylim{iobj1,1}(2),...		% y1max
+									xlim{iobj2,1}(1),...		% x2min
+									xlim{iobj2,1}(2),...		% x2max
+									ylim{iobj2,1}(1),...		% y2min
+									ylim{iobj2,1}(2))			% y2max
 								% The polygons may overlap or touch:
 								
 								unite_obj1_obj2		= false;
@@ -371,7 +371,7 @@ for iobj1=2:length(obj_bot_reg.poly)
 											unite_obj1_obj2		= true;
 										end
 									end
-									% 2) Die Objekte vereinen, wenn beide direkt neben- oder übereinander auf dieselbe 
+									% 2) Die Objekte vereinen, wenn beide direkt neben- oder übereinander auf dieselbe
 									%    unterhalb liegende Farbe gedruckt werden:
 									% Zur Erinnerung: Die Objekte sind eindeutig nach Farbpriorität sortiert.
 									% Nur bei gleicher Farbpriorität wird nach Objektpriorität sortiert.
@@ -549,14 +549,14 @@ for iobj1=2:size(obj_bot_reg.poly,1)
 			if size(xlim{iobj1,1},1)>0
 				if size(xlim{iobj2,1},1)>0
 					if overlaps_boundingbox(tol_1,...
-						xlim{iobj1,1}(1),...		% x1min
-						xlim{iobj1,1}(2),...		% x1max
-						ylim{iobj1,1}(1),...		% y1min
-						ylim{iobj1,1}(2),...		% y1max
-						xlim{iobj2,1}(1),...		% x2min
-						xlim{iobj2,1}(2),...		% x2max
-						ylim{iobj2,1}(1),...		% y2min
-						ylim{iobj2,1}(2))			% y2max
+							xlim{iobj1,1}(1),...		% x1min
+							xlim{iobj1,1}(2),...		% x1max
+							ylim{iobj1,1}(1),...		% y1min
+							ylim{iobj1,1}(2),...		% y1max
+							xlim{iobj2,1}(1),...		% x2min
+							xlim{iobj2,1}(2),...		% x2max
+							ylim{iobj2,1}(1),...		% y2min
+							ylim{iobj2,1}(2))			% y2max
 						% The polygons may overlap or touch:
 						command_txt	= ...
 							sprintf('obj_bot_reg.poly(%4.0f)	= subtract(obj_bot_reg.poly(%4.0f),obj_bot_reg.poly(%4.0f));\n',...
@@ -596,14 +596,14 @@ for iobj1=2:size(obj_bot_reg.poly,1)
 			if size(xlim{iobj1,1},1)>0
 				if size(xlim{iobj2,1},1)>0
 					if overlaps_boundingbox(tol_1,...
-						xlim{iobj1,1}(1),...		% x1min
-						xlim{iobj1,1}(2),...		% x1max
-						ylim{iobj1,1}(1),...		% y1min
-						ylim{iobj1,1}(2),...		% y1max
-						xlim{iobj2,1}(1),...		% x2min
-						xlim{iobj2,1}(2),...		% x2max
-						ylim{iobj2,1}(1),...		% y2min
-						ylim{iobj2,1}(2))			% y2max
+							xlim{iobj1,1}(1),...		% x1min
+							xlim{iobj1,1}(2),...		% x1max
+							ylim{iobj1,1}(1),...		% y1min
+							ylim{iobj1,1}(2),...		% y1max
+							xlim{iobj2,1}(1),...		% x2min
+							xlim{iobj2,1}(2),...		% x2max
+							ylim{iobj2,1}(1),...		% y2min
+							ylim{iobj2,1}(2))			% y2max
 						% The polygons may overlap or touch:
 						command_txt	= ...
 							sprintf('obj_bot_reg.poly(%4.0f)	= subtract(obj_bot_reg.poly(%4.0f),obj_bot_reg.poly(%4.0f));\n',...
@@ -820,195 +820,21 @@ end
 % 					obj_nextcolprio.colprio(iobj)
 % 					obj_nextcolprio.srftype(iobj)
 
-if (currpart_i_tile==1)&&(currpart_i_colprio==4)&&(currpart_i_part==3)
-	test=1;
-end
-if (currpart_i_tile==1)&&(currpart_i_colprio==4)
-	test=1;
-end
+% % % % Save Testdata in case of errors:
+% % % save('C:\Daten\Projekte\MapLab3D_Ablage\00_Matlab\Test\test_map2stl_get_obj_nextcolprio_002.mat',...
+% % % 	'obj_bot_reg','colprio_base','PP_local','tol_1',...
+% % % 	'xmin_mm','xmax_mm','ymin_mm','ymax_mm',...
+% % % 	'testplot_obj_bot_reg','testplot_obj_ncp','testplot_obj_ncp_1plot','testplot_xylimits',...
+% % % 	'currpart_i_tile','currpart_i_colprio','currpart_i_part','imax_part');
+% % % testplot_obj_ncp		= 1;
 
-obj_nextcolprio	= [];
-colprio_sort		= sort(unique(obj_bot_reg.colprio));
-i_colprio_base		= find(colprio_sort==colprio_base);
-if (length(i_colprio_base)<length(colprio_sort))&&(currpart_i_part==imax_part)
-	% Es ist noch eine weitere Farbe vorhanden:
-	colprio_next	= colprio_sort(i_colprio_base+1);
-	iobj	= 0;
-	for iobj_reg=1:length(obj_bot_reg.poly)
-		if obj_bot_reg.colprio(iobj_reg)==colprio_next
-			% Der Einfachheit halber sollen nur einzelne Regionen bearbeitet werden.
-			% So gibt es nur einen äußeren und ggf. mehrere innere Ränder eines Druckteils.
-			if GV.warnings_off
-				warning('off','MATLAB:polyshape:tinyBoundaryDropped');
-			end
-			poly1		= regions(obj_bot_reg.poly(iobj_reg));
-			if GV.warnings_off
-				warning('on','MATLAB:polyshape:tinyBoundaryDropped');
-			end
-			for i_region1=1:length(poly1)
-				
-				% Die Randlinie des nächsten Objekts wird um tol_1 verkleinert,
-				% damit keine schmalen Linien am Rand übrig bleiben, die bei der Triangulation Probleme machen:
-				poly1_i_region1_mtol1		= polybuffer(poly1(i_region1),-tol_1,'JointType','miter');
-				
-				% In der Funktion get_T_margin/triangulation_simplify werden Punkte mit einem Abstand kleiner als
-				% GV.tol_tp zu einem Punkt zusammengefasst, um die Triangulationsdaten zu vereinfachen und um
-				% Fehler bei der Bestimmung der Randlinie zu minimieren.
-				% Dafür muss verhindert werden, dass sich das Teil am Rand nicht selbst berührt, sonst könnten
-				% Punkte zusammengefasst werden, die nicht zusammengehören.
-				% Vorgehensweise:
-				% Um poly1_i_region1_mtol1 wird ein 3*GV.tol_tp breiter Streifen gelegt und dann dieser Streifen
-				% von poly1_i_region1_mtol1 subtrahiert. Normalerweise sollte das Polygon poly1_i_region1_mtol1
-				% dadurch nicht verändert werden.
-				poly1_i_region1_ptoltp		= polybuffer(poly1_i_region1_mtol1,3*GV.tol_tp,'JointType','miter');
-				poly_strip						= subtract(poly1_i_region1_ptoltp,poly1_i_region1_mtol1,...
-					'KeepCollinearPoints',false);
-				poly_strip						= polybuffer(poly_strip,-tol_1,'JointType','miter');
-				poly1_i_region1				= subtract(poly1_i_region1_mtol1,poly_strip,...
-					'KeepCollinearPoints',false);
-				
-				% In Regionen aufteilen und die Regionen einzeln in obj_nextcolprio speichern:
-				if GV.warnings_off
-					warning('off','MATLAB:polyshape:tinyBoundaryDropped');
-				end
-				poly2		= regions(poly1_i_region1);
-				if GV.warnings_off
-					warning('on','MATLAB:polyshape:tinyBoundaryDropped');
-				end
-				for i_region2=1:length(poly2)
-					if numboundaries(poly2(i_region2))>0
-						iobj	= iobj+1;
-						obj_nextcolprio.poly(iobj)			= poly2(i_region2);
-						obj_nextcolprio.colno(iobj)		= obj_bot_reg.colno(iobj_reg);
-						obj_nextcolprio.dz(iobj)			= obj_bot_reg.dz(iobj_reg);
-						obj_nextcolprio.z_bot(iobj)		= obj_bot_reg.z_bot(iobj_reg);
-						obj_nextcolprio.zbotmax(iobj)		= obj_bot_reg.zbotmax(iobj_reg);
-						obj_nextcolprio.zmin(iobj)			= obj_bot_reg.zmin(iobj_reg);
-						obj_nextcolprio.zmax(iobj)			= obj_bot_reg.zmax(iobj_reg);
-						obj_nextcolprio.colprio(iobj)		= obj_bot_reg.colprio(iobj_reg);
-						obj_nextcolprio.srftype(iobj)		= obj_bot_reg.srftype(iobj_reg);
-					end
-				end
-				
-			end
-		end
-	end
-else
-	% Die aktuelle Grundfarbe ist bereits die letzte Farbe:
-	obj_nextcolprio	= [];
-end
+obj_nextcolprio=map2stl_get_obj_nextcolprio(...
+	obj_bot_reg,colprio_base,PP_local,tol_1,...
+	xmin_mm,xmax_mm,ymin_mm,ymax_mm,...
+	testplot_obj_bot_reg,testplot_obj_ncp,testplot_obj_ncp_1plot,testplot_xylimits,...
+	currpart_i_tile,currpart_i_colprio,currpart_i_part,imax_part);
 
-% Testplots:
-if (testplot_obj_ncp>0)&&~isempty(obj_nextcolprio)
-	
-	if ~isempty(testplot_xylimits)
-		iobj_v			= 1;
-		poly_xylimits	= polyshape(...
-			[testplot_xylimits(1,1) testplot_xylimits(2,1) testplot_xylimits(2,1) testplot_xylimits(1,1)],...
-			[testplot_xylimits(3,1) testplot_xylimits(3,1) testplot_xylimits(4,1) testplot_xylimits(4,1)]);
-		[xb_poly_xylimits,yb_poly_xylimits]		= boundary(poly_xylimits);
-		for iobj=1:length(obj_nextcolprio.poly)
-			if overlaps(obj_nextcolprio.poly(iobj),poly_xylimits)
-				iobj_v	= [iobj_v;iobj];
-			end
-		end
-		iobj_v	= unique(iobj_v);
-		imax_obj	= length(iobj_v);
-	else
-		imax_obj	= length(obj_nextcolprio.poly);
-		iobj_v	= (1:imax_obj)';
-	end
-	m_obj		= ceil(sqrt(imax_obj+1));
-	n_obj		= ceil((imax_obj+1)/m_obj);
-	hf			= 100280;
-	if testplot_obj_bot_reg==1
-		hf=figure(hf);
-	else
-		hf=figure(hf+currpart_i_tile*10000+currpart_i_colprio*100+currpart_i_part);
-	end
-	clf(hf,'reset');
-	set(hf,'Tag','maplab3d_figure');
-	if testplot_obj_ncp==1
-		set(hf,'Name','obj_ncp');
-	else
-		set(hf,'Name',sprintf('obj_ncp %1.0f/%1.0f/%1.0f',currpart_i_tile,currpart_i_colprio,currpart_i_part));
-	end
-	set(hf,'NumberTitle','off');
-	
-	for k=1:length(iobj_v)
-		iobj	= iobj_v(k);
-		ha=subplot(m_obj,n_obj,k);
-		hold(ha,'on');
-		axis(ha,'equal');
-		plot(ha,obj_nextcolprio.poly(iobj),...
-			'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',...
-			PP_local.color(obj_nextcolprio.colno(iobj)).rgb/255)
-		plot(ha,obj_nextcolprio.poly(iobj).Vertices(:,1),obj_nextcolprio.poly(iobj).Vertices(:,2),...
-			'LineWidth',0.5,'LineStyle','none','Marker','.','MarkerSize',5,...
-			'Color','k');
-		if ~isempty(testplot_xylimits)
-			plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
-			set(ha,'XLim',[testplot_xylimits(1,1) testplot_xylimits(2,1)]);
-			set(ha,'YLim',[testplot_xylimits(3,1) testplot_xylimits(4,1)]);
-		else
-			set(ha,'XLim',[xmin_mm xmax_mm]);
-			set(ha,'YLim',[ymin_mm ymax_mm]);
-		end
-		title(sprintf('i=%g, cp=%g, st=%g\ndz=%g\nzb=%g, zbmax=%g\nzmin=%1.4f, zmax=%1.4f',...
-			iobj,obj_nextcolprio.colprio(iobj),obj_nextcolprio.srftype(iobj),...
-			obj_nextcolprio.dz(iobj),...
-			obj_nextcolprio.z_bot(iobj),obj_nextcolprio.zbotmax(iobj),...
-			obj_nextcolprio.zmin(iobj),obj_nextcolprio.zmax(iobj)),'Interpreter','none')
-	end
-	
-	ha=subplot(m_obj,n_obj,imax_obj+1);
-	hold(ha,'on');
-	axis(ha,'equal');
-	imax_obj	= length(obj_nextcolprio.poly);
-	for iobj=1:imax_obj
-		plot(ha,obj_nextcolprio.poly(iobj),...
-			'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',...
-			PP_local.color(obj_nextcolprio.colno(iobj)).rgb/255)
-	end
-	if ~isempty(testplot_xylimits)
-		plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
-	end
-	set(ha,'XLim',[xmin_mm xmax_mm]);
-	set(ha,'YLim',[ymin_mm ymax_mm]);
-	title(sprintf('i=1...%g',imax_obj),'Interpreter','none')
-	
-	setbreakpoint	= 1;
-end
-
-if testplot_obj_ncp_1plot==1
-	hf=figure(100290);
-	clf(hf,'reset');
-	set(hf,'Tag','maplab3d_figure');
-	set(hf,'Name','obj_ncp');
-	set(hf,'NumberTitle','off');
-	ha=axes(hf);
-	hold(ha,'on');
-	axis(ha,'equal');
-	if ~isempty(obj_nextcolprio)
-		imax_obj	= length(obj_nextcolprio.poly);
-		for iobj=1:imax_obj
-			plot(ha,obj_nextcolprio.poly(iobj),...
-				'LineWidth',0.5,'LineStyle','-','EdgeColor','k','FaceColor',...
-				PP_local.color(obj_nextcolprio.colno(iobj)).rgb/255)
-		end
-	end
-	if ~isempty(testplot_xylimits)
-		poly_xylimits	= polyshape(...
-			[testplot_xylimits(1,1) testplot_xylimits(2,1) testplot_xylimits(2,1) testplot_xylimits(1,1)],...
-			[testplot_xylimits(3,1) testplot_xylimits(3,1) testplot_xylimits(4,1) testplot_xylimits(4,1)]);
-		[xb_poly_xylimits,yb_poly_xylimits]		= boundary(poly_xylimits);
-		plot(ha,xb_poly_xylimits,yb_poly_xylimits,'-r');
-	end
-	set(ha,'XLim',[xmin_mm xmax_mm]);
-	set(ha,'YLim',[ymin_mm ymax_mm]);
-	title(sprintf('i=1...%g',imax_obj),'Interpreter','none')
-	setbreakpoint	= 1;
-end
+setbreakpoint=1;
 
 
 %------------------------------------------------------------------------------------------------------------------
@@ -1092,14 +918,14 @@ for iobj1=size(obj_bot_bh.poly,1):-1:1
 				if size(xlim{iobj1,1},1)>0
 					if size(xlim{iobj2,1},1)>0
 						if overlaps_boundingbox(tol_1,...
-							xlim{iobj1,1}(1),...		% x1min
-							xlim{iobj1,1}(2),...		% x1max
-							ylim{iobj1,1}(1),...		% y1min
-							ylim{iobj1,1}(2),...		% y1max
-							xlim{iobj2,1}(1),...		% x2min
-							xlim{iobj2,1}(2),...		% x2max
-							ylim{iobj2,1}(1),...		% y2min
-							ylim{iobj2,1}(2))			% y2max
+								xlim{iobj1,1}(1),...		% x1min
+								xlim{iobj1,1}(2),...		% x1max
+								ylim{iobj1,1}(1),...		% y1min
+								ylim{iobj1,1}(2),...		% y1max
+								xlim{iobj2,1}(1),...		% x2min
+								xlim{iobj2,1}(2),...		% x2max
+								ylim{iobj2,1}(1),...		% y2min
+								ylim{iobj2,1}(2))			% y2max
 							% The polygons may overlap or touch:
 							command_txt	= ...
 								sprintf('obj_bot_bh.poly(%4.0f)	= subtract(obj_bot_bh.poly(%4.0f),obj_bot_bh.poly(%4.0f));\n',...
@@ -1137,14 +963,14 @@ for iobj1=(size(obj_bot_bh.poly,1)-1):-1:2
 				if size(xlim{iobj1,1},1)>0
 					if size(xlim{iobj2,1},1)>0
 						if overlaps_boundingbox(tol_1,...
-							xlim{iobj1,1}(1),...		% x1min
-							xlim{iobj1,1}(2),...		% x1max
-							ylim{iobj1,1}(1),...		% y1min
-							ylim{iobj1,1}(2),...		% y1max
-							xlim{iobj2,1}(1),...		% x2min
-							xlim{iobj2,1}(2),...		% x2max
-							ylim{iobj2,1}(1),...		% y2min
-							ylim{iobj2,1}(2))			% y2max
+								xlim{iobj1,1}(1),...		% x1min
+								xlim{iobj1,1}(2),...		% x1max
+								ylim{iobj1,1}(1),...		% y1min
+								ylim{iobj1,1}(2),...		% y1max
+								xlim{iobj2,1}(1),...		% x2min
+								xlim{iobj2,1}(2),...		% x2max
+								ylim{iobj2,1}(1),...		% y2min
+								ylim{iobj2,1}(2))			% y2max
 							% The polygons may overlap or touch:
 							command_txt	= ...
 								sprintf('obj_bot_bh.poly(%4.0f)	= subtract(obj_bot_bh.poly(%4.0f),obj_bot_bh.poly(%4.0f));\n',...
@@ -1382,14 +1208,14 @@ for iobj1=2:length(obj_bot_bh_reg.poly)
 			if size(xlim{iobj1,1},1)>0
 				if size(xlim{iobj2,1},1)>0
 					if overlaps_boundingbox(tol_1,...
-						xlim{iobj1,1}(1),...		% x1min
-						xlim{iobj1,1}(2),...		% x1max
-						ylim{iobj1,1}(1),...		% y1min
-						ylim{iobj1,1}(2),...		% y1max
-						xlim{iobj2,1}(1),...		% x2min
-						xlim{iobj2,1}(2),...		% x2max
-						ylim{iobj2,1}(1),...		% y2min
-						ylim{iobj2,1}(2))			% y2max
+							xlim{iobj1,1}(1),...		% x1min
+							xlim{iobj1,1}(2),...		% x1max
+							ylim{iobj1,1}(1),...		% y1min
+							ylim{iobj1,1}(2),...		% y1max
+							xlim{iobj2,1}(1),...		% x2min
+							xlim{iobj2,1}(2),...		% x2max
+							ylim{iobj2,1}(1),...		% y2min
+							ylim{iobj2,1}(2))			% y2max
 						% The polygons may overlap or touch:
 						obj_bot_bh_reg.poly(iobj1)	= ...
 							subtract(obj_bot_bh_reg.poly(iobj1),obj_bot_bh_reg.poly(iobj2),'KeepCollinearPoints',true);
@@ -1474,23 +1300,23 @@ for iobj1=2:length(obj_bot_bh_reg.poly)
 							ylim{iobj2,1}(2))			% y2max
 						overlap_is_possible	= true;
 					end
-% 					% a little bit faster:
-% 					overlap_is_possible	= true;
-% 					if xlim{iobj2,1}(1)>(xlim{iobj1,1}(2)+tol_1_2)
-% 						overlap_is_possible	= false;
-% 					else
-% 						if xlim{iobj2,1}(2)<(xlim{iobj1,1}(1)-tol_1_2)
-% 							overlap_is_possible	= false;
-% 						else
-% 							if ylim{iobj2,1}(1)>(ylim{iobj1,1}(2)+tol_1_2)
-% 								overlap_is_possible	= false;
-% 							else
-% 								if ylim{iobj2,1}(2)<(ylim{iobj1,1}(1)-tol_1_2)
-% 									overlap_is_possible	= false;
-% 								end
-% 							end
-% 						end
-% 					end
+					% 					% a little bit faster:
+					% 					overlap_is_possible	= true;
+					% 					if xlim{iobj2,1}(1)>(xlim{iobj1,1}(2)+tol_1_2)
+					% 						overlap_is_possible	= false;
+					% 					else
+					% 						if xlim{iobj2,1}(2)<(xlim{iobj1,1}(1)-tol_1_2)
+					% 							overlap_is_possible	= false;
+					% 						else
+					% 							if ylim{iobj2,1}(1)>(ylim{iobj1,1}(2)+tol_1_2)
+					% 								overlap_is_possible	= false;
+					% 							else
+					% 								if ylim{iobj2,1}(2)<(ylim{iobj1,1}(1)-tol_1_2)
+					% 									overlap_is_possible	= false;
+					% 								end
+					% 							end
+					% 						end
+					% 					end
 					if overlap_is_possible
 						% The polygons may overlap or touch:
 						% Finde die Stützstellen von Objekt 1, die auf dem Rand von Objekt 2 liegen, und fügen sie dem
@@ -1580,7 +1406,7 @@ for iobj1=2:length(obj_bot_bh_reg.poly)
 	% Wichtig: die Werte srftype sind nur für colprio_base noch gültig, da die Unterseiten der Farben mit
 	% höherer Farbpriorität verundet wurden.
 	if		(numboundaries(obj_bot_bh_reg.poly(iobj1))                           ==           1)           &&((...
-		   (obj_bot_bh_reg.colprio(iobj1)                                       ==colprio_base)&&...
+			(obj_bot_bh_reg.colprio(iobj1)                                       ==colprio_base)&&...
 			(obj_bot_bh_reg.srftype(iobj1)-mod(obj_bot_bh_reg.srftype(iobj1),100)~=         300)&&...
 			(obj_bot_bh_reg.srftype(iobj1)-mod(obj_bot_bh_reg.srftype(iobj1),100)~=         400)     )||...
 			(obj_bot_bh_reg.colprio(iobj1)                                       > colprio_base)                  )
@@ -1771,7 +1597,7 @@ obj_bot_bh_reg.poly		= poly_contour_ordering(obj_bot_bh_reg.poly);
 % Alle Stützstellen der Objektränder in T.Points sammeln
 %------------------------------------------------------------------------------------------------------------------
 % T.Points		Liste aller Stützpunkte mit x,y und z-Koordinaten, jeder Punkt kommt nur einmal vor
-%										
+%
 
 if colprio_base>0
 	test=1;

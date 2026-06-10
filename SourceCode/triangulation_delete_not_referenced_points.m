@@ -67,7 +67,7 @@ try
 			% Triangulation vertex normal:
 			V		= vertexNormal(TR);
 			% Undocumented characteristic of the “vertexNormal” function:
-			% If a vertex has no connection to an edge, the length of the vertex normal vector =0.
+			% If a vertex has no connection to an edge, the length of the vertex normal vector is 0.
 			% These nodes are deleted:
 			ip_delete_v_0		= sort(find(sum(abs(V),2)<0.1));
 			ip_delete_v			= ip_delete_v_0;

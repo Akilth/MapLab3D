@@ -376,8 +376,8 @@ try
 	GV.pp_obj_inclexcltags_no_row_min		= 5;
 	GV.pp_obj_inclexcltags_no_col_min		= 5;
 	
-	% During "Create map," the dimensions of map objects are displayed in the Command Window (development mode) or 
-	% in the Log (deployed) if they are greater than the minimum dimensions defined in the project parameters 
+	% During "Create map," the dimensions of map objects are displayed in the Command Window (development mode) or
+	% in the Log (deployed) if they are greater than the minimum dimensions defined in the project parameters
 	% divided by this value. This value should be greater than 1, for example 10.
 	GV.testout_minvalues_divisor				= 10;
 	
@@ -426,6 +426,8 @@ try
 	GV.selbyfilt.def_val.MaxDiag_EditField.Value												= 1e10;
 	GV.selbyfilt.def_val.MinArea_EditField.Value												= 0;
 	GV.selbyfilt.def_val.MaxArea_EditField.Value												= 1e10;
+	GV.selbyfilt.def_val.MinLineLength_EditField.Value										= 0;
+	GV.selbyfilt.def_val.MaxLineLength_EditField.Value										= 1e10;
 	GV.selbyfilt.def_val.ObjectNumbers_ListBox.Value										= {'---'};
 	GV.selbyfilt.def_val.ColorNumbers_ListBox.Value											= {'---'};
 	GV.selbyfilt.def_val.CharacterStyleNumbers_ListBox.Value								= {'---'};
@@ -494,11 +496,11 @@ try
 	% -	For individual ways, a distinction is made depending on the type of display:
 	%		-	When displayed as an area, the repeated use of ways is also permitted in certain cases if they are
 	%			already part of a relation, because it could be an area within a hole in a relation.
-	%			Therefore, repeated use as a single way is only permitted for members with role=inner, 
+	%			Therefore, repeated use as a single way is only permitted for members with role=inner,
 	%			but not for all other members of a relation: see plotosmdata_getdata.m.
 	%		-	When displayed as a line (not as an area), the repeated use of ways is not permitted if they are
 	%			already part of a relation, because otherwise the way would exist twice.
-	%		-	The parameter GV.get_nodes_ways_repeatedly is retained nonetheless in order to identify 
+	%		-	The parameter GV.get_nodes_ways_repeatedly is retained nonetheless in order to identify
 	%			where in the program these measures are taken.
 	% -	Nodes are used for text and symbols and have their own parameters:
 	%		If a text or symbol has already been generated for a relation, the same text or symbol does not
@@ -513,6 +515,11 @@ try
 	
 	% Switch warnings off:
 	GV.warnings_off							= true;
+	
+	% Figure format
+	% old: 'fig' (large figures could no longer be loaded after being saved several times, cause unknown)
+	% new: 'mat' (starting with version 1.2)
+	GV.openfigureformat	= 'mat';
 	
 	% Collect the objects for user interactions: see startupFcn(app)
 	

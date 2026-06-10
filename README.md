@@ -190,7 +190,7 @@ The original author [Andreas Kilthau](https://github.com/Akilth) currently plans
 ## License
 
 ```
-(C) 2020 Andreas Kilthau
+(C) 2025 Andreas Kilthau
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License as

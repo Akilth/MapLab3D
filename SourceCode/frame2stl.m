@@ -790,6 +790,8 @@ try
 			PRINTDATA.frame.tile(tile_no,1).xmax	= max(T_print.Points(:,1));
 			PRINTDATA.frame.tile(tile_no,1).ymin	= min(T_print.Points(:,2));
 			PRINTDATA.frame.tile(tile_no,1).ymax	= max(T_print.Points(:,2));
+			PRINTDATA.frame.tile(tile_no,1).zmin	= min(T_print.Points(:,3));
+			PRINTDATA.frame.tile(tile_no,1).zmax	= max(T_print.Points(:,3));
 			if PRINTDATA.frame.tile(tile_no,1).xmin<0
 				PRINTDATA.frame.tile(tile_no,1).xmin_str	= sprintf('m%04.0f',abs(PRINTDATA.frame.tile(tile_no,1).xmin));
 			else

@@ -87,7 +87,7 @@ try
 	if get_symb
 		if    (PP.obj(iobj).symbolpar.display==1)           &&...
 				APP.CreatemapSettingsCreateSymbolsMenu.Checked
-			[isym_symbol_eqtags,...
+			[  isym_symbol_eqtags,...
 				PLOTDATA.obj(iobj,1).symb_eqtags,...
 				itable_symbol_eqtags,...
 				text_tag_symbol_eqtags]	= ...
@@ -108,7 +108,8 @@ try
 			PLOTDATA.obj(iobj,1).symb(iseqt,1).ud_symb_obj				= zeros(0,1);
 			PLOTDATA.obj(iobj,1).symb(iseqt,1).pos_refpoints			= zeros(0,2);
 			PLOTDATA.obj(iobj,1).symb(iseqt,1).symbol_eqtags_text		= cell(0,2);
-			PLOTDATA.obj(iobj,1).symb(iseqt,1).source						= zeros(0,1);
+			PLOTDATA.obj(iobj,1).symb(iseqt,1).isource					= zeros(0,1);
+			PLOTDATA.obj(iobj,1).symb(iseqt,1).source						= [];
 		end
 	end
 	
@@ -131,7 +132,8 @@ try
 			PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_obj				= zeros(0,1);
 			PLOTDATA.obj(iobj,1).text(iteqt,1).ud_text_lrp				= zeros(0,1);
 			PLOTDATA.obj(iobj,1).text(iteqt,1).pos_refpoints			= zeros(0,2);
-			PLOTDATA.obj(iobj,1).text(iteqt,1).source						= zeros(0,1);
+			PLOTDATA.obj(iobj,1).text(iteqt,1).isource					= zeros(0,1);
+			PLOTDATA.obj(iobj,1).text(iteqt,1).source						= [];
 		end
 	end
 	

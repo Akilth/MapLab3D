@@ -3,14 +3,14 @@ function [map_filename,mapdata_filename,mapdata_filename_ending]=filenames_savef
 global GV VER
 
 try
-
+	
 	if nargin<1
 		filename_add			= '';
 	end
 	map_filename				= '';
 	mapdata_filename			= '';
 	mapdata_filename_ending	= '...MAPDATA.mat';				% display on gui
-
+	
 	% Filenames:
 	exec_not_possible			= false;
 	if ~isfield(GV,'pp_projectfilename')
@@ -27,9 +27,9 @@ try
 	end
 	filename_map				= sprintf('%s%s - v%1.0f.%1.0f - MAP',...
 		GV.pp_projectfilename,filename_add,VER.no1,VER.no2);
-	map_filename				= [filename_map '.fig'];
+	map_filename				= [filename_map '.' GV.openfigureformat];		% '.fig' or '.mat'
 	mapdata_filename			= [filename_map 'DATA.mat'];
-
+	
 catch ME
 	errormessage('',ME);
 end

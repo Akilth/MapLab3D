@@ -132,6 +132,8 @@ function map2stl(...
 %		PRINTDATA.frame.tile(tile_no,1).xmax
 % 		PRINTDATA.frame.tile(tile_no,1).ymin
 %		PRINTDATA.frame.tile(tile_no,1).ymax
+% 		PRINTDATA.frame.tile(tile_no,1).zmin
+%		PRINTDATA.frame.tile(tile_no,1).zmax
 %		PRINTDATA.frame.tile(tile_no,1).xmin_str
 %		PRINTDATA.frame.tile(tile_no,1).xmax_str
 % 		PRINTDATA.frame.tile(tile_no,1).ymin_str
@@ -299,11 +301,25 @@ try
 	%------------------------------------------------------------------------------------------------------------------
 	% Open map:
 	%------------------------------------------------------------------------------------------------------------------
-	
-	hf_map			= openfig([map_pathname map_filename],'invisible');
-	figure_theme(hf_map,'set',[],'light');
-	set(hf_map,'Tag','maplab3d_figure');
-	set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+	switch GV.openfigureformat
+		case 'fig'
+			% Old method: open figure
+			hf_map			= openfig([map_pathname map_filename],'invisible');
+			figure_theme(hf_map,'set',[],'light');
+			set(hf_map,'Tag','maplab3d_figure');
+			set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+		case 'mat'
+			% New method: load figure data and restore figure:
+			% Create figure:
+			hf_map		= figure;
+			figure_theme(hf_map,'set',[],'light');
+			set(hf_map,'Tag','maplab3d_figure');
+			set(hf_map,'WindowStyle','normal');		% open in a standalone window (not docked)
+			ha_map	= axes(hf_map);
+			% Restore figure content:
+			figvisible					= 'off';
+			openfigasmat(hf_map,ha_map,[map_pathname map_filename],figvisible);
+	end
 	
 	% Projekt parameters and elevation data:
 	fig_userdata	= get(hf_map,'UserData');
@@ -583,10 +599,40 @@ try
 						i_colprio_stal		= i_colprio;
 					else
 						% The color is printed non-stand-alone in one operation together with other colors.
-						i_overlap_found	= false;
+						i_overlap_found		= false;
+						coverage_ratio_max	= -1;
+						i_coverage_ratio_max	= -1;
+						
 						for i_colprio_stal=(i_colprio-1):-1:0
 							if i_colprio_stal==0
-								errormessage;
+								% % Test:
+								% hf=4657482;
+								% figure(hf);
+								% clf(hf,'reset');
+								% ha=axes;
+								% hold(ha,'on');
+								% axis(ha,'equal');
+								% plot(ha,PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp));
+								% plot(ha,PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp).Vertices(:,1),...
+								% 	PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp).Vertices(:,2),'.k');
+								% if ~isempty(testplot_xylimits)
+								% 	set(ha,'XLim',[testplot_xylimits(1,1) testplot_xylimits(2,1)]);
+								% 	set(ha,'YLim',[testplot_xylimits(3,1) testplot_xylimits(4,1)]);
+								% else
+								% 	set(ha,'XLim',[PRINTDATA.xmin PRINTDATA.xmax]);
+								% 	set(ha,'YLim',[PRINTDATA.ymin PRINTDATA.ymax]);
+								% end
+								if i_coverage_ratio_max~=-1
+									% The current polygon PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp)
+									% has maximum overlap with PRINTDATA.stal_parts.poly(i_coverage_ratio_max,1):
+									% Overwrite i_tile:
+									i_tile		= PRINTDATA.stal_parts.i_tile(i_coverage_ratio_max,1);
+									% Save i_part_stal:
+									i_part_stal	= PRINTDATA.stal_parts.i_part_stal(i_coverage_ratio_max,1);
+									break
+								else
+									errormessage;
+								end
 							end
 							i_overlap_is_possible_v		= find(...
 								(PRINTDATA.stal_parts.i_colprio_stal==i_colprio_stal)&~(...
@@ -602,7 +648,7 @@ try
 								i_overlap_is_possible_sort_v	= i_overlap_is_possible_v(ksort_v);
 								for k=1:length(i_overlap_is_possible_sort_v)
 									i_overlap				= i_overlap_is_possible_sort_v(k);
-									
+									% % Test:
 									% hf=4657483;
 									% figure(hf);
 									% clf(hf,'reset');
@@ -620,7 +666,6 @@ try
 									% 	set(ha,'XLim',[PRINTDATA.xmin PRINTDATA.xmax]);
 									% 	set(ha,'YLim',[PRINTDATA.ymin PRINTDATA.ymax]);
 									% end
-									
 									if overlaps(...
 											PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp),...
 											PRINTDATA.stal_parts.poly(i_overlap,1))
@@ -630,12 +675,16 @@ try
 											PRINTDATA.stal_parts.poly(i_overlap,1));
 										area_intersect			= area(poly_intersect);
 										coverage_ratio			= 1-(area_currpoly-area_intersect)/area_currpoly;		% see also map2stl_preparation
+										if coverage_ratio>coverage_ratio_max
+											coverage_ratio_max	= coverage_ratio;
+											i_coverage_ratio_max	= i_overlap;
+										end
 										% The non-stand-alone color should clearly lie completely above a stand-alone color.
 										% However, it may happen that, for example, a text foreground is not completely within
 										% the text background and extends slightly beyond it.
 										% The non-stand-alone part is therefore assigned to the color that has the highest
-										% color priority and is covered by at least half of the part:
-										if coverage_ratio>0.5
+										% color priority and is covered by at least 90% of the part:
+										if coverage_ratio>0.9
 											% The current polygon PRINTDATA.col(i_colprio).obj_nextcolprio.poly(i_part_ncp)
 											% is inside PRINTDATA.stal_parts.poly(i_overlap,1):
 											% Overwrite i_tile:
@@ -653,6 +702,7 @@ try
 								end
 							end
 						end
+						
 					end
 				end
 				
@@ -749,6 +799,9 @@ try
 					% The global variables defined in the function must also be defined globally outside:
 					% required: global GV GV_H WAITBAR PRINTDATA
 					errormessage('',ME);
+				end
+				if isempty(partdata.T.Points)
+					setbreakpoint=1;
 				end
 				% Sicherheitsabfrage:
 				for i_margin=1:size(partdata.iT_margin,2)
@@ -1076,234 +1129,354 @@ try
 					% Es gibt stand-alone Teile in dieser Farbe:
 					% Nicht-stand-alone Teile dieser Farbe werden nur auf stand-alone-Teilen mit anderen Farben gedruckt.
 					for i_part_stal=1:imax_part_stal
-						
-						% Data of the current stand-alone part (always the first element!):
-						partdata	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal);
-						partdata(end).i_colprio	= i_colprio_stal;		% damit color_rgb korrekt ist
-						partdata(end).i_part		= 0;
-						
-						% Add the data of corresponding non-stand-alone parts to partdata:
-						if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
-							imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col);
-							for i_colprio=1:imax_colprio
-								imax_part			= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part);
-								for i_part=1:imax_part
-									partdata_new	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part);
-									partdata_new.col				= [];
-									partdata_new.i_colprio		= i_colprio;
-									partdata_new.i_part			= i_part;
-									if isfield(partdata,'zmin_TPoints')
-										partdata_new.zmin_TPoints	= [];
+						% In rare cases, the triangulation data may be empty: If so, skip this part!
+						if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points)
+							
+							% Data of the current stand-alone part (always the first element!):
+							partdata	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal);
+							partdata(end).i_colprio	= i_colprio_stal;		% damit color_rgb korrekt ist
+							partdata(end).i_part		= 0;
+							
+							% Add the data of corresponding non-stand-alone parts to partdata:
+							if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
+								imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col);
+								for i_colprio=1:imax_colprio
+									% PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part can be empty
+									imax_part			= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part);
+									for i_part=1:imax_part
+										% In rare cases, the triangulation data may be empty: If so, skip this part!
+										if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.Points)
+											partdata_new	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part);
+											partdata_new.col				= [];
+											partdata_new.i_colprio		= i_colprio;
+											partdata_new.i_part			= i_part;
+											if isfield(partdata,'zmin_TPoints')
+												partdata_new.zmin_TPoints	= [];
+											end
+											if isfield(partdata,'zmax_TPoints')
+												partdata_new.zmax_TPoints	= [];
+											end
+											partdata(end+1)			= partdata_new;
+										else
+											setbreakpoint=1;
+										end
 									end
-									if isfield(partdata,'zmax_TPoints')
-										partdata_new.zmax_TPoints	= [];
-									end
-									partdata(end+1)			= partdata_new;
 								end
 							end
-						end
-						
-						% Unterseiten der Objekte berechnen und der Struktur PRINTDATA zuweisen:
-						imax_partdata		= length(partdata);
-						for i_partdata=1:imax_partdata
 							
-							t_start_i_part	= clock;
-							%---------------------------------------------------------------------------------------------------
-							% i_part: Anfang
-							%---------------------------------------------------------------------------------------------------
-							
-							i_colprio								= partdata(i_partdata).i_colprio;
-							i_part									= partdata(i_partdata).i_part;
-							colprio									= PRINTDATA.colprio_visible(i_colprio);
-							colno										= find([PP_local.color.prio]==colprio,1);
-							% icolspec								= PP_local.color(colno).spec;
-							% bottom_version						= PP_local.colorspec(icolspec).bottom_version;
-							% lower_parts_individually			= PP_local.colorspec(icolspec).lower_parts_individually;
-							
-							% Test:
-							if (i_tile==1)&&(i_colprio==9)
-								setbreakpoint=1;
-							end
-							
-							% Für die Darstellung:
-							color_rgb						= PP_local.color(colno).rgb/255;
-							color_rgb						= color_rgb_improve(PP_local,color_rgb);
-							
-							% Fortschrittsanzeige:
-							% i_tile				= 1:imax_tile
-							% i_colprio_stal	= 1:kmax_colprio_stal_waitbar
-							% i_part_stal		= 1:imax_part_stal
-							% i_partdata		= 1:imax_partdata
-							dx_tile				= 1/PRINTDATA.no_nonempty_tiles/2;	% /2 und +0.5 wegen der zweiten Schleife
-							dx_colprio_stal	= dx_tile/kmax_colprio_stal_waitbar;			% vor Berechnung von z_bottom
-							dx_part_stal		= dx_colprio_stal/imax_part_stal;
-							dx_partdata			= dx_part_stal/imax_partdata;
-							progress				= min(...
-								(i_nonempty_tiles_v(i_tile)              -1)*dx_tile         + ...
-								(k_colprio_stal_waitbar_v(i_colprio_stal)-1)*dx_colprio_stal + ...
-								(i_part_stal                             -1)*dx_part_stal    + ...
-								(i_partdata                              -1)*dx_partdata     +0.5 ,1);		% +0.5
-							msg_add		= sprintf('bottom side tile %g/%g, color %g/%g, part %g/%g %g/%g',...
-								i_tile,imax_tile,...
-								k_colprio_stal_waitbar_v(i_colprio_stal),kmax_colprio_stal_waitbar,...
-								i_part_stal,imax_part_stal,...
-								i_partdata,imax_partdata);
-							if ~isempty(msg)
-								msg_add	= sprintf('%s: %s',msg,msg_add);
-							end
-							set(GV_H.text_waitbar,'String',sprintf('%s',msg_add));
-							set(GV_H.patch_waitbar,'XData',[0 progress progress 0]);
-							drawnow;
-							
-							% Ausgabe im Command-Window:
-							fprintf(1,[...
-								'Bottom side: i_tile         = %g/%g (tile_no   =%g)\n',...
-								'             k_colprio_stal = %g/%g (i_colprio_stal = %g, colno_stal=%g)\n',...
-								'             i_part_stal    = %g/%g\n',...
-								'             i_part         = %g/%g (colno     =%g)\n'],...
-								i_tile,imax_tile,tile_no,...
-								k_colprio_stal_waitbar_v(i_colprio_stal),kmax_colprio_stal_waitbar,i_colprio_stal,colno_stal,...
-								i_part_stal,imax_part_stal,...
-								i_partdata,imax_partdata,colno);
-							
-							
-							%---------------------------------------------------------------------------------------------------
-							% Die Unterseite des aktuellen Teils berechnen:
-							%---------------------------------------------------------------------------------------------------
-							if i_partdata==1
-								colprio_base	= colprio_stal;
-							else
-								colprio_base	= colprio;
-							end
-							try
-								partdata(i_partdata).T	= ...
-									map2stl_botside_triangulation(...
-									partdata(i_partdata).T,...
-									partdata(i_partdata).iT_margin,...
-									partdata(i_partdata).z_bottom,...
-									partdata(i_partdata).z_bottom_max,...
-									partdata(i_partdata).zmin,...
-									colprio_base,PP_local,ELE_local,poly_legbgd,...
-									testout_botside,testplot_triang_bot,...
-									testplot_xylimits,msg_add,...
-									i_tile,i_colprio_stal,i_part_stal,i_colprio,i_part);
-							catch ME
-								% The global variables defined in the function must also be defined globally outside:
-								% required: global GV GV_H WAITBAR
-								errormessage('',ME);
-							end
-							
-							%---------------------------------------------------------------------------------------------------
-							% Darstellung nur des aktuellen Teils für Testzwecke (testplot_triang_currpart=1) und
-							% Darstellung aller Teile der ganzen Karte und
-							% Darstellung aller Teile einer Kachel
-							%---------------------------------------------------------------------------------------------------
-							if i_partdata==1
-								colpartno_str	= sprintf('C%03.0f P%03.0f',colno_stal,i_part_stal);
-							else
-								colpartno_str	= sprintf('C%03.0f P%03.0f - C%03.0f P%03.0f',colno_stal,i_part_stal,colno,i_part);
-							end
-							if testplot_triang_currpart==1
-								hf=figure(101000);
-								clf(hf,'reset');
-								set(hf,'Tag','maplab3d_figure');
-								set(hf,'Name','triang_curr');
-								set(hf,'NumberTitle','off');
-								cameratoolbar(hf,'Show');
-								ha	= axes(hf);
-								F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
-									partdata(i_partdata).T.ConnectivityList(:,2) ...
-									partdata(i_partdata).T.ConnectivityList(:,3) ...
-									partdata(i_partdata).T.ConnectivityList(:,1)];
-								hp=patch(ha,'faces',F,...
-									'vertices',partdata(i_partdata).T.Points,...
-									'EdgeColor','k','FaceColor',color_rgb,...
-									'FaceAlpha',PP_local.general.savefig_facealpha,...
-									'EdgeAlpha',PP_local.general.savefig_edgealpha,...
-									'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str));
-								axis(ha,'equal');
-								set(ha,'XLim',[PRINTDATA.tile_axislimits(i_tile).xmin PRINTDATA.tile_axislimits(i_tile).xmax]);
-								set(ha,'YLim',[PRINTDATA.tile_axislimits(i_tile).ymin PRINTDATA.tile_axislimits(i_tile).ymax]);
-								view(ha,3);
-								% Licht von zwei Seiten, ohne Reflexionen:
-								material(hp,'dull');
-								el			= 30;
-								az			= el;
-								hlight1	= light(ha,'Color',[1 1 1]*1);
-								lightangle(hlight1,az,el);
-								az			= el+180;
-								hlight2	= light(ha,'Color',[1 1 1]*0.3);
-								lightangle(hlight2,az,el);
-							end
-							ud_patch				= [];
-							ud_patch.colno		= colno;
-							ud_patch.pp_color	= PP_local.color(colno);
-							if (PP_local.general.savefig_map==1)&&...
-									(maptype==0)										% maptype=0: normal map (no testsample)
-								% figure(GV_H.fig_stldata_map);
-								F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
-									partdata(i_partdata).T.ConnectivityList(:,2) ...
-									partdata(i_partdata).T.ConnectivityList(:,3) ...
-									partdata(i_partdata).T.ConnectivityList(:,1)];
-								hp=patch(GV_H.ax_stldata_map,'faces',F,...
-									'vertices',partdata(i_partdata).T.Points,...
-									'EdgeColor','k','FaceColor',color_rgb,...
-									'FaceAlpha',PP_local.general.savefig_facealpha,...
-									'EdgeAlpha',PP_local.general.savefig_edgealpha,...
-									'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str),...
-									'UserData',ud_patch);
-								material(hp,'dull');
-							end
-							if ((testplot_tile==1)||(PP_local.general.savefig_tile==1))&&...
-									(PRINTDATA.no_nonempty_tiles>1)&&...
-									(maptype==0)										% maptype=0: normal map (no testsample)
-								% figure(GV_H.fig_stldata_tile);
-								F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
-									partdata(i_partdata).T.ConnectivityList(:,2) ...
-									partdata(i_partdata).T.ConnectivityList(:,3) ...
-									partdata(i_partdata).T.ConnectivityList(:,1)];
-								hp=patch(GV_H.ax_stldata_tile,'faces',F,...
-									'vertices',partdata(i_partdata).T.Points,...
-									'EdgeColor','k','FaceColor',color_rgb,...
-									'FaceAlpha',PP_local.general.savefig_facealpha,...
-									'EdgeAlpha',PP_local.general.savefig_edgealpha,...
-									'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str),...
-									'UserData',ud_patch);
-								material(hp,'dull');
-							end
-							
-							
-							%---------------------------------------------------------------------------------------------------
-							% folgende Daten der Struktur PRINTDATA zuweisen:
-							% partdata(i_partdata).T
-							% partdata(i_partdata).zmin_TPoints
-							% partdata(i_partdata).zmax_TPoints
-							%---------------------------------------------------------------------------------------------------
-							
-							% min./max. z-Wert in den Triangulationsdaten:
-							partdata(i_partdata).zmin_TPoints	= min(partdata(i_partdata).T.Points(:,3));
-							partdata(i_partdata).zmax_TPoints	= max(partdata(i_partdata).T.Points(:,3));
-							if i_partdata==1
-								% The color is printed stand-alone and serves as a basis for non-stand-alone colors:
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T				= partdata(i_partdata).T;
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints	= partdata(i_partdata).zmin_TPoints;
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints	= partdata(i_partdata).zmax_TPoints;
-								% Bounding box of the stand-alone color:
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).xmin_TPoints(i_part_stal)	= min(partdata(i_partdata).T.Points(:,1));
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).ymin_TPoints(i_part_stal)	= min(partdata(i_partdata).T.Points(:,2));
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).xmax_TPoints(i_part_stal)	= max(partdata(i_partdata).T.Points(:,1));
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).ymax_TPoints(i_part_stal)	= max(partdata(i_partdata).T.Points(:,2));
-							else
-								% The color is printed non-stand-alone in one operation together with other colors:
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T					= partdata(i_partdata).T;
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints	= partdata(i_partdata).zmin_TPoints;
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints	= partdata(i_partdata).zmax_TPoints;
-							end
-							
-							% Ausgabe im Command-Window:
-							fprintf(1,'             z_bottom  = %g\n',partdata(i_partdata).z_bottom);
-							fprintf(1,'             Execution time: %s\n',dt_string(etime(clock,t_start_i_part)));
-							
+							% Unterseiten der Objekte berechnen und der Struktur PRINTDATA zuweisen:
+							imax_partdata		= length(partdata);
+							for i_partdata=1:imax_partdata
+								
+								t_start_i_part	= clock;
+								%---------------------------------------------------------------------------------------------------
+								% i_part: Anfang
+								%---------------------------------------------------------------------------------------------------
+								
+								i_colprio								= partdata(i_partdata).i_colprio;
+								i_part									= partdata(i_partdata).i_part;
+								colprio									= PRINTDATA.colprio_visible(i_colprio);
+								colno										= find([PP_local.color.prio]==colprio,1);
+								% icolspec								= PP_local.color(colno).spec;
+								% bottom_version						= PP_local.colorspec(icolspec).bottom_version;
+								% lower_parts_individually			= PP_local.colorspec(icolspec).lower_parts_individually;
+								
+								% Test:
+								if (i_tile==1)&&(i_colprio==9)
+									setbreakpoint=1;
+								end
+								
+								% Für die Darstellung:
+								color_rgb						= PP_local.color(colno).rgb/255;
+								color_rgb						= color_rgb_improve(PP_local,color_rgb);
+								
+								% Fortschrittsanzeige:
+								% i_tile				= 1:imax_tile
+								% i_colprio_stal	= 1:kmax_colprio_stal_waitbar
+								% i_part_stal		= 1:imax_part_stal
+								% i_partdata		= 1:imax_partdata
+								dx_tile				= 1/PRINTDATA.no_nonempty_tiles/2;	% /2 und +0.5 wegen der zweiten Schleife
+								dx_colprio_stal	= dx_tile/kmax_colprio_stal_waitbar;			% vor Berechnung von z_bottom
+								dx_part_stal		= dx_colprio_stal/imax_part_stal;
+								dx_partdata			= dx_part_stal/imax_partdata;
+								progress				= min(...
+									(i_nonempty_tiles_v(i_tile)              -1)*dx_tile         + ...
+									(k_colprio_stal_waitbar_v(i_colprio_stal)-1)*dx_colprio_stal + ...
+									(i_part_stal                             -1)*dx_part_stal    + ...
+									(i_partdata                              -1)*dx_partdata     +0.5 ,1);		% +0.5
+								msg_add		= sprintf('bottom side tile %g/%g, color %g/%g, part %g/%g %g/%g',...
+									i_tile,imax_tile,...
+									k_colprio_stal_waitbar_v(i_colprio_stal),kmax_colprio_stal_waitbar,...
+									i_part_stal,imax_part_stal,...
+									i_partdata,imax_partdata);
+								if ~isempty(msg)
+									msg_add	= sprintf('%s: %s',msg,msg_add);
+								end
+								set(GV_H.text_waitbar,'String',sprintf('%s',msg_add));
+								set(GV_H.patch_waitbar,'XData',[0 progress progress 0]);
+								drawnow;
+								
+								% Ausgabe im Command-Window:
+								fprintf(1,[...
+									'Bottom side: i_tile         = %g/%g (tile_no   =%g)\n',...
+									'             k_colprio_stal = %g/%g (i_colprio_stal = %g, colno_stal=%g)\n',...
+									'             i_part_stal    = %g/%g\n',...
+									'             i_partdata     = %g/%g (colno     =%g)\n'],...
+									i_tile,imax_tile,tile_no,...
+									k_colprio_stal_waitbar_v(i_colprio_stal),kmax_colprio_stal_waitbar,i_colprio_stal,colno_stal,...
+									i_part_stal,imax_part_stal,...
+									i_partdata,imax_partdata,colno);
+								
+								
+								%---------------------------------------------------------------------------------------------------
+								% Die Unterseite des aktuellen Teils berechnen:
+								%---------------------------------------------------------------------------------------------------
+								if i_partdata==1
+									colprio_base	= colprio_stal;
+								else
+									colprio_base	= colprio;
+								end
+								try
+									partdata_i_partdata_T0	= partdata(i_partdata).T;		% for debugging
+									partdata(i_partdata).T	= ...
+										map2stl_botside_triangulation(...
+										partdata_i_partdata_T0,...
+										partdata(i_partdata).iT_margin,...
+										partdata(i_partdata).z_bottom,...
+										partdata(i_partdata).z_bottom_max,...
+										partdata(i_partdata).zmin,...
+										colprio_base,PP_local,ELE_local,poly_legbgd,...
+										testout_botside,testplot_triang_bot,...
+										testplot_xylimits,msg_add,...
+										i_tile,i_colprio_stal,i_part_stal,i_colprio,i_part);
+								catch ME
+									% The global variables defined in the function must also be defined globally outside:
+									% required: global GV GV_H WAITBAR
+									errormessage('',ME);
+								end
+								
+								% Es kann passieren, dass die Punkte der Triangulationsdaten Inf oder NaN sind:
+								T_contains_inf_or_nan		= 0;
+								if ~isempty(find(isinf(partdata(i_partdata).T.Points)          ,1))
+									T_contains_inf_or_nan	= 1;
+								end
+								if ~isempty(find(isnan(partdata(i_partdata).T.Points)          ,1))
+									T_contains_inf_or_nan	= 2;
+								end
+								if ~isempty(find(isinf(partdata(i_partdata).T.ConnectivityList),1))
+									T_contains_inf_or_nan	= 3;
+								end
+								if ~isempty(find(isnan(partdata(i_partdata).T.ConnectivityList),1))
+									T_contains_inf_or_nan	= 4;
+								end
+								if T_contains_inf_or_nan>0
+									
+									% Display error data:
+									fprintf(1,'Error when calculating the bottom side of a part!\n');
+									
+									% Display the current part:
+									hf		= figure(101001);
+									clf(hf,'reset');
+									set(hf,'Tag','maplab3d_figure');
+									set(hf,'Name','triang');
+									set(hf,'NumberTitle','off');
+									cameratoolbar(hf,'Show');
+									ha		= axes(hf);
+									hold(ha,'on');
+									facealpha	= 0.4;			% Transparenz der Oberflächen		0.2
+									edgealpha	= 0.4;			% Transparenz der Kanten			0.2
+									F=[partdata_i_partdata_T0.ConnectivityList(:,1) ...
+										partdata_i_partdata_T0.ConnectivityList(:,2) ...
+										partdata_i_partdata_T0.ConnectivityList(:,3) ...
+										partdata_i_partdata_T0.ConnectivityList(:,1)];
+									patch(ha,'faces',F,'vertices',partdata_i_partdata_T0.Points,...
+										'EdgeColor',[0 0 0],'FaceColor',[1 1 1]*0.65,'FaceAlpha',facealpha,'EdgeAlpha',edgealpha);
+									% upper margin:
+									for i_margin=1:size(partdata(i_partdata).iT_margin,2)
+										plot3(ha,...
+											partdata_i_partdata_T0.Points(partdata(i_partdata).iT_margin{1,i_margin},1),...
+											partdata_i_partdata_T0.Points(partdata(i_partdata).iT_margin{1,i_margin},2),...
+											partdata_i_partdata_T0.Points(partdata(i_partdata).iT_margin{1,i_margin},3),...
+											'LineWidth',0.5,'LineStyle','-','Color','r',...
+											'Marker','.','MarkerSize',10);
+									end
+									% Stützstellen:
+									% plot3(ha,partdata_i_partdata_T0.Points(:,1),partdata_i_partdata_T0.Points(:,2),partdata_i_partdata_T0.Points(:,3),...
+									% 	'LineWidth',1.5,'LineStyle','none','Color',[1 1 1]*0.65,...
+									% 	'Marker','.','MarkerSize',8);
+									view(ha,3);
+									title(ha,sprintf('partdata_i_partdata_T0: Error %g:\ni_tile=%g, i_colprio_stal=%g, i_part_stal=%g, i_colprio=%g, i_part=%g',...
+										T_contains_inf_or_nan,i_tile,i_colprio_stal,i_part_stal,i_colprio,i_part),'Interpreter','none');
+									axis(ha,'equal');
+									
+									hf		= figure(101002);
+									clf(hf,'reset');
+									set(hf,'Tag','maplab3d_figure');
+									set(hf,'Name','triang');
+									set(hf,'NumberTitle','off');
+									cameratoolbar(hf,'Show');
+									ha		= axes(hf);
+									hold(ha,'on');
+									facealpha	= 0.4;			% Transparenz der Oberflächen		0.2
+									edgealpha	= 0.4;			% Transparenz der Kanten			0.2
+									F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
+										partdata(i_partdata).T.ConnectivityList(:,2) ...
+										partdata(i_partdata).T.ConnectivityList(:,3) ...
+										partdata(i_partdata).T.ConnectivityList(:,1)];
+									patch(ha,'faces',F,'vertices',partdata(i_partdata).T.Points,...
+										'EdgeColor',[0 0 0],'FaceColor',[1 1 1]*0.65,'FaceAlpha',facealpha,'EdgeAlpha',edgealpha);
+									% Stützstellen:
+									% plot3(ha,partdata(i_partdata).T.Points(:,1),partdata(i_partdata).T.Points(:,2),partdata(i_partdata).T.Points(:,3),...
+									% 	'LineWidth',1.5,'LineStyle','none','Color',[1 1 1]*0.65,...
+									% 	'Marker','.','MarkerSize',8);
+									view(ha,3);
+									title(ha,sprintf('partdata(i_partdata).T: Error %g:\ni_tile=%g, i_colprio_stal=%g, i_part_stal=%g, i_colprio=%g, i_part=%g',...
+										T_contains_inf_or_nan,i_tile,i_colprio_stal,i_part_stal,i_colprio,i_part),'Interpreter','none');
+									axis(ha,'equal');
+									
+									if isdeployed
+										% Delete Points that are Inf or NaN:
+										ip_delete_v_0			= sort(find(...
+											isinf(partdata(i_partdata).T.Points(:,1))|isnan(partdata(i_partdata).T.Points(:,1))|...
+											isinf(partdata(i_partdata).T.Points(:,2))|isnan(partdata(i_partdata).T.Points(:,2))|...
+											isinf(partdata(i_partdata).T.Points(:,3))|isnan(partdata(i_partdata).T.Points(:,3))     ));
+										ip_delete_v				= ip_delete_v_0;
+										iCL_delete_logical	= false(size(partdata(i_partdata).T.ConnectivityList,1),1);
+										for i=1:size(ip_delete_v,1)
+											ip_delete				= ip_delete_v(i,1);
+											iCL_delete_logical	= 	iCL_delete_logical|...
+												(partdata(i_partdata).T.ConnectivityList(:,1)==ip_delete)|...
+												(partdata(i_partdata).T.ConnectivityList(:,2)==ip_delete)|...
+												(partdata(i_partdata).T.ConnectivityList(:,3)==ip_delete);
+											
+											iCL								= partdata(i_partdata).T.ConnectivityList>ip_delete;
+											partdata(i_partdata).T.ConnectivityList(iCL)		= partdata(i_partdata).T.ConnectivityList(iCL)-1;
+											ip_delete_v						= ip_delete_v-1;
+										end
+										partdata(i_partdata).T.Points(ip_delete_v_0,:)						= [];
+										partdata(i_partdata).T.ConnectivityList(iCL_delete_logical,:)	= [];
+									else
+										% TR		= triangulation(partdata(i_partdata).T.ConnectivityList,partdata(i_partdata).T.Points);
+										% stlwrite(TR,'C:\Daten\Projekte\MapLab3D_Daten\Germany\Test.stl');
+										setbreakpoint=1;
+										errormessage;
+									end
+									
+								end
+								
+								
+								%---------------------------------------------------------------------------------------------------
+								% Darstellung nur des aktuellen Teils für Testzwecke (testplot_triang_currpart=1) und
+								% Darstellung aller Teile der ganzen Karte und
+								% Darstellung aller Teile einer Kachel
+								%---------------------------------------------------------------------------------------------------
+								if i_partdata==1
+									colpartno_str	= sprintf('C%03.0f P%03.0f',colno_stal,i_part_stal);
+								else
+									colpartno_str	= sprintf('C%03.0f P%03.0f - C%03.0f P%03.0f',colno_stal,i_part_stal,colno,i_part);
+								end
+								if testplot_triang_currpart==1
+									hf=figure(101000);
+									clf(hf,'reset');
+									set(hf,'Tag','maplab3d_figure');
+									set(hf,'Name','triang_curr');
+									set(hf,'NumberTitle','off');
+									cameratoolbar(hf,'Show');
+									ha	= axes(hf);
+									F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
+										partdata(i_partdata).T.ConnectivityList(:,2) ...
+										partdata(i_partdata).T.ConnectivityList(:,3) ...
+										partdata(i_partdata).T.ConnectivityList(:,1)];
+									hp=patch(ha,'faces',F,...
+										'vertices',partdata(i_partdata).T.Points,...
+										'EdgeColor','k','FaceColor',color_rgb,...
+										'FaceAlpha',PP_local.general.savefig_facealpha,...
+										'EdgeAlpha',PP_local.general.savefig_edgealpha,...
+										'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str));
+									axis(ha,'equal');
+									set(ha,'XLim',[PRINTDATA.tile_axislimits(i_tile).xmin PRINTDATA.tile_axislimits(i_tile).xmax]);
+									set(ha,'YLim',[PRINTDATA.tile_axislimits(i_tile).ymin PRINTDATA.tile_axislimits(i_tile).ymax]);
+									view(ha,3);
+									% Licht von zwei Seiten, ohne Reflexionen:
+									material(hp,'dull');
+									el			= 30;
+									az			= el;
+									hlight1	= light(ha,'Color',[1 1 1]*1);
+									lightangle(hlight1,az,el);
+									az			= el+180;
+									hlight2	= light(ha,'Color',[1 1 1]*0.3);
+									lightangle(hlight2,az,el);
+								end
+								ud_patch				= [];
+								ud_patch.colno		= colno;
+								ud_patch.pp_color	= PP_local.color(colno);
+								if (PP_local.general.savefig_map==1)&&...
+										(maptype==0)										% maptype=0: normal map (no testsample)
+									% figure(GV_H.fig_stldata_map);
+									F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
+										partdata(i_partdata).T.ConnectivityList(:,2) ...
+										partdata(i_partdata).T.ConnectivityList(:,3) ...
+										partdata(i_partdata).T.ConnectivityList(:,1)];
+									hp=patch(GV_H.ax_stldata_map,'faces',F,...
+										'vertices',partdata(i_partdata).T.Points,...
+										'EdgeColor','k','FaceColor',color_rgb,...
+										'FaceAlpha',PP_local.general.savefig_facealpha,...
+										'EdgeAlpha',PP_local.general.savefig_edgealpha,...
+										'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str),...
+										'UserData',ud_patch);
+									material(hp,'dull');
+								end
+								if ((testplot_tile==1)||(PP_local.general.savefig_tile==1))&&...
+										(PRINTDATA.no_nonempty_tiles>1)&&...
+										(maptype==0)										% maptype=0: normal map (no testsample)
+									% figure(GV_H.fig_stldata_tile);
+									F=[partdata(i_partdata).T.ConnectivityList(:,1) ...
+										partdata(i_partdata).T.ConnectivityList(:,2) ...
+										partdata(i_partdata).T.ConnectivityList(:,3) ...
+										partdata(i_partdata).T.ConnectivityList(:,1)];
+									hp=patch(GV_H.ax_stldata_tile,'faces',F,...
+										'vertices',partdata(i_partdata).T.Points,...
+										'EdgeColor','k','FaceColor',color_rgb,...
+										'FaceAlpha',PP_local.general.savefig_facealpha,...
+										'EdgeAlpha',PP_local.general.savefig_edgealpha,...
+										'DisplayName',sprintf('T%03.0f - %s',tile_no,colpartno_str),...
+										'UserData',ud_patch);
+									material(hp,'dull');
+								end
+								
+								
+								%---------------------------------------------------------------------------------------------------
+								% folgende Daten der Struktur PRINTDATA zuweisen:
+								% partdata(i_partdata).T
+								% partdata(i_partdata).zmin_TPoints
+								% partdata(i_partdata).zmax_TPoints
+								%---------------------------------------------------------------------------------------------------
+								
+								% min./max. z-Wert in den Triangulationsdaten:
+								partdata(i_partdata).zmin_TPoints	= min(partdata(i_partdata).T.Points(:,3));
+								partdata(i_partdata).zmax_TPoints	= max(partdata(i_partdata).T.Points(:,3));
+								if i_partdata==1
+									% The color is printed stand-alone and serves as a basis for non-stand-alone colors:
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T				= partdata(i_partdata).T;
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints	= partdata(i_partdata).zmin_TPoints;
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints	= partdata(i_partdata).zmax_TPoints;
+									% Bounding box of the stand-alone color:
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).xmin_TPoints(i_part_stal)	= min(partdata(i_partdata).T.Points(:,1));
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).ymin_TPoints(i_part_stal)	= min(partdata(i_partdata).T.Points(:,2));
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).xmax_TPoints(i_part_stal)	= max(partdata(i_partdata).T.Points(:,1));
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).ymax_TPoints(i_part_stal)	= max(partdata(i_partdata).T.Points(:,2));
+								else
+									% The color is printed non-stand-alone in one operation together with other colors:
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T					= partdata(i_partdata).T;
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints	= partdata(i_partdata).zmin_TPoints;
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints	= partdata(i_partdata).zmax_TPoints;
+								end
+								
+								% Ausgabe im Command-Window:
+								fprintf(1,'             z_bottom  = %g\n',partdata(i_partdata).z_bottom);
+								fprintf(1,'             Execution time: %s\n',dt_string(etime(clock,t_start_i_part)));
+								
+							end		% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points)
 						end			% Ende von: for i_partdata=1:imax_partdata
 					end				% Ende von: for i_part_stal=1:imax_part_stal
 					
@@ -1386,15 +1559,19 @@ try
 					% Berechnung von PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints nach der Absenkung der Teile.
 					for fileno=1:length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)
 						kmax_part_stal		= size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).i_part_stal_v,1);
+						PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= [];
 						for k_part_stal=1:kmax_part_stal
 							i_part_stal			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).i_part_stal_v(k_part_stal,1);
-							if k_part_stal==1
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= ...
-									min(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points(:,3));
-							else
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= min(...
-									min(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points(:,3)),...
-									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints);
+							if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points)
+								% In rare cases, the triangulation data may be empty: If so, skip this part!
+								if isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints)
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= ...
+										min(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points(:,3));
+								else
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= min(...
+										min(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points(:,3)),...
+										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints);
+								end
 							end
 						end
 					end
@@ -1447,124 +1624,128 @@ try
 						end
 						for k_part_stal=1:kmax_part_stal
 							i_part_stal			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).i_part_stal_v(k_part_stal,1);
-							if isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T)
-								errormessage;
-							end
-							
-							% T_print.ConnectivityList erweitern:
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList	= [...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList;...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.ConnectivityList+...
-								size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points,1)];
-							
-							% Berechnung des Werts dz, um den die Teile auf die Druckplatte abgesenkt werden::
-							if lower_parts_individually_stal==1
-								% Alle Teile einzeln auf z=0 absenken/anheben:
-								dz_i_part_stal	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints;
-							end
-							
-							% T_print.Points erweitern:
-							T_print_Points_new	= ...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points+[0 0 -dz_i_part_stal];
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points			= [...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points;T_print_Points_new];
-							
-							% text_xyz zuweisen (Koordinaten der Teilenummer in den Plots):
-							[~,row_zmax]			= max(T_print_Points_new(:,3));
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_xyz(k_part_stal,:)	= T_print_Points_new(row_zmax,:)+[0 0 0.1];
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_str{k_part_stal,1}	= sprintf('%g',k_part_stal);
-							
-							% zmin aktualisieren:
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints	= ...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints-dz_i_part_stal;
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= min(...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints,...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints);
-							
-							% zmax aktualisieren:
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints	= ...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints-dz_i_part_stal;
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints	= max(...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints,...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints);
-							
-							% Flächen der stand-alone Farben aufsummieren (alle Teile, die in einer Datei gespeichert werden):
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area				= ...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area + ...
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).area;
-							
-							% Teile von überlagerten non-stand-alone Farben jeweils um denselben Betrag dz_i_part_stal absenken
-							% und nach Farben sortiert sammeln:
-							if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
-								imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col);
-								for i_colprio=1:imax_colprio
-									imax_part	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part);
-									for i_part=1:imax_part
-										if isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T)
-											errormessage;
-										end
-										
-										% T_print.ConnectivityList erweitern:
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList	= [...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList;...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.ConnectivityList+...
-											size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points,1)];
-										
-										% T_print.Points erweitern:
-										T_print_Points_new	= ...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.Points+[0 0 -dz_i_part_stal];
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points			= [...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points;T_print_Points_new];
-										
-										% text_xyz zuweisen (Koordinaten der Teilenummer in den Plots):
-										[~,row_zmax]			= max(T_print_Points_new(:,3));
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_xyz(end+1,:)	= T_print_Points_new(row_zmax,:)+[0 0 0.1];
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_str{end+1,:}	= sprintf('%g/%g',k_part_stal,i_part);
-										
-										% zmin aktualisieren:
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints	= ...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints-dz_i_part_stal;
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints	= min(...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints,...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints);
-										
-										% zmax aktualisieren:
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints	= ...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints-dz_i_part_stal;
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints	= max(...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints,...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints);
-										
-										% Flächen der non-stand-alone Farben aufsummieren (alle Teile, die in einer Datei gespeichert werden):
-										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area				= ...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area + ...
-											PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).area;
-										
-									end	% Ende von: for i_part=1:imax_part
-								end		% Ende von: for i_colprio=1:imax_colprio
-							end			% Ende von: if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
-						end				% Ende von: for i_i_part_stal_v=1:size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).i_part_stal_v,1)
+							if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points)
+								% In rare cases, the triangulation data may be empty: If so, skip this part!
+								
+								% T_print.ConnectivityList erweitern:
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList	= [...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList;...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.ConnectivityList+...
+									size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points,1)];
+								
+								% Berechnung des Werts dz, um den die Teile auf die Druckplatte abgesenkt werden::
+								if lower_parts_individually_stal==1
+									% Alle Teile einzeln auf z=0 absenken/anheben:
+									dz_i_part_stal	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints;
+								end
+								
+								% T_print.Points erweitern:
+								T_print_Points_new	= ...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T.Points+[0 0 -dz_i_part_stal];
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points			= [...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points;T_print_Points_new];
+								
+								% text_xyz zuweisen (Koordinaten der Teilenummer in den Plots):
+								[~,row_zmax]			= max(T_print_Points_new(:,3));
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_xyz(k_part_stal,:)	= T_print_Points_new(row_zmax,:)+[0 0 0.1];
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_str{k_part_stal,1}	= sprintf('%g',k_part_stal);
+								
+								% zmin aktualisieren:
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints	= ...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints-dz_i_part_stal;
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints	= min(...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints,...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmin_TPoints);
+								
+								% zmax aktualisieren:
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints	= ...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints-dz_i_part_stal;
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints	= max(...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints,...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).zmax_TPoints);
+								
+								% Flächen der stand-alone Farben aufsummieren (alle Teile, die in einer Datei gespeichert werden):
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area				= ...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area + ...
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).area;
+								
+								% Teile von überlagerten non-stand-alone Farben jeweils um denselben Betrag dz_i_part_stal absenken
+								% und nach Farben sortiert sammeln:
+								if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
+									imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col);
+									for i_colprio=1:imax_colprio
+										imax_part	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part);
+										for i_part=1:imax_part
+											if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.Points)
+												% In rare cases, the triangulation data may be empty: If so, skip this part!
+												
+												% T_print.ConnectivityList erweitern:
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList	= [...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList;...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.ConnectivityList+...
+													size(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points,1)];
+												
+												% T_print.Points erweitern:
+												T_print_Points_new	= ...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T.Points+[0 0 -dz_i_part_stal];
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points			= [...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points;T_print_Points_new];
+												
+												% text_xyz zuweisen (Koordinaten der Teilenummer in den Plots):
+												[~,row_zmax]			= max(T_print_Points_new(:,3));
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_xyz(end+1,:)	= T_print_Points_new(row_zmax,:)+[0 0 0.1];
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_str{end+1,:}	= sprintf('%g/%g',k_part_stal,i_part);
+												
+												% zmin aktualisieren:
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints	= ...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints-dz_i_part_stal;
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints	= min(...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints,...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmin_TPoints);
+												
+												% zmax aktualisieren:
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints	= ...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints-dz_i_part_stal;
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints	= max(...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints,...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).zmax_TPoints);
+												
+												% Flächen der non-stand-alone Farben aufsummieren (alle Teile, die in einer Datei gespeichert werden):
+												PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area				= ...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area + ...
+													PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).area;
+												
+											end	% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).col(i_colprio).part(i_part).T)
+										end		% Ende von: for i_part=1:imax_part
+									end			% Ende von: for i_colprio=1:imax_colprio
+								end				% Ende von: if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal),'col')
+							end					% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).part_stal(i_part_stal).T)
+						end						% Ende von: for k_part_stal=1:kmax_part_stal
 						
 						% Delete points that are not referenced by the triangulation:
-						[PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print,~]	= ...
-							triangulation_delete_not_referenced_points(...
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print);
-						for i_colprio=1:length(PRINTDATA.colprio_visible)
-							if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
-								[PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print,~]	= ...
-									triangulation_delete_not_referenced_points(...
-									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print);
+						if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points)
+							[PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print,~]	= ...
+								triangulation_delete_not_referenced_points(...
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print);
+							for i_colprio=1:length(PRINTDATA.colprio_visible)
+								if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
+									[PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print,~]	= ...
+										triangulation_delete_not_referenced_points(...
+										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print);
+								end
 							end
 						end
 						% Aus den Druckdaten wieder ein gültiges "triangulation object" machen:
-						PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print	= triangulation(...
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList,...
-							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points);
-						for i_colprio=1:length(PRINTDATA.colprio_visible)
-							if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print	= triangulation(...
-									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList,...
-									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points);
+						if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points)
+							PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print	= triangulation(...
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.ConnectivityList,...
+								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points);
+							for i_colprio=1:length(PRINTDATA.colprio_visible)
+								if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print	= triangulation(...
+										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.ConnectivityList,...
+										PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points);
+								end
 							end
 						end
 						
@@ -1579,426 +1760,434 @@ try
 						% coldata(i_coldata).filename_stl					wird weiter unten zugewiesen
 						% coldata(i_coldata).i_colprio						wird hier hinzugefügt
 						%---------------------------------------------------------------------------------------------------------
-						
-						% Data of the current stand-alone color (always the first element!):
-						i_coldata								= 1;
-						coldata									= struct;
-						coldata(i_coldata).zmin_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints;
-						coldata(i_coldata).zmax_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints;
-						coldata(i_coldata).area				= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area;
-						coldata(i_coldata).T_print			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print;
-						coldata(i_coldata).text_xyz		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_xyz;
-						coldata(i_coldata).text_str		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_str;
-						% coldata(i_coldata).filename_stl wird weiter unten zugewiesen
-						coldata(i_coldata).i_colprio		= i_colprio_stal;		% damit color_rgb korrekt ist
-						
-						% Add the data of corresponding non-stand-alone colors to coldata:
-						if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno),'col')
-							imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col);
-							for i_colprio=1:imax_colprio
-								if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
-									i_coldata								= i_coldata+1;
-									coldata(i_coldata).zmin_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints;
-									coldata(i_coldata).zmax_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints;
-									coldata(i_coldata).area				= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area;
-									coldata(i_coldata).T_print			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print;
-									coldata(i_coldata).text_xyz		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_xyz;
-									coldata(i_coldata).text_str		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_str;
-									% coldata(i_coldata).filename_stl wird weiter unten zugewiesen
-									coldata(i_coldata).i_colprio		= i_colprio;		% damit color_rgb korrekt ist
+						if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points)
+							
+							% Data of the current stand-alone color (always the first element!):
+							i_coldata								= 1;
+							coldata									= struct;
+							coldata(i_coldata).zmin_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmin_TPoints;
+							coldata(i_coldata).zmax_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).zmax_TPoints;
+							coldata(i_coldata).area				= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).area;
+							coldata(i_coldata).T_print			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print;
+							coldata(i_coldata).text_xyz		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_xyz;
+							coldata(i_coldata).text_str		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).text_str;
+							% coldata(i_coldata).filename_stl wird weiter unten zugewiesen
+							coldata(i_coldata).i_colprio		= i_colprio_stal;		% damit color_rgb korrekt ist
+							
+							% Add the data of corresponding non-stand-alone colors to coldata:
+							if isfield(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno),'col')
+								imax_colprio	= length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col);
+								for i_colprio=1:imax_colprio
+									if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print.Points)
+										i_coldata								= i_coldata+1;
+										coldata(i_coldata).zmin_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmin_TPoints;
+										coldata(i_coldata).zmax_TPoints	= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).zmax_TPoints;
+										coldata(i_coldata).area				= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).area;
+										coldata(i_coldata).T_print			= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).T_print;
+										coldata(i_coldata).text_xyz		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_xyz;
+										coldata(i_coldata).text_str		= PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).text_str;
+										% coldata(i_coldata).filename_stl wird weiter unten zugewiesen
+										coldata(i_coldata).i_colprio		= i_colprio;		% damit color_rgb korrekt ist
+									end
 								end
 							end
-						end
-						imax_coldata	= length(coldata);
-						
-						% Export as STL-files:
-						for i_coldata=1:imax_coldata
+							imax_coldata	= length(coldata);
 							
-							colprio_stal						= PRINTDATA.colprio_visible(i_colprio_stal);
-							colno_stal							= find([PP_local.color.prio]==colprio_stal,1);
-							
-							i_colprio							= coldata(i_coldata).i_colprio;
-							colprio								= PRINTDATA.colprio_visible(i_colprio);
-							colno									= find([PP_local.color.prio]==colprio,1);
-							
-							% Für die Darstellung:
-							color_rgb							= PP_local.color(colno).rgb/255;
-							color_rgb							= color_rgb_improve(PP_local,color_rgb);
-							
-							%------------------------------------------------------------------------------------------------------
-							% Alle Teile der aktuellen Farbe darstellen:
-							%------------------------------------------------------------------------------------------------------
-							if ((testplot_tile_colno==1)||(PP_local.general.savefig_tile_color==1))&&...
-									(maptype==0)								% maptype=0: normal map (no testsample)
-								if ~isfield(GV_H,'fig_stldata_color')
-									GV_H.fig_stldata_color	= [];
-								end
-								if ~isfield(GV_H,'ax_stldata_color')
-									GV_H.ax_stldata_color	= [];
-								end
-								if isempty(GV_H.fig_stldata_color)
-									GV_H.fig_stldata_color	= figure;
-									figure_theme(GV_H.fig_stldata_color,'set',[],'light');
-								else
-									if ~ishandle(GV_H.fig_stldata_color)
+							% Export as STL-files:
+							for i_coldata=1:imax_coldata
+								
+								colprio_stal						= PRINTDATA.colprio_visible(i_colprio_stal);
+								colno_stal							= find([PP_local.color.prio]==colprio_stal,1);
+								
+								i_colprio							= coldata(i_coldata).i_colprio;
+								colprio								= PRINTDATA.colprio_visible(i_colprio);
+								colno									= find([PP_local.color.prio]==colprio,1);
+								
+								% Für die Darstellung:
+								color_rgb							= PP_local.color(colno).rgb/255;
+								color_rgb							= color_rgb_improve(PP_local,color_rgb);
+								
+								%------------------------------------------------------------------------------------------------------
+								% Alle Teile der aktuellen Farbe darstellen:
+								%------------------------------------------------------------------------------------------------------
+								if ((testplot_tile_colno==1)||(PP_local.general.savefig_tile_color==1))&&...
+										(maptype==0)								% maptype=0: normal map (no testsample)
+									if ~isfield(GV_H,'fig_stldata_color')
+										GV_H.fig_stldata_color	= [];
+									end
+									if ~isfield(GV_H,'ax_stldata_color')
+										GV_H.ax_stldata_color	= [];
+									end
+									if isempty(GV_H.fig_stldata_color)
 										GV_H.fig_stldata_color	= figure;
 										figure_theme(GV_H.fig_stldata_color,'set',[],'light');
-									end
-								end
-								clf(GV_H.fig_stldata_color,'reset');
-								figure_theme(GV_H.fig_stldata_color,'set',[],'light');
-								ud_figure.version			= VER;
-								ud_figure.tile_no			= tile_no;
-								ud_figure.colno			= colno;
-								ud_figure.comment			= 'MapLab3D: 3D plot of one color';
-								set(GV_H.fig_stldata_color,'UserData',ud_figure);
-								set(GV_H.fig_stldata_color,'Tag','maplab3d_figure');
-								if i_coldata==1
-									set(GV_H.fig_stldata_color,'Name',sprintf('3D color: T%g C%g',tile_no,colno_stal));
-								else
-									set(GV_H.fig_stldata_color,'Name',sprintf('3D color: T%g C%g C%g',tile_no,colno_stal,colno));
-								end
-								set(GV_H.fig_stldata_color,'NumberTitle','off');
-								cameratoolbar(GV_H.fig_stldata_color,'Show');
-								GV_H.ax_stldata_color	= axes(GV_H.fig_stldata_color);
-								hold(GV_H.ax_stldata_color,'on');
-								F=[coldata(i_coldata).T_print.ConnectivityList(:,1) ...
-									coldata(i_coldata).T_print.ConnectivityList(:,2) ...
-									coldata(i_coldata).T_print.ConnectivityList(:,3) ...
-									coldata(i_coldata).T_print.ConnectivityList(:,1)];
-								if i_coldata==1
-									colno_str	= sprintf('C%03.0f',colno_stal);
-								else
-									colno_str	= sprintf('C%03.0f - C%03.0f',colno_stal,colno);
-								end
-								ud_patch				= [];
-								ud_patch.colno		= colno;
-								ud_patch.pp_color	= PP_local.color(colno);
-								hp=patch(GV_H.ax_stldata_color,'faces',F,'vertices',coldata(i_coldata).T_print.Points,...
-									'EdgeColor','k','FaceColor',color_rgb,...
-									'FaceAlpha',PP_local.general.savefig_facealpha,...
-									'EdgeAlpha',PP_local.general.savefig_edgealpha,...
-									'DisplayName',sprintf('T%03.0f - %s',tile_no,colno_str),...
-									'UserData',ud_patch);
-								if testplot_tile_colno~=0
-									for i=1:size(coldata(i_coldata).text_xyz,1)
-										if ~isempty(coldata(i_coldata).text_str{i,1})
-											text(GV_H.ax_stldata_color,...
-												coldata(i_coldata).text_xyz(i,1),...
-												coldata(i_coldata).text_xyz(i,2),...
-												coldata(i_coldata).text_xyz(i,3),...
-												coldata(i_coldata).text_str{i,1},...
-												'FontSize',8,'FontWeight','bold','Color','m');
+									else
+										if ~ishandle(GV_H.fig_stldata_color)
+											GV_H.fig_stldata_color	= figure;
+											figure_theme(GV_H.fig_stldata_color,'set',[],'light');
 										end
 									end
+									clf(GV_H.fig_stldata_color,'reset');
+									figure_theme(GV_H.fig_stldata_color,'set',[],'light');
+									ud_figure.version			= VER;
+									ud_figure.tile_no			= tile_no;
+									ud_figure.colno			= colno;
+									ud_figure.comment			= 'MapLab3D: 3D plot of one color';
+									set(GV_H.fig_stldata_color,'UserData',ud_figure);
+									set(GV_H.fig_stldata_color,'Tag','maplab3d_figure');
+									if i_coldata==1
+										set(GV_H.fig_stldata_color,'Name',sprintf('3D color: T%g C%g',tile_no,colno_stal));
+									else
+										set(GV_H.fig_stldata_color,'Name',sprintf('3D color: T%g C%g C%g',tile_no,colno_stal,colno));
+									end
+									set(GV_H.fig_stldata_color,'NumberTitle','off');
+									cameratoolbar(GV_H.fig_stldata_color,'Show');
+									GV_H.ax_stldata_color	= axes(GV_H.fig_stldata_color);
+									hold(GV_H.ax_stldata_color,'on');
+									F=[coldata(i_coldata).T_print.ConnectivityList(:,1) ...
+										coldata(i_coldata).T_print.ConnectivityList(:,2) ...
+										coldata(i_coldata).T_print.ConnectivityList(:,3) ...
+										coldata(i_coldata).T_print.ConnectivityList(:,1)];
+									if i_coldata==1
+										colno_str	= sprintf('C%03.0f',colno_stal);
+									else
+										colno_str	= sprintf('C%03.0f - C%03.0f',colno_stal,colno);
+									end
+									ud_patch				= [];
+									ud_patch.colno		= colno;
+									ud_patch.pp_color	= PP_local.color(colno);
+									hp=patch(GV_H.ax_stldata_color,'faces',F,'vertices',coldata(i_coldata).T_print.Points,...
+										'EdgeColor','k','FaceColor',color_rgb,...
+										'FaceAlpha',PP_local.general.savefig_facealpha,...
+										'EdgeAlpha',PP_local.general.savefig_edgealpha,...
+										'DisplayName',sprintf('T%03.0f - %s',tile_no,colno_str),...
+										'UserData',ud_patch);
+									if testplot_tile_colno~=0
+										for i=1:size(coldata(i_coldata).text_xyz,1)
+											if ~isempty(coldata(i_coldata).text_str{i,1})
+												text(GV_H.ax_stldata_color,...
+													coldata(i_coldata).text_xyz(i,1),...
+													coldata(i_coldata).text_xyz(i,2),...
+													coldata(i_coldata).text_xyz(i,3),...
+													coldata(i_coldata).text_str{i,1},...
+													'FontSize',8,'FontWeight','bold','Color','m');
+											end
+										end
+									end
+									axis(GV_H.ax_stldata_color,'equal');
+									set(GV_H.ax_stldata_color,'XLim',[PRINTDATA.tile_axislimits(i_tile).xmin PRINTDATA.tile_axislimits(i_tile).xmax]);
+									set(GV_H.ax_stldata_color,'YLim',[PRINTDATA.tile_axislimits(i_tile).ymin PRINTDATA.tile_axislimits(i_tile).ymax]);
+									view(GV_H.ax_stldata_color,3);
+									xlabel(GV_H.ax_stldata_color,'x / mm');
+									ylabel(GV_H.ax_stldata_color,'y / mm');
+									zlabel(GV_H.ax_stldata_color,'z / mm');
+									% Licht von zwei Seiten, ohne Reflexionen:
+									material(hp,'dull');
+									el			= 30;
+									az			= el;
+									hlight1	= light(GV_H.ax_stldata_color,'Color',[1 1 1]*1);
+									lightangle(hlight1,az,el),
+									az			= el+180;
+									hlight2	= light(GV_H.ax_stldata_color,'Color',[1 1 1]*0.3);
+									lightangle(hlight2,az,el),
 								end
-								axis(GV_H.ax_stldata_color,'equal');
-								set(GV_H.ax_stldata_color,'XLim',[PRINTDATA.tile_axislimits(i_tile).xmin PRINTDATA.tile_axislimits(i_tile).xmax]);
-								set(GV_H.ax_stldata_color,'YLim',[PRINTDATA.tile_axislimits(i_tile).ymin PRINTDATA.tile_axislimits(i_tile).ymax]);
-								view(GV_H.ax_stldata_color,3);
-								xlabel(GV_H.ax_stldata_color,'x / mm');
-								ylabel(GV_H.ax_stldata_color,'y / mm');
-								zlabel(GV_H.ax_stldata_color,'z / mm');
-								% Licht von zwei Seiten, ohne Reflexionen:
-								material(hp,'dull');
-								el			= 30;
-								az			= el;
-								hlight1	= light(GV_H.ax_stldata_color,'Color',[1 1 1]*1);
-								lightangle(hlight1,az,el),
-								az			= el+180;
-								hlight2	= light(GV_H.ax_stldata_color,'Color',[1 1 1]*0.3);
-								lightangle(hlight2,az,el),
-							end
-							
-							%------------------------------------------------------------------------------------------------
-							% Export as STL-file:
-							% File name:
-							% stand-alone:			PROJECTFILENAME-Cxxx-Txxx-Nxxx-a-b-c-Xde-Yfg-zmin hmm-zcenter imm
-							% non stand-alone:	PROJECTFILENAME-Cxxx-Txxx-Nxxx-Cxxx-a-b-c-Xde-Yfg-zmin hmm-zcenter imm
-							% legend:
-							% T	tile number
-							% C	color number
-							% N	consecutive number (if length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)>1)
-							% optional:
-							% a	PP.color(colno,1).description
-							% b	PP.color(colno,1).brand
-							% c	PP.color(colno,1).color_short_text
-							% X	x coordinates
-							% d	PRINTDATA.tile(i_tile).xmin_str
-							% e	PRINTDATA.tile(i_tile).xmax_str
-							% Y	y coordinates
-							% f	PRINTDATA.tile(i_tile).ymin_str
-							% g	PRINTDATA.tile(i_tile).ymax_str
-							% h	coldata(i_coldata).zmin_TPoints
-							% i	(coldata(i_coldata).zmin_TPoints+coldata(i_coldata).zmax_TPoints)/2
-							%------------------------------------------------------------------------------------------------
-							
-							% Filename:
-							if isempty(stl_filename)
-								filename_text			= GV.pp_projectfilename;
-							else
-								filename_text			= stl_filename;
-							end
-							filename_text				= validfilename(filename_text);
-							color_tile_file_text		= sprintf('-C%03.0f',colno_stal);
-							if PRINTDATA.no_nonempty_tiles==1
-								tile_text				= '';
-							else
-								tile_text				= sprintf('-T%03.0f',tile_no);
-								tile_text				= validfilename(tile_text);
-							end
-							color_tile_file_text		= sprintf('%s%s',color_tile_file_text,tile_text);
-							if length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)>1
-								color_tile_file_text	= sprintf('%s-N%03.0f',color_tile_file_text,fileno);
-							end
-							if i_coldata>1
-								color_tile_file_text	= sprintf('%s-C%03.0f',color_tile_file_text,colno);
-							end
-							color_tile_file_text		= validfilename(color_tile_file_text);
-							if PP_local.general.save_filename.color_description==0
-								color_description_text		= '';
-							else
-								color_description_text		= sprintf('-%s',PP_local.color(colno,1).description);
-								color_description_text		= validfilename(color_description_text);
-							end
-							if PP_local.general.save_filename.color_brand==0
-								color_brand_text		= '';
-							else
-								color_brand_text		= sprintf('-%s',PP_local.color(colno,1).brand);
-								color_brand_text		= validfilename(color_brand_text);
-							end
-							if PP_local.general.save_filename.color_short_text==0
-								color_short_text		= '';
-							else
-								color_short_text		= sprintf('-%s',PP_local.color(colno,1).color_short_text);
-								color_short_text		= validfilename(color_short_text);
-							end
-							if PP_local.general.save_filename.tilecoordinates==0
-								tilecoordinates_text	= '';
-							else
-								tilecoordinates_text	= sprintf('-X%s%s-Y%s%s',...
-									PRINTDATA.tile(i_tile).xmin_str,PRINTDATA.tile(i_tile).xmax_str,...
-									PRINTDATA.tile(i_tile).ymin_str,PRINTDATA.tile(i_tile).ymax_str);
-								tilecoordinates_text	= validfilename(tilecoordinates_text);
-							end
-							if PP_local.general.save_filename.zmin==0
-								zmin_text				= '';
-							else
-								zmin_text				= sprintf('-zmin %1.3fmm',coldata(i_coldata).zmin_TPoints);
-								% Do not use validfilename here so that the decimal point is not deleted.
-							end
-							if PP_local.general.save_filename.zcenter==0
-								zcenter_text			= '';
-							else
-								zcenter_text			= sprintf('-zcenter %1.3fmm',...
-									(coldata(i_coldata).zmin_TPoints+coldata(i_coldata).zmax_TPoints)/2);
-								% Do not use validfilename here so that the decimal point is not deleted.
-							end
-							filename_stl				= sprintf('%s%s%s%s%s%s%s%s',...
-								filename_text,...
-								color_tile_file_text,...
-								color_description_text,...
-								color_brand_text,...
-								color_short_text,...
-								tilecoordinates_text,...
-								zmin_text,...
-								zcenter_text);
-							coldata(i_coldata).filename_stl	= [filename_stl '.stl'];
-							
-							% Save the STL files:
-							map_path_stl_exists	= true;
-							if exist(map_pathname_stl,'dir')~=7
-								status_mkdir	= mkdir(map_pathname_stl);
-								if status_mkdir~=1
-									map_path_stl_exists	= false;
+								
+								%------------------------------------------------------------------------------------------------
+								% Export as STL-file:
+								% File name:
+								% stand-alone:			PROJECTFILENAME-Cxxx-Txxx-Nxxx-a-b-c-Xde-Yfg-zmin hmm-zcenter imm
+								% non stand-alone:	PROJECTFILENAME-Cxxx-Txxx-Nxxx-Cxxx-a-b-c-Xde-Yfg-zmin hmm-zcenter imm
+								% legend:
+								% T	tile number
+								% C	color number
+								% N	consecutive number (if length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)>1)
+								% optional:
+								% a	PP.color(colno,1).description
+								% b	PP.color(colno,1).brand
+								% c	PP.color(colno,1).color_short_text
+								% X	x coordinates
+								% d	PRINTDATA.tile(i_tile).xmin_str
+								% e	PRINTDATA.tile(i_tile).xmax_str
+								% Y	y coordinates
+								% f	PRINTDATA.tile(i_tile).ymin_str
+								% g	PRINTDATA.tile(i_tile).ymax_str
+								% h	coldata(i_coldata).zmin_TPoints
+								% i	(coldata(i_coldata).zmin_TPoints+coldata(i_coldata).zmax_TPoints)/2
+								%------------------------------------------------------------------------------------------------
+								
+								% Filename:
+								if isempty(stl_filename)
+									filename_text			= GV.pp_projectfilename;
+								else
+									filename_text			= stl_filename;
 								end
-							end
-							if map_path_stl_exists
-								path_filename_stl				= [map_pathname_stl coldata(i_coldata).filename_stl];
-								stlwrite(coldata(i_coldata).T_print,path_filename_stl);
-							end
-							
-							% Try to repair and save the STL files:
-							if maptype==0
-								% maptype=0: normal map (no testsample):
+								filename_text				= validfilename(filename_text);
+								color_tile_file_text		= sprintf('-C%03.0f',colno_stal);
+								if PRINTDATA.no_nonempty_tiles==1
+									tile_text				= '';
+								else
+									tile_text				= sprintf('-T%03.0f',tile_no);
+									tile_text				= validfilename(tile_text);
+								end
+								color_tile_file_text		= sprintf('%s%s',color_tile_file_text,tile_text);
+								if length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)>1
+									color_tile_file_text	= sprintf('%s-N%03.0f',color_tile_file_text,fileno);
+								end
+								if i_coldata>1
+									color_tile_file_text	= sprintf('%s-C%03.0f',color_tile_file_text,colno);
+								end
+								color_tile_file_text		= validfilename(color_tile_file_text);
+								if PP_local.general.save_filename.color_description==0
+									color_description_text		= '';
+								else
+									color_description_text		= sprintf('-%s',PP_local.color(colno,1).description);
+									color_description_text		= validfilename(color_description_text);
+								end
+								if PP_local.general.save_filename.color_brand==0
+									color_brand_text		= '';
+								else
+									color_brand_text		= sprintf('-%s',PP_local.color(colno,1).brand);
+									color_brand_text		= validfilename(color_brand_text);
+								end
+								if PP_local.general.save_filename.color_short_text==0
+									color_short_text		= '';
+								else
+									color_short_text		= sprintf('-%s',PP_local.color(colno,1).color_short_text);
+									color_short_text		= validfilename(color_short_text);
+								end
+								if PP_local.general.save_filename.tilecoordinates==0
+									tilecoordinates_text	= '';
+								else
+									tilecoordinates_text	= sprintf('-X%s%s-Y%s%s',...
+										PRINTDATA.tile(i_tile).xmin_str,PRINTDATA.tile(i_tile).xmax_str,...
+										PRINTDATA.tile(i_tile).ymin_str,PRINTDATA.tile(i_tile).ymax_str);
+									tilecoordinates_text	= validfilename(tilecoordinates_text);
+								end
+								if PP_local.general.save_filename.zmin==0
+									zmin_text				= '';
+								else
+									zmin_text				= sprintf('-zmin %1.3fmm',coldata(i_coldata).zmin_TPoints);
+									% Do not use validfilename here so that the decimal point is not deleted.
+								end
+								if PP_local.general.save_filename.zcenter==0
+									zcenter_text			= '';
+								else
+									zcenter_text			= sprintf('-zcenter %1.3fmm',...
+										(coldata(i_coldata).zmin_TPoints+coldata(i_coldata).zmax_TPoints)/2);
+									% Do not use validfilename here so that the decimal point is not deleted.
+								end
+								filename_stl				= sprintf('%s%s%s%s%s%s%s%s',...
+									filename_text,...
+									color_tile_file_text,...
+									color_description_text,...
+									color_brand_text,...
+									color_short_text,...
+									tilecoordinates_text,...
+									zmin_text,...
+									zcenter_text);
+								coldata(i_coldata).filename_stl	= [filename_stl '.stl'];
+								
+								% Save the STL files:
 								map_path_stl_exists	= true;
-								if exist(map_pathname_stl_repaired,'dir')~=7
-									status_mkdir	= mkdir(map_pathname_stl_repaired);
+								if exist(map_pathname_stl,'dir')~=7
+									status_mkdir	= mkdir(map_pathname_stl);
 									if status_mkdir~=1
 										map_path_stl_exists	= false;
 									end
 								end
 								if map_path_stl_exists
-									try
-										[T_print_rep,status]	= stlrepair(coldata(i_coldata).T_print);
-									catch ME
-										if ~isdeployed
-											errormessage('',ME);
-										else
-											status			= 0;
+									path_filename_stl				= [map_pathname_stl coldata(i_coldata).filename_stl];
+									stlwrite(coldata(i_coldata).T_print,path_filename_stl);
+								end
+								
+								% Try to repair and save the STL files:
+								if maptype==0
+									% maptype=0: normal map (no testsample):
+									map_path_stl_exists	= true;
+									if exist(map_pathname_stl_repaired,'dir')~=7
+										status_mkdir	= mkdir(map_pathname_stl_repaired);
+										if status_mkdir~=1
+											map_path_stl_exists	= false;
 										end
 									end
-									if status==0
-										% the repair was not successful:
-										T_print_rep			= coldata(i_coldata).T_print;
-										path_filename_stl	= [map_pathname_stl_repaired filename_stl ' - to be repaired.stl'];
-									else
-										path_filename_stl	= [map_pathname_stl_repaired filename_stl '.stl'];
+									if map_path_stl_exists
+										try
+											[T_print_rep,status]	= stlrepair(coldata(i_coldata).T_print);
+										catch ME
+											if ~isdeployed
+												errormessage('',ME);
+											else
+												status			= 0;
+											end
+										end
+										if status==0
+											% the repair was not successful:
+											T_print_rep			= coldata(i_coldata).T_print;
+											path_filename_stl	= [map_pathname_stl_repaired filename_stl ' - to be repaired.stl'];
+										else
+											path_filename_stl	= [map_pathname_stl_repaired filename_stl '.stl'];
+										end
+										stlwrite(T_print_rep,path_filename_stl);
 									end
-									stlwrite(T_print_rep,path_filename_stl);
 								end
-							end
-							
-							%------------------------------------------------------------------------------------------------------
-							% Figures speichern:
-							%------------------------------------------------------------------------------------------------------
-							
-							% Preview of the whole map:
-							if    (i_tile                                  ==i_lastnonempty_tile      )&&...
-									(k_colprio_stal_waitbar_v(i_colprio_stal)==kmax_colprio_stal_waitbar)&&...
-									(i_coldata                               ==imax_coldata             )&&...
-									(maptype    ==0                  )		% maptype=0: normal map (no testsample)
-								if PP_local.general.savefig_map==1
-									% Save Matlab-figure:
-									if isempty(stl_filename)
-										if imax_tile==1
-											filename_fig	= sprintf('%s%s',...
-												GV.pp_projectfilename);
+								
+								%------------------------------------------------------------------------------------------------------
+								% Figures speichern:
+								%------------------------------------------------------------------------------------------------------
+								
+								% Preview of the whole map:
+								if    (i_tile                                  ==i_lastnonempty_tile      )&&...
+										(k_colprio_stal_waitbar_v(i_colprio_stal)==kmax_colprio_stal_waitbar)&&...
+										(i_coldata                               ==imax_coldata             )&&...
+										(maptype    ==0                  )		% maptype=0: normal map (no testsample)
+									if PP_local.general.savefig_map==1
+										% Save Matlab-figure:
+										if isempty(stl_filename)
+											if imax_tile==1
+												filename_fig	= sprintf('%s%s',...
+													GV.pp_projectfilename);
+											else
+												filename_fig	= sprintf('%s-T%03.0f to T%03.0f',...
+													GV.pp_projectfilename,...
+													1,imax_tile);
+											end
 										else
 											filename_fig	= sprintf('%s-T%03.0f to T%03.0f',...
-												GV.pp_projectfilename,...
+												stl_filename,...
 												1,imax_tile);
 										end
-									else
-										filename_fig	= sprintf('%s-T%03.0f to T%03.0f',...
-											stl_filename,...
-											1,imax_tile);
+										savefig(GV_H.fig_stldata_map,[map_pathname_stl filename_fig '.fig']);
 									end
-									savefig(GV_H.fig_stldata_map,[map_pathname_stl filename_fig '.fig']);
-								end
-								% Export preview:
-								for i_print=1:size(PP_local.general.printfig_map,1)
-									if ~isempty(PP_local.general.printfig_map(i_print,1).formattype)
-										resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_map(i_print,1).resolution);
-										GV_H.fig_stldata_map.PaperType			= PP_local.general.printfig_map(i_print,1).papertype;
-										GV_H.fig_stldata_map.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
-										if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
-											orient(GV_H.fig_stldata_map,'portrait');
-										else
-											orient(GV_H.fig_stldata_map,'landscape');
-										end
-										if    strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpdf')||...
-												strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dps')||...
-												strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpsc')||...
-												strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpsc2')
-											print(GV_H.fig_stldata_map,[map_pathname_stl filename_fig],...
-												['-' PP_local.general.printfig_map(i_print,1).formattype],...
-												resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
-										else
-											print(GV_H.fig_stldata_map,[map_pathname_stl filename_fig],...
-												['-' PP_local.general.printfig_map(i_print,1).formattype],...
-												resolution_str);
+									% Export preview:
+									for i_print=1:size(PP_local.general.printfig_map,1)
+										if ~isempty(PP_local.general.printfig_map(i_print,1).formattype)
+											resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_map(i_print,1).resolution);
+											GV_H.fig_stldata_map.PaperType			= PP_local.general.printfig_map(i_print,1).papertype;
+											GV_H.fig_stldata_map.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
+											if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
+												orient(GV_H.fig_stldata_map,'portrait');
+											else
+												orient(GV_H.fig_stldata_map,'landscape');
+											end
+											file_ext		= get_file_extension('print',...
+												PP_local.general.printfig_map(i_print,1).formattype);
+											if    strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpdf')||...
+													strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dps')||...
+													strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpsc')||...
+													strcmp(PP_local.general.printfig_map(i_print,1).formattype,'dpsc2')
+												print(GV_H.fig_stldata_map,[map_pathname_stl filename_fig file_ext],...
+													['-' PP_local.general.printfig_map(i_print,1).formattype],...
+													resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
+											else
+												print(GV_H.fig_stldata_map,[map_pathname_stl filename_fig file_ext],...
+													['-' PP_local.general.printfig_map(i_print,1).formattype],...
+													resolution_str);
+											end
 										end
 									end
 								end
-							end
-							
-							% Preview of the tiles:
-							if    (PRINTDATA.no_nonempty_tiles             > 1                        )&&...
-									(k_colprio_stal_waitbar_v(i_colprio_stal)==kmax_colprio_stal_waitbar)&&...
-									(i_coldata                               ==imax_coldata             )&&...
-									(maptype       ==0                )			% maptype=0: normal map (no testsample)
-								if PP_local.general.savefig_tile==1
+								
+								% Preview of the tiles:
+								if    (PRINTDATA.no_nonempty_tiles             > 1                        )&&...
+										(k_colprio_stal_waitbar_v(i_colprio_stal)==kmax_colprio_stal_waitbar)&&...
+										(i_coldata                               ==imax_coldata             )&&...
+										(maptype       ==0                )			% maptype=0: normal map (no testsample)
+									if PP_local.general.savefig_tile==1
+										% Save Matlab-figure:
+										if isempty(stl_filename)
+											filename_fig	= sprintf('%s%s%s',...
+												GV.pp_projectfilename,...
+												tile_text,...
+												tilecoordinates_text);
+										else
+											filename_fig	= sprintf('%s%s',...
+												stl_filename,...
+												tile_text);
+										end
+										savefig(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig '.fig']);
+									end
+									% Export preview:
+									for i_print=1:size(PP_local.general.printfig_tile,1)
+										if ~isempty(PP_local.general.printfig_tile(i_print,1).formattype)
+											resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_tile(i_print,1).resolution);
+											GV_H.fig_stldata_tile.PaperType			= PP_local.general.printfig_tile(i_print,1).papertype;
+											GV_H.fig_stldata_tile.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
+											if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
+												orient(GV_H.fig_stldata_tile,'portrait');
+											else
+												orient(GV_H.fig_stldata_tile,'landscape');
+											end
+											file_ext		= get_file_extension('print',...
+												PP_local.general.printfig_map(i_print,1).formattype);
+											if    strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpdf')||...
+													strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dps')||...
+													strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpsc')||...
+													strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpsc2')
+												print(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig file_ext],...
+													['-' PP_local.general.printfig_tile(i_print,1).formattype],...
+													resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
+											else
+												print(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig file_ext],...
+													['-' PP_local.general.printfig_tile(i_print,1).formattype],...
+													resolution_str);
+											end
+										end
+									end
+								end
+								
+								% Preview of the colors of all tiles separatly:
+								if    (PP_local.general.savefig_tile_color==1)&&...
+										(maptype==0)										% maptype=0: normal map (no testsample)
 									% Save Matlab-figure:
-									if isempty(stl_filename)
-										filename_fig	= sprintf('%s%s%s',...
-											GV.pp_projectfilename,...
-											tile_text,...
-											tilecoordinates_text);
-									else
-										filename_fig	= sprintf('%s%s',...
-											stl_filename,...
-											tile_text);
-									end
-									savefig(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig '.fig']);
-								end
-								% Export preview:
-								for i_print=1:size(PP_local.general.printfig_tile,1)
-									if ~isempty(PP_local.general.printfig_tile(i_print,1).formattype)
-										resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_tile(i_print,1).resolution);
-										GV_H.fig_stldata_tile.PaperType			= PP_local.general.printfig_tile(i_print,1).papertype;
-										GV_H.fig_stldata_tile.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
-										if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
-											orient(GV_H.fig_stldata_tile,'portrait');
-										else
-											orient(GV_H.fig_stldata_tile,'landscape');
-										end
-										if    strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpdf')||...
-												strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dps')||...
-												strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpsc')||...
-												strcmp(PP_local.general.printfig_tile(i_print,1).formattype,'dpsc2')
-											print(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig],...
-												['-' PP_local.general.printfig_tile(i_print,1).formattype],...
-												resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
-										else
-											print(GV_H.fig_stldata_tile,[map_pathname_stl filename_fig],...
-												['-' PP_local.general.printfig_tile(i_print,1).formattype],...
-												resolution_str);
+									savefig(GV_H.fig_stldata_color,[map_pathname_stl filename_stl '.fig']);
+									% Export preview:
+									for i_print=1:size(PP_local.general.printfig_color,1)
+										if ~isempty(PP_local.general.printfig_color(i_print,1).formattype)
+											resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_color(i_print,1).resolution);
+											GV_H.fig_stldata_color.PaperType			= PP_local.general.printfig_color(i_print,1).papertype;
+											GV_H.fig_stldata_color.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
+											if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
+												orient(GV_H.fig_stldata_color,'portrait');
+											else
+												orient(GV_H.fig_stldata_color,'landscape');
+											end
+											file_ext		= get_file_extension('print',...
+												PP_local.general.printfig_map(i_print,1).formattype);
+											if    strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpdf')||...
+													strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dps')||...
+													strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpsc')||...
+													strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpsc2')
+												print(GV_H.fig_stldata_color,[map_pathname_stl filename_stl file_ext],...
+													['-' PP_local.general.printfig_color(i_print,1).formattype],...
+													resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
+											else
+												print(GV_H.fig_stldata_color,[map_pathname_stl filename_stl file_ext],...
+													['-' PP_local.general.printfig_color(i_print,1).formattype],...
+													resolution_str);
+											end
 										end
 									end
 								end
-							end
-							
-							% Preview of the colors of all tiles separatly:
-							if    (PP_local.general.savefig_tile_color==1)&&...
-									(maptype==0)										% maptype=0: normal map (no testsample)
-								% Save Matlab-figure:
-								savefig(GV_H.fig_stldata_color,[map_pathname_stl filename_stl '.fig']);
-								% Export preview:
-								for i_print=1:size(PP_local.general.printfig_color,1)
-									if ~isempty(PP_local.general.printfig_color(i_print,1).formattype)
-										resolution_str		= sprintf('-r%1.0f',PP_local.general.printfig_color(i_print,1).resolution);
-										GV_H.fig_stldata_color.PaperType			= PP_local.general.printfig_color(i_print,1).papertype;
-										GV_H.fig_stldata_color.PaperPositionMode = 'manual';		% expand the figure size to fill page, before orient!
-										if ((PRINTDATA.ymax-PRINTDATA.ymin)/(PRINTDATA.xmax-PRINTDATA.xmin))>1
-											orient(GV_H.fig_stldata_color,'portrait');
-										else
-											orient(GV_H.fig_stldata_color,'landscape');
-										end
-										if    strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpdf')||...
-												strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dps')||...
-												strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpsc')||...
-												strcmp(PP_local.general.printfig_color(i_print,1).formattype,'dpsc2')
-											print(GV_H.fig_stldata_color,[map_pathname_stl filename_stl],...
-												['-' PP_local.general.printfig_color(i_print,1).formattype],...
-												resolution_str,'-fillpage');				% '-fillpage' / '-bestfit'
-										else
-											print(GV_H.fig_stldata_color,[map_pathname_stl filename_stl],...
-												['-' PP_local.general.printfig_color(i_print,1).formattype],...
-												resolution_str);
-										end
-									end
+								
+								%------------------------------------------------------------------------------------------------------
+								% coldata zuweisen:
+								%------------------------------------------------------------------------------------------------------
+								
+								if i_coldata==1
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).filename_stl						= coldata(i_coldata).filename_stl;
+								else
+									PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).filename_stl	= coldata(i_coldata).filename_stl;
 								end
-							end
-							
-							%------------------------------------------------------------------------------------------------------
-							% coldata zuweisen:
-							%------------------------------------------------------------------------------------------------------
-							
-							if i_coldata==1
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).filename_stl						= coldata(i_coldata).filename_stl;
-							else
-								PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).col(i_colprio).filename_stl	= coldata(i_coldata).filename_stl;
-							end
-							
-						end	% Ende von: i_coldata=1:imax_coldata
-					end		% Ende von: fileno=1:length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)
-				end			% Ende von: if imax_part_stal>0
+								
+							end	% Ende von: i_coldata=1:imax_coldata
+						end		% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file(fileno).T_print.Points)
+					end			% Ende von: fileno=1:length(PRINTDATA.tile(i_tile).col_stal(i_colprio_stal).file)
+				end				% Ende von: if imax_part_stal>0
 				set_breakpoint_forloop_i_colprio_stal	= 1;
-			end				% Ende von: for i_colprio_stal=1:imax_colprio_stal
-		end					% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal)
+			end					% Ende von: for i_colprio_stal=1:imax_colprio_stal
+		end						% Ende von: if ~isempty(PRINTDATA.tile(i_tile).col_stal)
 		set_breakpoint_forloop_i_tile	= 1;
-	end						% Ende von: for i_tile=1:length(PRINTDATA.tile)
+	end							% Ende von: for i_tile=1:length(PRINTDATA.tile)
 	
 	% Execution time: before the last steps in map2stl_completion, because the execution times will be saved!
 	t_end_statebusy					= clock;

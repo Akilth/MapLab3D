@@ -70,8 +70,6 @@ try
 	set(hf_map_new,'SizeChangedFcn','');
 	set(hf_map_new,'ButtonDownFcn','');
 	
-	
-	
 	% Delete callbacks of the figure and axis children:
 	hc1		= hf_map_new.Children;
 	for ihc1=1:size(hc1,1)

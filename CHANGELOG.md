@@ -12,11 +12,13 @@ the project parameters may need to be edited.
 
 ## Known issues
 
+- The tooltips for the menu options appear behind the menu and are partially covered.
+
 - Sometimes a text map object is significantly too large. This error can be fixed by changing the text or the font 
 (open the context menu by left-clicking and then right-clicking on the text object).
 
-- This version is not suitable for large maps with many map objects, e.g., a map of an entire state. 
-It may happen that a saved project can no longer be loaded.
+- Error occurs when ungrouping texts/symbols while the "Menu: View - Automatically sort new map objects (off: faster)" 
+option is enabled.
 
 ## [Unreleased]
 
@@ -27,6 +29,29 @@ It may happen that a saved project can no longer be loaded.
 ### Removed
 
 ### Fixed
+
+## [1.2.0.0 Public Beta] - 2026-06-10
+
+### Added
+
+- When deleting map objects, information about the objects to be deleted is displayed in the confirm dialog:
+ object numbers, color numbers, descriptions and texts/tags.
+
+### Changed
+
+- A separate source plot (displayed as a magenta line when selecting texts and symbols) is no longer created for 
+each text and symbol, but only one source plot for multiple texts and symbols with the same source data. 
+In addition, the resolution of the source plots can be reduced using the parameters obj.textpar.dmin_source and 
+obj.symbolpar.dmin_source. This reduces the memory requirements for project saving.
+
+### Fixed
+
+- When saving the project, the 2D map is no longer saved in the format ...MAP.fig, but under ...MAP.mat. 
+This fixes the error that occurred with large maps containing many map objects, where the saved project could 
+no longer be loaded after saving it several times.
+
+- If the 2D map is saved with contour lines, these will be visible again after the project is loaded. 
+The checkbox in the menu is set accordingly.
 
 ## [1.1.0.1 Public Beta] - 2026-02-22
 

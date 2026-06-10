@@ -27,7 +27,7 @@ switch method_1
 		% With this method, areas may still overlap slightly.
 		% d_side must be determined depending on the color priority of the two parts involved.
 		% The part with the higher color priority cuts a hole in the part with the lower color priority.
-		if colno1>0
+		if (colno1>0)&&(colno2>0)
 			colprio1	= PP_local.color(colno1,1).prio;
 			colprio2	= PP_local.color(colno2,1).prio;
 			if colprio1>colprio2

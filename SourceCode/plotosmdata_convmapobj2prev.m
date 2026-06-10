@@ -103,30 +103,34 @@ try
 			dscr_prev_bgd	= sprintf('%s: background',poly_bgd_prev(k,1).dscr);
 			dscr_prev_fgd	= sprintf('%s: foreground',poly_fgd_prev(k,1).dscr);
 		end
-		if ~isnan(poly_bgd_prev_united.dscr)
-			if ~strcmp(poly_bgd_prev_united.dscr,dscr_prev_bgd)
-				poly_bgd_prev_united.dscr	= '';
+		if isfield(poly_bgd_prev(k,1),'dscr')
+			if ~isnan(poly_bgd_prev_united.dscr)
+				if ~strcmp(poly_bgd_prev_united.dscr,poly_bgd_prev(k,1).dscr)
+					poly_bgd_prev_united.dscr	= '';
+				end
+			else
+				poly_bgd_prev_united.dscr		= poly_bgd_prev(k,1).dscr;
 			end
-		else
-			poly_bgd_prev_united.dscr		= dscr_prev_bgd;
 		end
-		if ~isnan(poly_fgd_prev_united.dscr)
-			if ~strcmp(poly_fgd_prev_united.dscr,dscr_prev_fgd)
-				poly_fgd_prev_united.dscr	= '';
+		if isfield(poly_fgd_prev(k,1),'dscr')
+			if ~isnan(poly_fgd_prev_united.dscr)
+				if ~strcmp(poly_fgd_prev_united.dscr,poly_fgd_prev(k,1).dscr)
+					poly_fgd_prev_united.dscr	= '';
+				end
+			else
+				poly_fgd_prev_united.dscr		= poly_fgd_prev(k,1).dscr;
 			end
-		else
-			poly_fgd_prev_united.dscr		= dscr_prev_fgd;
 		end
 		if iscell(poly_bgd_prev_united.text)
-			if ~strcmp(poly_bgd_prev_united.text,text_prev_bgd)
-				poly_bgd_prev_united.text	= '';
+			if ~isequal(poly_bgd_prev_united.text,text_prev_bgd)
+				poly_bgd_prev_united.text	= {''};
 			end
 		else
 			poly_bgd_prev_united.text		= text_prev_bgd;
 		end
 		if iscell(poly_fgd_prev_united.text)
-			if ~strcmp(poly_fgd_prev_united.text,text_prev_fgd)
-				poly_fgd_prev_united.text	= '';
+			if ~isequal(poly_fgd_prev_united.text,text_prev_fgd)
+				poly_fgd_prev_united.text	= {''};
 			end
 		else
 			poly_fgd_prev_united.text		= text_prev_fgd;
