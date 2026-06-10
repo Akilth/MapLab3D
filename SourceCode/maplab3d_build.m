@@ -80,7 +80,8 @@ packageOpts	= [];
 
 % Matlab Branch Manager:	create new branch development if necessary, set development as HEAD
 % Matlab:						Increase version numbers
-% Matlab Branch Manager:	Commit and push changes in development
+% Matlab Branch Manager:	Commit (Message: version number increased to 1.x.x.x)
+%									Push changes in development
 
 
 % --------------------------------------------------------------------------------------------------------------------
