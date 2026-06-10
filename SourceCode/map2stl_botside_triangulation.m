@@ -18,6 +18,11 @@ global GV GV_H WAITBAR
 
 % The try/catch block is in the calling function!
 
+if isempty(T.Points)
+	% This should not happen:
+	errormessage;
+end
+
 if (currpart_i_tile==1)&&(currpart_i_colprio==2)&&(currpart_i_part==4)
 	test=1;
 end
@@ -810,6 +815,12 @@ for i_margin=1:size(iT_lines,2)
 			% Increase the resolution of the inner polygon:
 			dmax_poly_in	= max_step_size/2;																					% !!!!!
 			poly_in			= changeresolution_poly(poly_in,dmax_poly_in,dmax_poly_in/2.5,[]);
+			% Es ist möglich, dass nach Änderung der Auflösung poly_in nicht mehr vollständig innerhalb von poly_out
+			% liegt. Dies führt dann zu einem Fehler bei addboundary weiter unten.
+			% Stelle sicher, dass poly_in innerhalb von poly_out liegt:
+			poly_out_mtol		= polybuffer(poly_out,-tol_1,'JointType','miter',...
+				'MiterLimit',miterlimit);
+			poly_in			= intersect(poly_in,poly_out_mtol);
 			% Assign the polygon poly for triangulation or cancel the calculation of the overhead:
 			if numboundaries(poly_in)==0
 				% There remains no data in poly_in:
@@ -1348,9 +1359,13 @@ if    ~isempty(find(isinf(T.Points)          ,1))||...
 		~isempty(find(isnan(T.Points)          ,1))||...
 		~isempty(find(isinf(T.ConnectivityList),1))||...
 		~isempty(find(isnan(T.ConnectivityList),1))
-	currpart_i_tile
-	currpart_i_colprio
-	currpart_i_part
+	fprintf(1,[...
+		'Warning: map2stl_botside_triangulation:\n',...
+		'T.Points or T.ConnectivityList  is Inf or NaN\n',...
+		'in the part:\n',...
+		'currpart_i_tile    or i_tile         = %g\n',...
+		'currpart_i_colprio or i_colprio_stal = %g\n',...
+		'currpart_i_part    or i_part         = %g\n'],currpart_i_tile,currpart_i_colprio,currpart_i_part);
 	test=1;
 end
 

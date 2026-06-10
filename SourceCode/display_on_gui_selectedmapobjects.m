@@ -138,8 +138,9 @@ try
 		if ~isempty(obj_info_str)
 			obj_info_str			= sprintf(' (%s)',obj_info_str);
 		end
-		% Object information: number of regions:
+		% Additional information:
 		if GV.no_selected_plotobjects==1
+			% Object information: number of regions:
 			no_regions					= 0;
 			for i=1:size(MAP_OBJECTS(imapobj_v,1).h,1)
 				if strcmp(MAP_OBJECTS(imapobj_v,1).h(i,1).Type,'polygon')
@@ -155,7 +156,59 @@ try
 				no_regions_str			= sprintf('%1.0f regions',no_regions);
 			end
 			if ~isempty(no_regions_str)
-				obj_info_str		= sprintf(': %s%s',no_regions_str,obj_info_str);
+				obj_info_str		= sprintf('%s: %s',obj_info_str,no_regions_str);
+			end
+		elseif GV.no_selected_plotobjects==2
+			% Object information: minimum distance between two polygons:
+			poly1		= polyshape();
+			poly2		= polyshape();
+			if strcmp(MAP_OBJECTS(imapobj_v(1,1),1).h(1,1).Type,'polygon')
+				poly1		= MAP_OBJECTS(imapobj_v(1,1),1).h(1,1).Shape;
+			end
+			if strcmp(MAP_OBJECTS(imapobj_v(2,1),1).h(1,1).Type,'polygon')
+				poly2		= MAP_OBJECTS(imapobj_v(2,1),1).h(1,1).Shape;
+			end
+			for i=2:size(MAP_OBJECTS(imapobj_v(1,1),1).h,1)
+				if strcmp(MAP_OBJECTS(imapobj_v(1,1),1).h(i,1).Type,'polygon')
+					poly1		= union(poly1,MAP_OBJECTS(imapobj_v(1,1),1).h(i,1).Shape);
+				end
+			end
+			for i=2:size(MAP_OBJECTS(imapobj_v(2,1),1).h,1)
+				if strcmp(MAP_OBJECTS(imapobj_v(2,1),1).h(i,1).Type,'polygon')
+					poly2		= union(poly2,MAP_OBJECTS(imapobj_v(2,1),1).h(i,1).Shape);
+				end
+			end
+			if (numboundaries(poly1)>0)&&(numboundaries(poly2)>0)
+				if overlaps(poly1,poly2)
+					dmin_str		= 'overlap';
+				else
+					[  dmin1,...		% dmin	N*1 vector: minimum distances
+						~,...			% vx_dmin	N*1 vector: nearest points of the polygon to the query points  (x coordinates)
+						~,...			% vy_dmin	N*1 vector: nearest points of the polygon to the query points  (y coordinates)
+						~,...			% i_dmin		N*1 vector: indices of the line segments corresponding to vx_dmin, vy_dmin
+						~...			% k_dmin		N*1 vector: pos. of the point [vx_dmin vy_dmin] on the line segment i_dmin
+						]=mindistance_poly_p(...
+						poly1.Vertices(:,1),...		% vx			polygon vertices x
+						poly1.Vertices(:,2),...		% vy			polygon vertices y
+						poly2.Vertices(:,1),...		% pqx			N*1 vector: query points (x coordinates)
+						poly2.Vertices(:,2),...		% pqy			N*1 vector: query points (y coordinates)
+						true);							% poly_is_closed	optional (default: true):
+					[  dmin2,...		% dmin	N*1 vector: minimum distances
+						~,...			% vx_dmin	N*1 vector: nearest points of the polygon to the query points  (x coordinates)
+						~,...			% vy_dmin	N*1 vector: nearest points of the polygon to the query points  (y coordinates)
+						~,...			% i_dmin		N*1 vector: indices of the line segments corresponding to vx_dmin, vy_dmin
+						~...			% k_dmin		N*1 vector: pos. of the point [vx_dmin vy_dmin] on the line segment i_dmin
+						]=mindistance_poly_p(...
+						poly2.Vertices(:,1),...		% vx			polygon vertices x
+						poly2.Vertices(:,2),...		% vy			polygon vertices y
+						poly1.Vertices(:,1),...		% pqx			N*1 vector: query points (x coordinates)
+						poly1.Vertices(:,2),...		% pqy			N*1 vector: query points (y coordinates)
+						true);							% poly_is_closed	optional (default: true):
+					dmin1				= min(dmin1);
+					dmin2				= min(dmin2);
+					dmin_str			= sprintf('min. distance %1.3f mm',min(dmin1,dmin2));
+				end
+				obj_info_str		= sprintf('%s: %s',obj_info_str,dmin_str);
 			end
 		end
 		% Display object information:

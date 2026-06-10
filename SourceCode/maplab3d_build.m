@@ -17,7 +17,7 @@ packageOpts	= [];
 %		-	project.projectname		My Project 1
 %		-	project.filename			MP1
 %		-	project.scale				100.000
-% -	Reset Columns DATASET_2 (My Project 1) up to DATASET_4 (My Project 3)
+% -	Reset Columns DATASET_2 (My Project 1) up to DATASET_5 (My Project 4)
 % -	"name" keys to filter by:
 %		name
 %		alt_name
@@ -38,16 +38,21 @@ packageOpts	= [];
 %			maplab3d.Version		x.x
 %		-	app.MapLab3D.Name		MapLab3D 1.x.x.x
 % -	CHANGELOG.md:				Version number and date
-
-% Documentation of the changes contained in the new version.
+%										Documentation of the changes contained in the new version.
+%										New "Unreleased"
+%										Check "Known issues"
 
 % Check the directories and filenames below.
+
+% Run the app maplab3d
+% Load the project parameters und select a project directory
+% (so the diary.txt in the ...\MapLab3D\SourceCode directory can be deleted automatically)
 
 % Run this file.
 
 % Commit and push:
 % Source Control:				- Add untracked files to Source Control
-%									- Commit, Message: "Version 1.1.0.0 Public Beta"
+%									- Commit, Message: "Version 1.x.x.x Public Beta"
 % Matlab Branch Manager:	- Make shure that HEAD is development
 %									- Push changes in Development
 %									- Set main as HEAD:

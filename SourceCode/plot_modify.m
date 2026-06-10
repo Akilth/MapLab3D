@@ -2003,11 +2003,13 @@ try
 			ud.rotation		= 0;
 			preview			= struct;
 			i_preview		= 0;
+			par1_united		= polyshape();
 			for r=1:size(par1,1)
 				for c=1:size(par1,2)
 					if numboundaries(par1(r,c))>0
 						i_preview		= i_preview+1;
 						ud.shape0		= par1(r,c);
+						par1_united		= union(par1_united,par1(r,c));
 						% Plot the preview as polygon:
 						if ~ishandle(GV_H.ax_2dmap)
 							errormessage(sprintf('There exists no map where to plot the objects.\nCreate the map first.'));
@@ -2025,34 +2027,38 @@ try
 					end
 				end
 			end
-			% Create/modify legend:
-			create_legend_mapfigure;
-			% Save relevant data in the structure MAP_OBJECTS:
-			[xcenter,ycenter]						= centroid(par1);
-			MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
-			for i=1:size(preview,1)
-				MAP_OBJECTS(imapobj_new,1).h(i,1)	= preview(i,1).h;
-			end
-			if ~isfield(MAP_OBJECTS,'iobj')
-				MAP_OBJECTS(imapobj_new,1).iobj	= -1;
+			if i_preview>=1
+				% Create/modify legend:
+				create_legend_mapfigure;
+				% Save relevant data in the structure MAP_OBJECTS:
+				[xcenter,ycenter]						= centroid(par1_united);
+				MAP_OBJECTS(imapobj_new,1).disp	= 'preview polygon';
+				for i=1:size(preview,1)
+					MAP_OBJECTS(imapobj_new,1).h(i,1)	= preview(i,1).h;
+				end
+				if ~isfield(MAP_OBJECTS,'iobj')
+					MAP_OBJECTS(imapobj_new,1).iobj	= -1;
+				else
+					MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
+				end
+				MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev;
+				MAP_OBJECTS(imapobj_new,1).x		= xcenter;
+				MAP_OBJECTS(imapobj_new,1).y		= ycenter;
+				MAP_OBJECTS(imapobj_new,1).text	= text_prev;
+				MAP_OBJECTS(imapobj_new,1).mod	= false;
+				MAP_OBJECTS(imapobj_new,1).cncl	= 0;
+				MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
+				MAP_OBJECTS(imapobj_new,1).vis0	= 1;
+				
+				% Update MAP_OBJECTS_TABLE:
+				plot_modify('deselect',-1,0);
+				if select_prev
+					plot_modify('select',imapobj_new,0);
+				end
+				display_map_objects;
 			else
-				MAP_OBJECTS(imapobj_new,1).iobj	= min([[MAP_OBJECTS.iobj] 0])-1;
+				setbreakpoint=1;
 			end
-			MAP_OBJECTS(imapobj_new,1).dscr	= dscr_prev;
-			MAP_OBJECTS(imapobj_new,1).x		= xcenter;
-			MAP_OBJECTS(imapobj_new,1).y		= ycenter;
-			MAP_OBJECTS(imapobj_new,1).text	= text_prev;
-			MAP_OBJECTS(imapobj_new,1).mod	= false;
-			MAP_OBJECTS(imapobj_new,1).cncl	= 0;
-			MAP_OBJECTS(imapobj_new,1).cnuc	= 0;
-			MAP_OBJECTS(imapobj_new,1).vis0	= 1;
-			
-			% Update MAP_OBJECTS_TABLE:
-			plot_modify('deselect',-1,0);
-			if select_prev
-				plot_modify('select',imapobj_new,0);
-			end
-			display_map_objects;
 			
 			
 			%------------------------------------------------------------------------------------------------------------
@@ -3541,7 +3547,6 @@ try
 					'This function cannot be applied to preview objects.'],imapobj1));
 			end
 			
-			% Plot the preview polygon:
 			if GV.warnings_off
 				warning('off','MATLAB:polyshape:repairedBySimplify');
 			end
